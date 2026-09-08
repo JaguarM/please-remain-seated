@@ -41,6 +41,10 @@
                 canvas = el("canvas", { id: "cabin", class: "cabin" }),
             ]),
             el("div", { class: "here", id: "here" }),
+        ]);
+        // The log is a sibling of the two columns rather than a child of the left one, so that a
+        // narrow window can order it after the action list instead of burying the list under it.
+        const logwrap = el("div", { class: "logwrap" }, [
             el("div", { class: "log", id: "log" }),
         ]);
 
@@ -56,7 +60,7 @@
         ]);
 
         root.appendChild(bar);
-        root.appendChild(el("div", { class: "board" }, [left, right]));
+        root.appendChild(el("div", { class: "board" }, [left, right, logwrap]));
 
         ctx = canvas.getContext("2d");
         scale = PRS.render.fit(canvas);

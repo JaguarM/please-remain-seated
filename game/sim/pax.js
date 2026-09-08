@@ -26,6 +26,17 @@
         return !canWalk(p) || p.state === "down" || p.traits.indexOf("elderly") >= 0;
     }
 
+    /** What "no longer held, not yet safe" means for this person: on their feet, or not. */
+    function looseState(p) {
+        return canStandUp(p) ? "standing" : "seated";
+    }
+
+    /** Anybody who could physically get up and block the aisle. Not the dog. */
+    function canStandUp(p) {
+        return p.traits.indexOf("pet") < 0 && p.traits.indexOf("infant") < 0 &&
+               p.traits.indexOf("immobile") < 0;
+    }
+
     function displayState(p) {
         switch (p.state) {
             case "asleep": return "asleep";
@@ -166,12 +177,13 @@
 
             // ---- standing up, and getting in the way -----------------------------------------
             if (p.helper) { helperTick(S, p, dt); }
-            else if (p.state === "seated" && p.panic > 58 && p.awareness > 45) {
+            else if (p.state === "seated" && p.panic > 58 && p.awareness > 45 &&
+                       canStandUp(p)) {
                 if (S.rng.chance(clamp01(dt * 0.045))) {
                     p.state = "standing";
                     p.belted = false;
                 }
-            } else if (p.state === "standing" && p.panic > 74) {
+            } else if (p.state === "standing" && p.panic > 74 && canStandUp(p)) {
                 if (S.rng.chance(clamp01(dt * 0.05)) && S.crewPhase < 5) {
                     // Into the aisle, facing the wrong way, with a bag.
                     p.state = "aisle";
@@ -389,13 +401,13 @@
     function speak(S, p) {
         const data = PRS.data.passengers;
         if (p.state === "down") return "(" + p.name + " does not answer.)";
-        if (p.smokeDose > 34 || S.cabinAwareness > 70) return S.rng.pick(data.LATE);
+        if (p.smokeDose > 34 || S.cabinAwareness > 70) return PRS.state.line(S, "late", data.LATE);
         if (p.spokenTo === 0) return p.says;
-        return S.rng.pick(data.AMBIENT);
+        return PRS.state.line(S, "ambient", data.AMBIENT);
     }
 
     PRS.pax = {
-        DOWN_AT, CRITICAL_AT, isChild, isPet, canWalk, needsCarrying, displayState, condition,
+        DOWN_AT, CRITICAL_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
         carryOverhead, canCarry, refusalFor, advance, recruit, resistance, persuasion, convince,
         speak, nearestSafeX,
     };

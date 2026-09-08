@@ -190,8 +190,28 @@ button.big:hover { background: #4b6191; }
 .kit { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
 .kit-item { border: 1px solid var(--line); border-radius: 2px; background: #1a1d23; }
 
-.board { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 0; flex: 1; min-height: 0; }
-@media (max-width: 1000px) { .board { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
+/* Three areas, so the reading order is cabin, then the list, then the log, at every width.
+   On a wide window the log sits under the cabin; on a narrow one it goes to the bottom, because
+   burying the action list under forty lines of log is the one layout that breaks the game. */
+.board {
+  display: grid; flex: 1; min-height: 0;
+  grid-template-columns: minmax(0, 1fr) 400px;
+  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-areas: "view list" "log list";
+}
+.col-left  { grid-area: view; }
+.col-right { grid-area: list; }
+.logwrap   { grid-area: log; min-height: 0; padding: 0 10px 10px; display: flex; }
+@media (max-width: 1000px) {
+  .board {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto;
+    grid-template-areas: "view" "list" "log";
+  }
+  .play { height: auto; min-height: 100vh; overflow: auto; }
+  .col-right { border-left: none; border-top: 1px solid var(--line); max-height: 70vh; }
+  .logwrap { max-height: 40vh; }
+}
 
 .col-left { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 10px; gap: 8px; }
 .canvas-wrap { background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
@@ -205,7 +225,7 @@ button.big:hover { background: #4b6191; }
 .chip-t1 { border-color: #6a6432; } .chip-t2 { border-color: #7a5a2a; }
 .chip-t3 { border-color: #7a3a2a; background: #2a1f1c; } .chip-t4 { border-color: var(--bad); background: #33201c; }
 
-.log { flex: 1; min-height: 120px; overflow-y: auto; background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; }
+.log { flex: 1; min-height: 110px; overflow-y: auto; background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 8px 10px; font-size: 12.5px; }
 .log-line { display: grid; grid-template-columns: 44px 1fr; gap: 8px; padding: 3px 0; border-bottom: 1px solid #1c2027; }
 .log-t { font: 10px var(--mono); color: var(--ink-faint); padding-top: 2px; }
 .log-x { color: var(--ink-dim); white-space: pre-wrap; }

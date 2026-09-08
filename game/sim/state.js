@@ -264,6 +264,16 @@
 
     // ------------------------------------------------------------------------------ the log ---
 
+    /**
+     * A flavour line that does not repeat until the whole set has been used. Two passengers
+     * saying the same sentence one after the other reads as a bug even when it is not one.
+     */
+    function line(S, key, options) {
+        S._bags = S._bags || {};
+        if (!S._bags[key]) S._bags[key] = S.rng.bagPicker(options);
+        return S._bags[key]();
+    }
+
     function log(S, text, kind) {
         if (!text) return;
         const entry = {
@@ -285,6 +295,6 @@
     PRS.state = {
         FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
         inventoryHas, inventoryAll, slotOf, useCharge, has, setFlag, hasPerk, wearing,
-        securedCount, downCount, helperCount, log, note,
+        securedCount, downCount, helperCount, log, note, line,
     };
 })(window);

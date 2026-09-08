@@ -71,7 +71,7 @@
                   "remaining glassware.”",
                   "“Would the passenger in 9C please return to their seat. Thank you.”",
               ];
-              return { text: "PA: " + S.rng.pick(lines), kind: "pa" };
+              return { text: "PA: " + PRS.state.line(S, "pa", lines), kind: "pa" };
           } },
 
         { id: "belt_sign", weight: 14, once: true,
@@ -92,7 +92,7 @@
                   if (S.rng.chance(0.4)) {
                       const p = PRS.state.paxById(S, id);
                       if (p) {
-                          p.state = p.state === "down" ? "down" : "standing";
+                          p.state = p.state === "down" ? "down" : PRS.pax.looseState(p);
                           p.carriedBy = null;
                           dropped.push(p.name);
                           S.player.carrying = S.player.carrying.filter((c) => c !== id);
@@ -121,7 +121,8 @@
         { id: "someone_stands", weight: 18,
           when: (S) => S.cabinPanic > 30,
           run(S) {
-              const options = S.pax.filter((p) => p.state === "seated" && p.panic > 45 && !p.helper);
+              const options = S.pax.filter((p) => p.state === "seated" && p.panic > 45 &&
+                                                  !p.helper && PRS.pax.canStandUp(p));
               if (!options.length) return null;
               const p = S.rng.pick(options);
               p.state = "aisle";
@@ -141,10 +142,13 @@
               if (!b) return null;
               S.cabinPanic = Math.min(100, S.cabinPanic + 4);
               return { text: a.name + " and " + b.name + " begin a loud argument about whether " +
-                             S.rng.pick(["the crew have been told", "this is normal",
-                                         "somebody should do something",
-                                         "it is legally allowed to be this hot",
-                                         "the exits open from the inside"]) + ".", kind: "plain" };
+                             PRS.state.line(S, "argument", [
+                                 "the crew have been told", "this is normal",
+                                 "somebody should do something",
+                                 "it is legally allowed to be this hot",
+                                 "whose bag it is",
+                                 "whether anybody has actually seen a flame",
+                                 "the exits open from the inside"]) + ".", kind: "plain" };
           } },
 
         { id: "phone_out", weight: 12,
@@ -222,7 +226,8 @@
                   "“I have asked you politely. That was the polite one.”",
                   "“Cabin crew! CABIN CREW! This person won't sit down!”",
               ];
-              return { text: p.name + ", from " + p.seat + ": " + S.rng.pick(lines), kind: "bad" };
+              return { text: p.name + ", from " + p.seat + ": " +
+                  PRS.state.line(S, "sitdown", lines), kind: "bad" };
           } },
 
         { id: "vindication", weight: 10, once: true,

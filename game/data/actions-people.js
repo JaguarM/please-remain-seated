@@ -61,7 +61,7 @@
             S.credibility = Math.min(100, S.credibility + 3);
             PRS.audio.play("secure");
         } else {
-            p.state = p.smokeDose > P.DOWN_AT ? "down" : "standing";
+            p.state = p.smokeDose > P.DOWN_AT ? "down" : P.looseState(p);
             PRS.audio.play("drop");
         }
         st.reindex(S);
@@ -205,7 +205,7 @@
                         "in the forward cross-aisle, on a person, alive and accounted for. The " +
                         "cabin has never been quieter.", kind: "great" };
                 }
-                p.state = "standing";
+                p.state = P.looseState(p);
                 st.reindex(S);
                 return { text: "You throw " + p.name + " five rows up the cabin. They land badly, " +
                     "in the aisle, at row " + (cabin.rowAt(nx) || "?") + ", and they are five " +
@@ -447,7 +447,7 @@
                 c.p.panic = Math.max(0, c.p.panic - drop);
                 c.p.trust = Math.min(100, c.p.trust + 12);
                 if (c.p.state === "aisle" && c.p.panic < 50) {
-                    c.p.state = "standing";
+                    c.p.state = P.looseState(c.p);
                     c.p.x = c.p.homeX; c.p.y = c.p.homeY;
                     st.reindex(S);
                 }
@@ -467,7 +467,7 @@
                 S.cabinPanic = Math.min(100, S.cabinPanic + 4);
                 if (roll.ok) {
                     c.p.belted = false;
-                    c.p.state = "standing";
+                    c.p.state = P.looseState(c.p);
                     return { text: c.p.name + " gets up because you shouted, which will work " +
                         "exactly once.", kind: "plain" };
                 }
@@ -550,7 +550,7 @@
                 const roll = say(S, c.p, "threat", { bonus: st.hasPerk(S, "authority") ? 30 : -14 });
                 if (roll.ok) {
                     c.p.belted = false;
-                    c.p.state = "standing";
+                    c.p.state = P.looseState(c.p);
                     return { text: c.p.name + " believes you, gets up, and is going to describe " +
                         "you very accurately to an investigator in about six weeks.", kind: "plain" };
                 }
@@ -570,7 +570,7 @@
             run(S, c) {
                 c.p.trust = 80;
                 c.p.belted = false;
-                c.p.state = "standing";
+                c.p.state = P.looseState(c.p);
                 c.p.awareness = Math.min(100, c.p.awareness + 30);
                 S.credibility = Math.min(100, S.credibility + 5);
                 return { text: c.p.name + " reads the badge, goes very slightly grey, and does " +
@@ -696,7 +696,7 @@
                 const p = c.p;
                 p.smokeDose = Math.max(0, p.smokeDose - 26);
                 if (p.smokeDose < P.DOWN_AT) {
-                    p.state = "standing";
+                    p.state = P.looseState(p);
                     S.stats.revives++;
                     PRS.audio.play("good");
                     return { text: p.name + " comes back. Coughing, grey, appalled, and upright. " +
@@ -732,7 +732,7 @@
             run(S, c) {
                 st.useCharge(S, st.slotOf(S, "inhaler"));
                 c.p.smokeDose = Math.max(0, c.p.smokeDose - 16);
-                if (c.p.state === "down" && c.p.smokeDose < P.DOWN_AT) c.p.state = "standing";
+                if (c.p.state === "down" && c.p.smokeDose < P.DOWN_AT) c.p.state = P.looseState(c.p);
                 return { text: "Two puffs and a spacer made out of a paper cup. " + c.p.name +
                     " gets a breath in that goes all the way down.", kind: "good" };
             },

@@ -1,71 +1,148 @@
-From ProjectNauvis
-==================
+PLEASE REMAIN SEATED
+====================
 
-Pixel art and the tooling behind it, copied out of the ProjectNauvis Minecraft modpack on
-2026-09-08 for use in a JavaScript pixel-art RPG. Everything here is the pack's own work under
-its MIT licence (copyright JaguarM); nothing of Factorio's or Mojang's is in this folder.
+There is a fire in the overhead locker above seat 14C. You are the only person on this aeroplane
+who has noticed. The plane lands in fifteen minutes, and the clock only moves when you do.
 
-What is here
-------------
+**Open `index.html`.** That is the whole installation. No build step, no server, no dependencies —
+every file is a classic script, so a double-clicked `index.html` works from disk.
 
-    sprites/items/       51 item icons, 16x16 PNG with transparency
-    sprites/gui/         3 HUD meter sprites: a flame, a lightning bolt, an arrow
-    pixel-workshop/
-      sprites.json       every sprite above as an ASCII map plus a palette
-      pixelmap.js        draws a sprites.json entry to a canvas, with palette swaps
-      demo.html          opens in a browser from disk; every sprite, and a few recolours
-      make_*_textures.py the original Python generators (they write into the modpack)
-      WORKSHOP-README.md the conventions the maps follow
+    please-remain-seated/
+      index.html          ← open this
 
-The icons
+If your browser is unusually strict about `file://`, any static server will do:
+
+```bash
+python -m http.server 8731
+```
+
+The rules
 ---------
 
-Drawn in vanilla Minecraft's idiom - an outline, three or four tones, one highlight - so they sit
-beside stock Minecraft art. For an RPG the useful ones are:
+**Time only passes when you act.** Nothing moves while you think. Every action in the list costs a
+number of seconds, and paying that cost is the only thing that advances the fire, the smoke, the
+passengers and the crew. Nine hundred seconds, and then it lands.
 
-- **Seven flasks** (`*_science_pack`): one map, seven liquid colours. Potions. Recolour the `c`,
-  `b`, `d` keys for any new one; see the bottom of `demo.html`.
-- **Two guns** (`pistol`, `submachine_gun`), drawn level with the muzzle to the left, and two
-  curved **magazines** with a yellow or red stripe.
-- **Armour** (`light_armor`, `heavy_armor`), a **grenade**, a **repair pack** (wrench and
-  screwdriver), **explosives** (three sticks with fuses).
-- **Materials**: gear, rod, coil of wire, plates, plastic bar, sulfur crystal, battery, engine,
-  motor, circuit boards in three colours, honeycomb plate, fuel canister, coal brick.
-- **Eight barrels**: one drum, a colour band per fluid.
-- **Nine modules**: one square unit with three lamps, three colours, gold stripes for tiers.
-- **Three meters** (`sprites/gui`): draw the sprite tinted dark as the empty meter, then the bright
-  sprite over it from the bottom up (or the left, for the arrow) as far as the meter is full.
+**You cannot put the fire out.** Not a difficulty setting — the premise. It is a lithium cell in a
+vape pen, in a hard case, in a closed locker, and a cell in thermal runaway makes its own oxygen.
+Water cools it and buys time. Halon smothers the flame and buys more. Nothing reaches the cell.
+There are nine cells and they are all going to go. `putOut()` does not exist in `game/sim/fire.js`.
 
-The technique
+**Smoke is what actually kills people.** It moves four times faster than the fire and fills from
+the ceiling down. A person on the floor is in different air from a person standing up, which is
+why carrying somebody forward and low is worth so much more than it looks.
+
+**Nobody believes you, and they are right not to.** You are a passenger out of your seat during
+the meal service, pointing at a closed locker. Credibility rises when the evidence becomes public
+— a photograph, an open bin, a burn on your hand, the lavatory smoke detector — and every social
+action in the game is gated behind it.
+
+**You cannot save everybody.** You can carry about fourteen people in fifteen minutes. There are
+sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference
+between three and twenty-seven, and the route to the top of that range is not in the fire deck.
+
+What is in it
 -------------
 
-A sprite is an ASCII map and a palette. A family - potions, barrels, modules, circuit boards,
-magazines - is one map with a palette per member, so the members cannot drift apart and a new
-one is a line of colours. `pixelmap.js` does this at runtime:
+- **315 hand-written actions** across eight decks, each with its own cost, conditions and line of
+  text. Actions with targets appear once per target, so a turn offers **a hundred and thirty
+  concrete options** at the median and over four hundred at the worst moment in the cabin — and
+  the list only ever contains things that are actually possible right now.
+- **Twelve playable characters**, ten available and two earned, on five stats — strength, speed,
+  lungs, nerve, voice — with a signature ability and a genuine flaw each. A retired fire officer
+  who is the slowest person in the cast. An eight-year-old who fits under the seats and cannot
+  lift an adult. An air marshal with a firearm and no useful application for it.
+- **Forty-three loadout items** against an eight-kilo cabin allowance the airline keeps enforcing
+  while its aeroplane is on fire. The correct answer is boring and next to it there is a megaphone.
+- **Sixty named passengers**, each with a weight, a temperament, a seat and an opinion, and a
+  **helper system** that is the only thing in the game that scales.
+- Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
+- A **fire, smoke and heat simulation** over a 30×9 cabin grid, ventilation-limited, with a core
+  that suppression cannot touch.
+- **Forty-eight medals**, **fourteen endings**, and an **incident report** written in the flat
+  voice of an air accident investigator: every soul on board by seat with what happened to them,
+  your own actions quoted back in order, and where the fifteen minutes went.
 
-    import { drawSprite, spriteCanvas, recolour } from "./pixel-workshop/pixelmap.js";
-    import sprites from "./pixel-workshop/sprites.json" with { type: "json" };
+Controls
+--------
 
-    const healthPotion = spriteCanvas(sprites.automation_science_pack, 4);
-    const manaPotion = spriteCanvas(sprites.automation_science_pack, 4,
-        { c: "#3a5ad4", b: "#8aa4ff", d: "#1a2a8a" });
-    drawSprite(ctx, sprites.pistol, x, y, 3);
+Click an action, or press **1–9** for the first nine. **Arrow keys** or **WASD** to step. **Click
+a tile** to walk there or reach the person on it. **Tab** cycles the decks, **/** focuses the
+filter box.
 
-`sprites.json` is checked pixel for pixel against the PNGs when it is exported, so either is the
-source. To draw a new sprite, write its map in the same shape (16 rows of 16, `.` transparent)
-and give it a palette; a key with no colour is drawn magenta so the hole is seen.
+How it is built
+---------------
 
-The Python scripts are how the modpack makes its PNGs. They write into the modpack's folders, so
-run them there; here they are the readable source of every map, with the reasoning in their
-docstrings. `make_belt_textures.py` has one trick worth knowing for animation: a belt that moves
-1.5 pixels a frame gets eight frames and a frame list that walks them one pixel, then two, so any
-speed can be animated from whole-pixel frames.
+```
+index.html            the script order, which is the dependency graph
+game/
+  art/                generated sprite data (two files, both regenerable)
+  engine/             seeded RNG, sprite atlas, synthesised audio, canvas renderer
+  sim/                cabin geometry, fire, passengers, crew, the action engine, scoring
+  data/               characters, items, the roster, events, medals, endings, the action decks
+  ui/                 the play screen and the menu screens
+  style.css
+pixel-workshop/       the ProjectNauvis pixel workshop, plus make_cabin_textures.py
+tools/                the play-testers and the sprite bundler
+```
 
-Not copied
+Everything assigns to one global, `window.PRS`, because the game has to run from a file you can
+double-click and `file://` will not load an ES module or fetch a sibling JSON. The cost is that
+the script order in `index.html` matters; the benefit is that the game is a folder you can open.
+
+`game/sim/actions.js` has the only function in the codebase that moves the clock. Nothing else may
+call `fire.advance`, `pax.advance` or `crew.advance`.
+
+The art
+-------
+
+Every sprite is an ASCII map plus a palette, in the idiom of the ProjectNauvis pixel workshop that
+this repository started as (see [ART.md](ART.md)). A passenger is one map and sixty palettes, so
+the roster is data and the art cannot drift; fire is one map at four sizes, so the four read as
+the same fire growing.
+
+```bash
+python pixel-workshop/make_cabin_textures.py --preview   # 85 cabin sprites + a preview sheet
+python tools/bundle_nauvis_sprites.py                    # the pack's 54 item icons, as a script
+```
+
+The generator validates every map before it writes anything: rectangular, within 16×16, and no
+palette key without a colour.
+
+Testing it
 ----------
 
-The modpack's block textures (belts, chests, drills, turrets) are faces of 3D Minecraft blocks and
-do not read as top-down or side-on tiles. `tools/render_model.py` there projects a Minecraft block
-model into a 2D sprite, which is only useful with Minecraft models. The research screen in
-`nauvis_research` lays out a technology tree in Java; if the RPG wants a skill tree, its layout
-rules (`ResearchScreen.java`) are worth reading, not porting.
+The game is three hundred hand-written functions that all touch the same world, so it is tested by
+being played, a great many times, by things that are not people.
+
+```bash
+node tools/simulate.js 400        # five bots, a few hundred flights, and the balance table
+node tools/coverage.js            # build a world for every action and perform it
+node tools/coverage.js --verbose  # ...and print what each one said
+```
+
+`simulate.js` finds the crashes and prints the tuning table. The numbers below are what the design
+is aiming at, and they were found with it rather than guessed:
+
+| bot | what it does | souls secured of 60 | not accounted for |
+|-----|--------------|---------------------|-------------------|
+| `fire` | only fights the fire | **1.9** | 18.8 |
+| `idle` | never leaves its seat | 6.8 | 14.7 |
+| `random` | picks uniformly from everything | 8.5 | 12.6 |
+| `carry` | carries people, one at a time | 19.1 | 10.3 |
+| `good` | recruits, delegates, then carries | **19.3** (best 31) | 11.4 |
+
+If the fire bot ever scores well, the game has stopped being about the thing it is about.
+
+`coverage.js` walks the registry instead of playing: for each of the 315 definitions it builds a
+world designed to make that one possible, stands the player in every plausible place, and performs
+it. It currently reports **315 of 315 reachable, none throw**. It has already found one action
+that asked for an item which had never been added to `items.js`, and so could never have appeared
+in a real game at all.
+
+Licence
+-------
+
+The pixel art and the workshop tooling are ProjectNauvis's own work under its MIT licence
+(copyright JaguarM), as described in [ART.md](ART.md). Everything else here was written for this
+game.
