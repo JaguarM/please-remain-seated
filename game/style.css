@@ -190,12 +190,12 @@ button.big:hover { background: #4b6191; }
 .kit { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 6px; }
 .kit-item { border: 1px solid var(--line); border-radius: 2px; background: #1a1d23; }
 
-.board { display: grid; grid-template-columns: 1fr 420px; gap: 0; flex: 1; min-height: 0; }
+.board { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 0; flex: 1; min-height: 0; }
 @media (max-width: 1000px) { .board { grid-template-columns: 1fr; grid-template-rows: auto 1fr; } }
 
 .col-left { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 10px; gap: 8px; }
-.canvas-wrap { display: grid; place-items: center; background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 6px; overflow: auto; }
-.cabin { display: block; max-width: 100%; }
+.canvas-wrap { background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
+.cabin { display: block; width: 100%; height: auto; }
 
 .here { font-size: 12px; }
 .here-place { color: var(--ink-dim); margin-bottom: 5px; }

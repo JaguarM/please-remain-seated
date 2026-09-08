@@ -71,6 +71,7 @@
         if (tags.indexOf("carry") < 0 && tags.indexOf("move") < 0) c *= d.actionMul;
         if (tags.indexOf("social") >= 0) c *= (2.0 - d.voiceMul) * 0.72 + 0.5;
         if (st.hasPerk(S, "fast_hands") && tags.indexOf("carry") < 0) c *= 0.75;
+        if (st.hasPerk(S, "flock") && tags.indexOf("social") >= 0) c *= 0.7;
         if (S.character.id === "ubel" && tags.indexOf("social") >= 0) c += 8;
         if (st.hasPerk(S, "adrenaline") && S.player.panic >= 80) c *= 0.5;
         if (st.hasPerk(S, "adrenaline") && S.player.panic < 60) c *= 1.25;

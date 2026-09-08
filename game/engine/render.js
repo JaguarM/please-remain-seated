@@ -16,20 +16,23 @@
 
     const TILE = 16;
 
+    /**
+     * The cabin is always drawn at the same integer sprite scale and then left to CSS to fit the
+     * column. Drawing at a fractional scale would put half-pixels through sixteen-pixel sprites;
+     * drawing at an integer scale and letting `image-rendering: pixelated` do the last bit keeps
+     * every sprite square whatever width the window happens to be.
+     */
+    const DRAW_SCALE = 3;
+
     function fit(canvas) {
-        const wantW = cabin.W * TILE;
-        const wantH = cabin.H * TILE;
-        const box = canvas.parentElement.getBoundingClientRect();
-        const scale = Math.max(1, Math.floor(Math.min(box.width / wantW,
-                                                      (box.height || 400) / wantH)));
-        canvas.width = wantW * scale;
-        canvas.height = wantH * scale;
-        canvas.style.width = (wantW * scale) + "px";
-        canvas.style.height = (wantH * scale) + "px";
-        return scale;
+        canvas.width = cabin.W * TILE * DRAW_SCALE;
+        canvas.height = cabin.H * TILE * DRAW_SCALE;
+        canvas.style.width = "100%";
+        canvas.style.height = "auto";
+        return DRAW_SCALE;
     }
 
-    /** Which tile the mouse is over, or null. */
+    /** Which tile the mouse is over, or null. Works at any CSS size the canvas ends up. */
     function tileAt(canvas, scale, clientX, clientY) {
         const r = canvas.getBoundingClientRect();
         const x = Math.floor((clientX - r.left) / (r.width / cabin.W));
@@ -180,6 +183,49 @@
                 const drift = Math.round(Math.sin(t * 0.0016 + x * 0.4 + y) * scale);
                 atlas.blitAlpha(ctx, name, x * T + drift, y * T, scale, a);
             }
+        }
+
+        // ---- fire, again, through the smoke ------------------------------------------------
+        // A fire behind smoke is a glow, not nothing. Without this pass the middle of the cabin
+        // is a flat grey rectangle by minute six and the player cannot see the thing the whole
+        // game is about.
+        for (let x = 0; x < cabin.W; x++) {
+            for (let y = 0; y < cabin.H; y++) {
+                const i = cabin.idx(x, y);
+                const v = f.intensity[i];
+                if (v <= 4) continue;
+                const behind = clamp01(f.smoke[i] / 70);
+                if (behind < 0.15) continue;
+                const name = PRS.fire.fireSprite(v);
+                if (!name) continue;
+                atlas.blitAlpha(ctx, name, x * T, y * T, scale,
+                                behind * (0.4 + 0.2 * Math.sin(t * 0.009 + i)));
+            }
+        }
+
+        // ---- you, again, over the smoke ----------------------------------------------------
+        // Not a cheat: the smoke does everything to you it does to everybody, and this is the
+        // interface refusing to lose the player in it.
+        atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale, 1);
+        atlas.blitAlpha(ctx, P.crouching ? "pax_down" : "pax", ppx, ppy, scale, 0.9,
+                        { h: S.character.hair, s: S.character.skin, c: S.character.shirt });
+        {
+            // A chevron over your head, so a glance finds you at any zoom.
+            const cx = ppx + T / 2, cy = ppy - 3 * scale;
+            ctx.save();
+            ctx.fillStyle = "#ffd54a";
+            ctx.beginPath();
+            ctx.moveTo(cx, cy + 3 * scale);
+            ctx.lineTo(cx - 3 * scale, cy - 2 * scale);
+            ctx.lineTo(cx + 3 * scale, cy - 2 * scale);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+        // Anybody secured keeps their tick over the smoke too, because the tick is the score.
+        for (const p of S.pax) {
+            if (p.state !== "secured") continue;
+            atlas.blitAlpha(ctx, "mark_saved", p.x * T, p.y * T, scale, 0.95);
         }
 
         // ---- overlays ------------------------------------------------------------------------

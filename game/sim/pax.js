@@ -273,7 +273,11 @@
                      Math.abs(best.x - nearestSafeX(best.x));
         const fog = 1 + clamp01(S.fire.smoke[cabin.idx(best.x, best.y)] / 100) * 0.8;
         const fright = 1 + clamp01(p.panic / 100) * 0.5;
-        p.taskLeft = (16 + best.kg * 0.22 + dist * 2.1) * 1.05 * fog * fright;
+        // The aisle is fifty centimetres wide. A second pair of hands is worth almost a whole
+        // extra pair; a seventh is worth rather less, because six of them are already in it.
+        const congestion = 1 + (PRS.state.hasPerk(S, "flock") ? 0.08 : 0.13)
+                             * Math.max(0, activeHelpers(S) - 1);
+        p.taskLeft = (16 + best.kg * 0.22 + dist * 2.1) * 1.05 * fog * fright * congestion;
         p.x = best.x; p.y = best.y;
     }
 
@@ -298,7 +302,7 @@
         if (helperCap(S) <= 0) return;
         // About one conversion every two minutes per helper, at full credibility, and none at all
         // while nobody believes anything is happening.
-        const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
+        const rate = (PRS.state.hasPerk(S, "flock") ? 0.0068 : 0.0036) * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
         if (!S.rng.chance(rate)) return;
         const near = S.pax.filter((q) => !q.helper && q.state !== "down" && q.state !== "dead" &&
             q.state !== "secured" && Math.abs(q.x - p.x) <= 3 &&
@@ -309,10 +313,14 @@
         recruit(S, q, p.name + " asked them, which is not something you had to do.");
     }
 
-    function helperCap(S) {
+    function activeHelpers(S) {
         let n = 0;
         for (const p of S.pax) if (p.helper) n++;
-        return 9 - n;
+        return n;
+    }
+
+    function helperCap(S) {
+        return (PRS.state.hasPerk(S, "flock") ? 10 : 7) - activeHelpers(S);
     }
 
     /** Turn somebody into a helper. The single highest-value thing in the game. */

@@ -139,8 +139,7 @@
         box.appendChild(meter("HELPING", st.helperCount(S), 10, "m-good",
                               String(st.helperCount(S))));
         box.appendChild(meter("THEY BELIEVE YOU", S.credibility, 100, "m-cred"));
-        box.appendChild(meter("FIRE", PRS.fire.worst(f), 100, "m-fire",
-                              PRS.fire.describe(f, f.core.x, f.core.y)));
+        box.appendChild(meter("FIRE", PRS.fire.worst(f), 100, "m-fire", worstWord(f)));
         box.appendChild(meter("SMOKE", PRS.fire.totalSmoke(f), 100, "m-smoke",
                               PRS.fire.describeSmoke(PRS.fire.totalSmoke(f))));
         box.appendChild(meter("CABIN PANIC", S.cabinPanic, 100, "m-panic"));
@@ -150,6 +149,18 @@
             el("b", { text: phase.name }),
             el("i", { text: phase.desc }),
         ]));
+    }
+
+    /** The state of the worst tile in the cabin, which is the one the meter is measuring. */
+    function worstWord(f) {
+        let bx = f.core.x, by = f.core.y, bv = -1;
+        for (let x = 0; x < cabin.W; x++) {
+            for (let y = 0; y < cabin.H; y++) {
+                const v = f.intensity[cabin.idx(x, y)];
+                if (v > bv) { bv = v; bx = x; by = y; }
+            }
+        }
+        return PRS.fire.describe(f, bx, by);
     }
 
     function paintYou() {

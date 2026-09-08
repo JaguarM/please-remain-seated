@@ -247,9 +247,15 @@
             detail: (S, c) => {
                 const r = P.resistance(S, c.p);
                 const v = P.persuasion(S);
-                return "They are " + (r > v + 20 ? "not going to" : r > v ? "unlikely to" :
-                       r > v - 25 ? "probably going to" : "going to") + " say yes. " +
-                       "This is worth more than anything else you can do.";
+                const odds = r > v + 20 ? "not going to" : r > v ? "unlikely to"
+                           : r > v - 25 ? "probably going to" : "going to";
+                const cond = P.condition(c.p);
+                // A helper who is already full of smoke will be on the floor inside a minute,
+                // and the list has to say so, because "recruit everybody" is not the lesson.
+                const health = cond.tier >= 2
+                    ? " They are " + cond.label + " and they will not last long on their feet."
+                    : cond.tier === 1 ? " They are already coughing." : "";
+                return "They are " + odds + " say yes." + health;
             },
             cost: 22,
             run(S, c) {
