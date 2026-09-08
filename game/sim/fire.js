@@ -1,0 +1,387 @@
+// Fire, smoke and heat. Three fields over the cabin grid, advanced by however many seconds the
+// player just spent, because in this game the world only moves when the player does.
+//
+// The one rule that is not negotiable
+// -----------------------------------
+//
+// The fire cannot be put out. Not as a difficulty setting: as the premise. The seat of it is a
+// lithium cell in a vape pen inside a hard case inside a closed overhead bin, and a lithium cell
+// in thermal runaway makes its own oxygen. Water cools the cell and buys you time. Halon smothers
+// the flame and buys you more. Neither reaches the cell, so the cell reheats and lights the bin
+// again, and it will do that until the aeroplane is on the ground and somebody with a hose and a
+// bucket of vermiculite takes the case off it.
+//
+// So suppression is real - it drops intensity, it stops spread, it saves lives - and `core` is the
+// thing suppression cannot touch. `core.heat` climbs on its own and dumps back into the cabin
+// every time it tops out. Everything the player does to the fire changes how often that happens
+// and how bad it is when it does. Nothing sets it to zero. `putOut()` does not exist in this file.
+(function (global) {
+    "use strict";
+
+    const PRS = global.PRS = global.PRS || {};
+    const cabin = PRS.cabin;
+    const { clamp, clamp01 } = PRS.util;
+
+    const N = cabin.W * cabin.H;
+
+    // How an agent behaves once it is on a tile: how much intensity it takes off now, how much
+    // suppression it leaves behind, how fast that fades, and what it does to smoke.
+    // `coolsCore` is the only column that matters in the long run: it is the fraction of the
+    // agent that gets past the case and onto the cell.
+    const AGENTS = {
+        water:     { knock: 26, hold: 34, decay: 0.020, smoke: +14, coolsCore: 0.55, name: "water" },
+        icewater:  { knock: 32, hold: 40, decay: 0.017, smoke: +10, coolsCore: 0.70, name: "iced water" },
+        soda:      { knock: 20, hold: 24, decay: 0.024, smoke: +16, coolsCore: 0.40, name: "soft drink" },
+        coffee:    { knock: 14, hold: 16, decay: 0.030, smoke: +18, coolsCore: 0.22, name: "hot coffee" },
+        foam:      { knock: 44, hold: 70, decay: 0.010, smoke: +6,  coolsCore: 0.30, name: "foam" },
+        halon:     { knock: 74, hold: 82, decay: 0.014, smoke: -8,  coolsCore: 0.10, name: "halon" },
+        smother:   { knock: 30, hold: 46, decay: 0.016, smoke: -14, coolsCore: 0.12, name: "smothering" },
+        wetcloth:  { knock: 38, hold: 56, decay: 0.013, smoke: -10, coolsCore: 0.34, name: "a wet cloth" },
+        beat:      { knock: 16, hold: 8,  decay: 0.060, smoke: +22, coolsCore: 0.02, name: "beating" },
+        // These make it worse, and they are in the same table so the code cannot pretend it did
+        // not know that.
+        spirits:   { knock: -40, hold: 0, decay: 0.10, smoke: +30, coolsCore: 0.00, name: "spirits" },
+        perfume:   { knock: -55, hold: 0, decay: 0.10, smoke: +34, coolsCore: 0.00, name: "perfume" },
+        sanitiser: { knock: -48, hold: 0, decay: 0.10, smoke: +26, coolsCore: 0.00, name: "hand gel" },
+        air:       { knock: -22, hold: 0, decay: 0.10, smoke: +8,  coolsCore: 0.00, name: "air" },
+    };
+
+    function create(rng) {
+        const f = {
+            intensity: new Float32Array(N),
+            fuel: new Float32Array(N),
+            burnt: new Float32Array(N),      // 0 unburnt, 1 nothing left. Drives the scorch art.
+            suppress: new Float32Array(N),   // agent still on the tile
+            smoke: new Float32Array(N),
+            heat: new Float32Array(N),
+            binOpen: {},                     // binKey -> true, an open bin feeds the fire air
+            binBurning: {},
+            // The seat of it.
+            core: {
+                x: cabin.originTile().x,
+                y: cabin.originTile().y,
+                heat: 46,        // 0..100. At 100 it dumps into the cabin and resets.
+                rate: 1.00,      // how fast heat climbs, per second, before modifiers
+                cells: 9,        // cells left in the pack. Each flare-up is one cell venting.
+                vented: 0,
+                contained: 0,    // 0..1, how much of the venting the cabin does not see
+                exposed: false,  // has anyone actually looked at it
+                inSink: false,   // the one thing that genuinely helps and nobody thinks of
+                lastVent: 0,
+            },
+            oxygen: 1.0,         // cabin oxygen fraction available to the fire
+            packsHigh: false,    // recirc on high: more oxygen, more spread, thinner smoke
+            totalBurned: 0,
+            ventCount: 0,
+            peakIntensity: 0,
+            suppressedSeconds: 0,
+            history: [],
+        };
+        for (let x = 0; x < cabin.W; x++) {
+            for (let y = 0; y < cabin.H; y++) {
+                const i = cabin.idx(x, y);
+                // A little variation so the fire does not spread in a diamond.
+                f.fuel[i] = cabin.baseFuel(x, y) * (0.82 + rng() * 0.36);
+            }
+        }
+        const ci = cabin.idx(f.core.x, f.core.y);
+        f.intensity[ci] = 12;
+        f.binBurning[cabin.binKey(f.core.x, "left")] = true;
+        return f;
+    }
+
+    const at = (f, x, y) => f.intensity[cabin.idx(x, y)];
+    const smokeAt = (f, x, y) => f.smoke[cabin.idx(x, y)];
+    const heatAt = (f, x, y) => f.heat[cabin.idx(x, y)];
+
+    /** The number the HUD shows: the worst tile in the cabin, 0..100. */
+    function worst(f) {
+        let m = 0;
+        for (let i = 0; i < N; i++) if (f.intensity[i] > m) m = f.intensity[i];
+        return m;
+    }
+
+    function burningTiles(f) {
+        let n = 0;
+        for (let i = 0; i < N; i++) if (f.intensity[i] > 4) n++;
+        return n;
+    }
+
+    function totalSmoke(f) {
+        let s = 0;
+        for (let i = 0; i < N; i++) s += f.smoke[i];
+        return s / N;
+    }
+
+    /** Everything above this line of smoke is unbreathable; below it you can crawl. */
+    function smokeLayer(f) {
+        return clamp01(totalSmoke(f) / 62);
+    }
+
+    // -------------------------------------------------------------------------- suppression ---
+
+    /**
+     * Put an agent on a tile and its neighbours. Returns what visibly happened, because the log
+     * line is different for "that did something" and "that made it worse".
+     */
+    function apply(f, x, y, agentName, amount, spread) {
+        const agent = AGENTS[agentName] || AGENTS.water;
+        amount = amount === undefined ? 1 : amount;
+        spread = spread === undefined ? 0 : spread;
+        const tiles = [[x, y]];
+        if (spread > 0) {
+            for (const [nx, ny] of cabin.neighbours(x, y)) tiles.push([nx, ny]);
+        }
+        let knocked = 0, worsened = 0;
+        for (const [tx, ty] of tiles) {
+            if (!cabin.inBounds(tx, ty)) continue;
+            const i = cabin.idx(tx, ty);
+            const factor = (tx === x && ty === y) ? 1 : spread;
+            const before = f.intensity[i];
+            if (agent.knock >= 0) {
+                f.intensity[i] = Math.max(0, f.intensity[i] - agent.knock * amount * factor);
+                f.suppress[i] = Math.min(100, f.suppress[i] + agent.hold * amount * factor);
+                knocked += before - f.intensity[i];
+            } else {
+                // An accelerant. It does nothing to a tile that is not already alight, which is
+                // the only mercy in the table.
+                if (before > 1) {
+                    f.intensity[i] = Math.min(100, f.intensity[i] - agent.knock * amount * factor);
+                    f.fuel[i] = Math.min(1.4, f.fuel[i] + 0.25 * amount * factor);
+                    worsened += f.intensity[i] - before;
+                }
+            }
+            f.smoke[i] = clamp(f.smoke[i] + agent.smoke * amount * factor * 0.35, 0, 100);
+        }
+        // Does any of it reach the cell? Only if you are on the seat of the fire.
+        const onCore = (x === f.core.x && y === f.core.y);
+        if (onCore && agent.coolsCore > 0) {
+            f.core.heat = Math.max(0, f.core.heat - 34 * agent.coolsCore * amount);
+        } else if (onCore && agent.knock < 0) {
+            f.core.heat = Math.min(100, f.core.heat + 12 * amount);
+        }
+        f.suppressedSeconds += knocked * 0.1;
+        return { agent: agent, knocked: knocked, worsened: worsened, onCore: onCore };
+    }
+
+    /** Deny the fire air rather than fight it: closing the bin, sealing a vent, the packs off. */
+    function starve(f, x, y, strength) {
+        const i = cabin.idx(x, y);
+        f.intensity[i] = Math.max(0, f.intensity[i] - 18 * strength);
+        f.suppress[i] = Math.min(100, f.suppress[i] + 30 * strength);
+        f.core.contained = clamp01(f.core.contained + 0.16 * strength);
+        return f.core.contained;
+    }
+
+    // ------------------------------------------------------------------------------- advance ---
+
+    /**
+     * Move the world on by `dt` seconds. Called once per action, with the action's cost, which
+     * is why a forty-second argument with a flight attendant is expensive in a way the player
+     * feels immediately.
+     */
+    function advance(f, dt, S) {
+        if (dt <= 0) return { vented: false, spread: 0 };
+        const rng = S.rng;
+        const spreadTo = [];
+        let spread = 0;
+
+        // The core climbs. Nothing in the cabin stops this; things only slow it.
+        const coreRate = f.core.rate
+            * (f.core.inSink ? 0.30 : 1)
+            * (1 - 0.35 * f.core.contained)
+            * (f.packsHigh ? 1.10 : 1)
+            * (1 + 0.10 * f.core.vented);          // each vented cell heats its neighbours
+        f.core.heat += coreRate * dt * 0.55;
+
+        let vented = false;
+        if (f.core.heat >= 100 && f.core.cells > 0) {
+            vented = true;
+            f.core.heat = 18 + rng() * 14;
+            f.core.cells--;
+            f.core.vented++;
+            f.ventCount++;
+            f.core.lastVent = S.clock.elapsed;
+            const ci = cabin.idx(f.core.x, f.core.y);
+            const violence = (1 - f.core.contained) * (f.core.inSink ? 0.35 : 1);
+            f.intensity[ci] = Math.min(100, f.intensity[ci] + 55 * violence + 20);
+            f.suppress[ci] = f.suppress[ci] * 0.25;
+            f.smoke[ci] = Math.min(100, f.smoke[ci] + 34 * violence);
+            // A venting cell throws burning electrolyte down the bin.
+            const side = f.core.y < cabin.AISLE_Y ? "left" : "right";
+            for (let d = -3; d <= 3; d++) {
+                const bx = f.core.x + d;
+                if (!cabin.inBounds(bx, f.core.y) || d === 0) continue;
+                if (cabin.rowAt(bx) === null) continue;
+                const bi = cabin.idx(bx, f.core.y);
+                const reach = violence * (1 - Math.abs(d) / 4.5);
+                if (reach > 0 && rng() < reach) {
+                    f.intensity[bi] = Math.min(100, f.intensity[bi] + 22 * reach);
+                    f.binBurning[cabin.binKey(bx, side)] = true;
+                }
+            }
+        }
+
+        // Every tile: burn, make smoke, cool, try the neighbours.
+        for (let x = 0; x < cabin.W; x++) {
+            for (let y = 0; y < cabin.H; y++) {
+                const i = cabin.idx(x, y);
+                const inten = f.intensity[i];
+
+                // Suppressant fades. Water evaporates fastest, foam sits longest.
+                if (f.suppress[i] > 0) {
+                    f.suppress[i] = Math.max(0, f.suppress[i] - f.suppress[i] * 0.022 * dt - 0.05 * dt);
+                }
+
+                if (inten <= 0.05) {
+                    // Cold tile. Smoke still drifts through it; handled below.
+                    f.heat[i] = Math.max(0, f.heat[i] - 0.9 * dt);
+                    continue;
+                }
+
+                const fuel = f.fuel[i];
+                if (fuel <= 0.002) {
+                    // Burnt out. It goes to embers, not to nothing, because embers relight.
+                    f.intensity[i] = Math.max(0, inten - 3.2 * dt);
+                    f.heat[i] = Math.max(0, f.heat[i] - 0.6 * dt);
+                    continue;
+                }
+
+                const suppressed = clamp01(f.suppress[i] / 70);
+                const air = f.oxygen * (f.packsHigh ? 1.16 : 1)
+                          * (f.binOpen[cabin.binKey(x, y < cabin.AISLE_Y ? "left" : "right")] ? 1.12 : 1);
+
+                // Growth. A fire with fuel and air doubles about every forty seconds; suppression
+                // is subtracted from the growth rate, not from the fire, which is why holding a
+                // fire down needs you to keep standing there.
+                const grow = (0.055 * air * (0.45 + fuel) * (1 - suppressed) - 0.028 * suppressed)
+                           * inten * dt;
+                f.intensity[i] = clamp(inten + grow, 0, 100);
+
+                // Fuel goes. This is the only thing that is permanent.
+                const eaten = Math.min(fuel, inten * 0.00042 * dt * (1 - suppressed * 0.6));
+                f.fuel[i] -= eaten;
+                f.burnt[i] = clamp01(f.burnt[i] + eaten * 1.6);
+                f.totalBurned += eaten;
+
+                // Smoke. A suppressed fire smokes more, not less, which surprises people.
+                const smokeRate = inten * (0.020 + 0.030 * suppressed) * (f.packsHigh ? 0.8 : 1);
+                f.smoke[i] = clamp(f.smoke[i] + smokeRate * dt, 0, 100);
+                f.heat[i] = clamp(f.heat[i] + (inten * 0.03 - 0.8) * dt, 0, 100);
+
+                if (f.intensity[i] > f.peakIntensity) f.peakIntensity = f.intensity[i];
+
+                // Spread. Along the bin is fastest, across the aisle is slowest.
+                if (f.intensity[i] > 14) {
+                    for (const [nx, ny] of cabin.neighbours(x, y)) {
+                        const ni = cabin.idx(nx, ny);
+                        if (f.fuel[ni] <= 0.02) continue;
+                        if (f.intensity[ni] > f.intensity[i] * 0.7) continue;
+                        const nSup = clamp01(f.suppress[ni] / 70);
+                        let p = f.intensity[i] * f.fuel[ni] * 0.00055 * dt * air * (1 - nSup);
+                        if (ny === cabin.AISLE_Y || y === cabin.AISLE_Y) p *= 0.42;  // the aisle is a firebreak
+                        if (nx !== x) p *= 1.55;                                     // along the bin
+                        if (cabin.kindAt(nx, ny) === "galley") p *= 1.4;
+                        if (p > rng()) spreadTo.push([ni, 6 + rng() * 8]);
+                    }
+                }
+            }
+        }
+        for (const [ni, amount] of spreadTo) {
+            if (f.intensity[ni] < 4) spread++;
+            f.intensity[ni] = Math.min(100, f.intensity[ni] + amount);
+        }
+
+        advanceSmoke(f, dt, S);
+        return { vented: vented, spread: spread };
+    }
+
+    /**
+     * Smoke moves four times faster than fire and does not care how big the fire is once it
+     * exists. It fills the ceiling first and comes down, so the game keeps one scalar for the
+     * layer height and one field for where it is thickest.
+     */
+    function advanceSmoke(f, dt, S) {
+        const next = new Float32Array(N);
+        const drift = f.packsHigh ? 0.16 : 0.09;   // fore-aft airflow from the packs
+        const rate = clamp01(dt * 0.16);
+        for (let x = 0; x < cabin.W; x++) {
+            for (let y = 0; y < cabin.H; y++) {
+                const i = cabin.idx(x, y);
+                const s = f.smoke[i];
+                if (s <= 0.02) continue;
+                if (cabin.solid(x, y)) { next[i] += s * 0.5; continue; }
+                let kept = s;
+                const ns = cabin.neighbours(x, y).filter(([nx, ny]) => !cabin.solid(nx, ny));
+                for (const [nx, ny] of ns) {
+                    const ni = cabin.idx(nx, ny);
+                    if (f.smoke[ni] >= s) continue;
+                    let flow = (s - f.smoke[ni]) * rate / Math.max(1, ns.length);
+                    if (nx > x) flow *= (1 + drift);        // aft
+                    if (nx < x) flow *= (1 - drift * 0.6);  // forward, against the packs
+                    if (ny === cabin.AISLE_Y) flow *= 1.25; // the aisle is the chimney
+                    next[ni] += flow;
+                    kept -= flow;
+                }
+                next[i] += kept;
+            }
+        }
+        // The packs scrub a little of it, and the recirculation filters take a little more.
+        const scrub = (f.packsHigh ? 0.0055 : 0.0022) * dt;
+        for (let i = 0; i < N; i++) f.smoke[i] = Math.max(0, next[i] * (1 - scrub));
+    }
+
+    // ---------------------------------------------------------------------------- inspection ---
+
+    /** What a person standing here would say the fire is doing. Feeds the log and the HUD. */
+    function describe(f, x, y) {
+        const i = cabin.idx(x, y);
+        const v = f.intensity[i];
+        if (v <= 0.5) return f.burnt[i] > 0.25 ? "charred and cold" : "nothing";
+        if (v < 8) return "smouldering";
+        if (v < 22) return "alight";
+        if (v < 45) return "burning properly";
+        if (v < 70) return "burning hard";
+        if (v < 88) return "an inferno";
+        return "not survivable";
+    }
+
+    function describeSmoke(v) {
+        if (v < 3) return "clear";
+        if (v < 12) return "hazy";
+        if (v < 30) return "thick";
+        if (v < 55) return "you cannot see the seat in front";
+        if (v < 80) return "black";
+        return "solid";
+    }
+
+    /** The four-sprite fire, picked by intensity. */
+    function fireSprite(v) {
+        if (v <= 0.5) return null;
+        if (v < 6) return "ember";
+        if (v < 20) return "fire_1";
+        if (v < 45) return "fire_2";
+        if (v < 72) return "fire_3";
+        return "fire_4";
+    }
+
+    function smokeSprite(v) {
+        if (v < 6) return null;
+        if (v < 26) return "smoke_1";
+        if (v < 58) return "smoke_2";
+        return "smoke_3";
+    }
+
+    /** Seconds until the next cell vents, at the current rate. The lawyer can see this. */
+    function ventEta(f) {
+        const rate = f.core.rate * (f.core.inSink ? 0.30 : 1) * (1 - 0.35 * f.core.contained)
+                   * (1 + 0.10 * f.core.vented) * 0.55;
+        if (rate <= 0.0001) return Infinity;
+        return (100 - f.core.heat) / rate;
+    }
+
+    PRS.fire = {
+        AGENTS, create, at, smokeAt, heatAt, worst, burningTiles, totalSmoke, smokeLayer,
+        apply, starve, advance, describe, describeSmoke, fireSprite, smokeSprite, ventEta,
+    };
+})(window);
