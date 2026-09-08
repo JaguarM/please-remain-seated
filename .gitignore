@@ -1,0 +1,4 @@
+# Build artefacts of the frame renderer. docs/cabin.png is committed; the dump it came from is
+# not, because it is forty thousand lines of JSON that regenerates in a second.
+docs/frame.json
+pixel-workshop/cabin-preview.png

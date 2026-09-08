@@ -89,7 +89,7 @@
                 const side = y < cabin.AISLE_Y ? "left" : "right";
                 const open = S.cabinFlags.binsOpen[cabin.binKey(x, side)];
                 const py = y === 1 ? (y * T) : (y * T + T - 9 * scale);
-                atlas.blitAlpha(ctx, open ? "bin_open" : "bin_closed", x * T, py, scale, 0.9);
+                atlas.blitAlpha(ctx, open ? "bin_open" : "bin_closed", x * T, py, scale, 0.76);
             }
         }
 

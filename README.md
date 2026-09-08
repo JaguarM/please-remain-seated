@@ -10,6 +10,13 @@ every file is a classic script, so a double-clicked `index.html` works from disk
     please-remain-seated/
       index.html          ← open this
 
+![The cabin at five minutes to touchdown](docs/cabin.png)
+
+*Five minutes fifteen to touchdown. Twelve souls secured, four people helping, the fire in the
+locker above 14C has taken most of the left bank, and everybody with a green tick is somebody who
+is somewhere better than their seat. Not a screenshot — `tools/render_frame.py` draws the game's
+own simulation with the game's own sprite maps, so the picture regenerates from a seed.*
+
 If your browser is unusually strict about `file://`, any static server will do:
 
 ```bash
@@ -116,9 +123,12 @@ The game is three hundred hand-written functions that all touch the same world, 
 being played, a great many times, by things that are not people.
 
 ```bash
-node tools/simulate.js 400        # five bots, a few hundred flights, and the balance table
+node tools/simulate.js 400        # six bots, a few hundred flights, and the balance table
 node tools/coverage.js            # build a world for every action and perform it
 node tools/coverage.js --verbose  # ...and print what each one said
+
+node tools/dump_frame.js --at=480 --seed=447   # play to a moment and dump it
+python tools/render_frame.py --scale=4         # draw that moment as a PNG
 ```
 
 `simulate.js` finds the crashes and prints the tuning table. The numbers below are what the design
