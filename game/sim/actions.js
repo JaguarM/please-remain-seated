@@ -339,5 +339,8 @@
     PRS.actions = {
         DECKS, register, count, all, byId, deckCounts, costOf, available, availableByDeck,
         perform, spend, stepCost, moveTo, land, resolve,
+        // Ask one definition whether it is possible right now, without evaluating the other
+        // three hundred. tools/coverage.js walks the whole registry with this.
+        entriesFor,
     };
 })(window);

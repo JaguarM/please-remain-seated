@@ -88,6 +88,7 @@ const FILES = [
     "game/data/actions-self.js",
     "game/data/actions-items.js",
     "game/data/actions-desperate.js",
+    "game/data/actions-extra.js",
 ];
 
 function load() {
@@ -174,6 +175,18 @@ const BOTS = {
     // Never moves. Establishes the floor: what happens if you do nothing useful at all.
     idle(PRS, S, list) {
         return pickBy(list, (e) => (e.deck === "self" || e.deck === "desperate") ? 10 : 0);
+    },
+
+    // The coverage bot. Always takes the thing it has taken least, which walks it into the
+    // lavatory, the galley and the flight deck and down every chain that needs three actions in
+    // the right order. It plays appallingly and it is the only bot that reaches the whole game.
+    novelty(PRS, S, list) {
+        return pickBy(list, (e) => {
+            const used = S.counts[e.id] || 0;
+            // A never-taken action beats everything; after that, cheap beats dear so the bot
+            // keeps enough clock left to reach the far end of a chain.
+            return (used === 0 ? 500 : 60 - used * 12) - e.cost * 0.25;
+        });
     },
 };
 

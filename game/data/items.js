@@ -173,6 +173,11 @@
           blurb: "Over-ear. The good ones. The reason you have not heard anything all flight.",
           note: "Wearing them calms you and deafens you. Choose a moment." },
 
+        { id: "sock", name: "A spare sock", kg: 0.05, sprite: "cabin:sock",
+          uses: null, tags: ["cloth", "mask", "absurd", "wettable"],
+          blurb: "One. Not a pair. You have thought about why and stopped.",
+          note: "Wet, over a face, a sock is exactly as good as a flannel and never feels it." },
+
         { id: "earplugs", name: "Foam earplugs", kg: 0.02, sprite: "nauvis:sulfur",
           uses: null, tags: ["ears", "calm", "absurd"],
           blurb: "Orange. In a tiny plastic barrel. Free from a hotel.",
