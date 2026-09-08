@@ -234,7 +234,7 @@
         const inten = S.fire.intensity[i];
         const d = S.derived;
 
-        let intake = smoke * dt * 0.0155 * d.smokeMul;
+        let intake = smoke * dt * 0.0034 * d.smokeMul;
         if (st.wearing(S, "hood")) intake *= 0.05;
         else if (st.wearing(S, "wet_towel") || st.wearing(S, "wipes")) intake *= 0.45;
         else if (st.wearing(S, "pillow")) intake *= 0.62;
@@ -244,7 +244,7 @@
 
         if (inten > 16) {
             const shield = st.wearing(S, "gloves") ? 0.6 : 1;
-            p.burns += (inten - 16) * dt * 0.0024 * shield;
+            p.burns += (inten - 16) * dt * 0.0014 * shield;
         }
 
         let fear = smoke * 0.035 + (inten > 8 ? 0.9 : 0) + S.cabinPanic * 0.012;

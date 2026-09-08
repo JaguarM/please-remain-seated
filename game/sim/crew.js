@@ -113,7 +113,7 @@
                    "the cabin and we are going down early. Cabin crew, stations.”", "pa");
             PRS.audio.play("pa");
             // An emergency descent is faster. Faster is not the same as better.
-            const cut = Math.min(S.clock.remaining - 60, 130);
+            const cut = Math.max(0, Math.min(S.clock.remaining - 300, 95));
             if (cut > 0) {
                 S.clock.remaining -= cut;
                 S.clock.total -= cut;
@@ -132,28 +132,42 @@
      * How the procedure decides to move on. Credibility is the fast lever; the evidence is the
      * slow one that arrives whether you do anything or not, by which time it is too late.
      */
+    // How long each step of the procedure takes before the next one can begin: walking the
+    // cabin, finding the locker, getting the bottle, getting an answer out of the flight deck.
+    const DWELL = [55, 70, 50, 40, 9999];
+
     function checkPhase(S) {
         const f = S.fire;
         const smoke = PRS.fire.totalSmoke(f);
         const worst = PRS.fire.worst(f);
         const cred = S.credibility;
 
-        if (S.crewPhase < 1 && (cred >= 18 || smoke > 3)) {
-            setPhase(S, 1, "A passenger reported a smell " + PRS.util.mmss(S.clock.elapsed) +
-                           " into the descent.");
-        }
-        if (S.crewPhase < 2 && (cred >= 40 || smoke > 9 || S.cabinFlags.detectorSounded)) {
-            setPhase(S, 2, "Cabin crew commenced investigation.");
-        }
-        if (S.crewPhase < 3 && (cred >= 60 || worst > 30 || smoke > 16)) {
-            setPhase(S, 3, "Cabin crew commenced firefighting with BCF.");
-        }
-        if (S.crewPhase < 4 && (cred >= 78 || worst > 52 || smoke > 26 || S.cabinFlags.masksDropped)) {
-            setPhase(S, 4, "Flight deck notified; emergency declared.");
-        }
+        // Secure-cabin is on the clock and not on the evidence, so it jumps the queue.
         if (S.crewPhase < 5 && S.clock.remaining < 190) {
             setPhase(S, 5, "Cabin secured for landing.");
+            return;
         }
+        if (S.crewPhase >= 5) return;
+        // One step at a time, and never before the last one has had time to happen. The crew
+        // cannot be fighting a fire they have not yet walked to.
+        if (S.clock.elapsed - S.crewPhaseAt < DWELL[S.crewPhase]) return;
+
+        const next = S.crewPhase + 1;
+        const ready = [
+            cred >= 14 || smoke > 1.6,
+            cred >= 34 || smoke > 5 || S.cabinFlags.detectorSounded || worst > 24,
+            cred >= 55 || worst > 34 || smoke > 11,
+            cred >= 74 || worst > 55 || smoke > 18 || S.cabinFlags.masksDropped,
+        ][S.crewPhase];
+        if (!ready) return;
+
+        const why = [
+            "A passenger reported a smell " + PRS.util.mmss(S.clock.elapsed) + " into the descent.",
+            "Cabin crew commenced investigation.",
+            "Cabin crew commenced firefighting with BCF.",
+            "Flight deck notified; emergency declared.",
+        ][S.crewPhase];
+        setPhase(S, next, why);
     }
 
     /** One crew member walks one step toward a target tile. Crew are not fast either. */
@@ -267,7 +281,10 @@
     }
 
     function doCrewCarry(S, c, dt) {
-        // A crew member without a bottle is worth more than one with. They will not work this out.
+        // A crew member without a bottle is worth more than one with. They will not work this
+        // out, and they have a cabin to secure, so this happens rarely and it happens slowly.
+        if (c.id === "purser" || S.crewPhase < 4) return;
+        if ((S.stats.crewSaves || 0) >= 4) return;
         const candidates = S.pax.filter((p) => (p.state === "down") && !p.carriedBy);
         if (!candidates.length) return;
         let best = candidates[0], bestD = 1e9;
@@ -277,7 +294,8 @@
         }
         stepToward(c, best.x, best.y, dt);
         if (Math.abs(c.x - best.x) <= 1 && Math.abs(c.y - best.y) <= 1) {
-            c.busy = 46;
+            c.busy = 96;
+            S.stats.crewSaves = (S.stats.crewSaves || 0) + 1;
             best.state = "secured";
             best.securedAt = S.clock.elapsed;
             best.x = c.home; best.y = cabin.AISLE_Y;

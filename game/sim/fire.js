@@ -183,6 +183,12 @@
     function advance(f, dt, S) {
         if (dt <= 0) return { vented: false, spread: 0 };
         const rng = S.rng;
+
+        // Ventilation limit. Everything alight is competing for the same air, so the cabin as a
+        // whole has a ceiling and a big fire holds itself down.
+        let burning = 0;
+        for (let i = 0; i < N; i++) burning += f.intensity[i];
+        f.oxygen = clamp(1.12 - burning / 2400, 0.30, 1.0);
         const spreadTo = [];
         let spread = 0;
 
@@ -254,18 +260,19 @@
                 // Growth. A fire with fuel and air doubles about every forty seconds; suppression
                 // is subtracted from the growth rate, not from the fire, which is why holding a
                 // fire down needs you to keep standing there.
-                const grow = (0.055 * air * (0.45 + fuel) * (1 - suppressed) - 0.028 * suppressed)
+                const grow = (0.017 * air * (0.45 + fuel) * (1 - suppressed)
+                            * (1 - inten / 135) - 0.030 * suppressed)
                            * inten * dt;
                 f.intensity[i] = clamp(inten + grow, 0, 100);
 
                 // Fuel goes. This is the only thing that is permanent.
-                const eaten = Math.min(fuel, inten * 0.00042 * dt * (1 - suppressed * 0.6));
+                const eaten = Math.min(fuel, inten * 0.00010 * dt * (1 - suppressed * 0.6));
                 f.fuel[i] -= eaten;
                 f.burnt[i] = clamp01(f.burnt[i] + eaten * 1.6);
                 f.totalBurned += eaten;
 
                 // Smoke. A suppressed fire smokes more, not less, which surprises people.
-                const smokeRate = inten * (0.020 + 0.030 * suppressed) * (f.packsHigh ? 0.8 : 1);
+                const smokeRate = inten * (0.024 + 0.034 * suppressed) * (f.packsHigh ? 0.8 : 1);
                 f.smoke[i] = clamp(f.smoke[i] + smokeRate * dt, 0, 100);
                 f.heat[i] = clamp(f.heat[i] + (inten * 0.03 - 0.8) * dt, 0, 100);
 
@@ -278,7 +285,7 @@
                         if (f.fuel[ni] <= 0.02) continue;
                         if (f.intensity[ni] > f.intensity[i] * 0.7) continue;
                         const nSup = clamp01(f.suppress[ni] / 70);
-                        let p = f.intensity[i] * f.fuel[ni] * 0.00055 * dt * air * (1 - nSup);
+                        let p = f.intensity[i] * f.fuel[ni] * 0.00030 * dt * air * (1 - nSup);
                         if (ny === cabin.AISLE_Y || y === cabin.AISLE_Y) p *= 0.42;  // the aisle is a firebreak
                         if (nx !== x) p *= 1.55;                                     // along the bin
                         if (cabin.kindAt(nx, ny) === "galley") p *= 1.4;
@@ -328,7 +335,7 @@
         }
         // The packs scrub a little of it, and the recirculation filters take a little more.
         const scrub = (f.packsHigh ? 0.0055 : 0.0022) * dt;
-        for (let i = 0; i < N; i++) f.smoke[i] = Math.max(0, next[i] * (1 - scrub));
+        for (let i = 0; i < N; i++) f.smoke[i] = clamp(next[i] * (1 - scrub), 0, 100);
     }
 
     // ---------------------------------------------------------------------------- inspection ---

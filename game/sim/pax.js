@@ -116,22 +116,22 @@
             if (p.state !== "secured") {
                 const maskFactor = p.masked ? 0.16 : 1;
                 const lowFactor = (p.state === "down" || p.braced) ? 0.72 : 1;  // smoke is high up
-                p.smokeDose += smoke * dt * 0.0165 * maskFactor * lowFactor;
+                p.smokeDose += smoke * dt * 0.0031 * maskFactor * lowFactor;
             } else {
                 // Forward, low, by a door, next to the crew. Not nothing, but much less.
-                p.smokeDose += smokeMean * dt * 0.0035 * (p.masked ? 0.2 : 1);
+                p.smokeDose += smokeMean * dt * 0.0012 * (p.masked ? 0.2 : 1);
             }
-            if (inten > 18) p.burns += (inten - 18) * dt * 0.0022;
+            if (inten > 18) p.burns += (inten - 18) * dt * 0.0012;
             if (heat > 40) p.burns += (heat - 40) * dt * 0.0009;
 
-            if (p.state !== "down" && p.smokeDose > DOWN_AT) {
+            if (p.state !== "down" && p.state !== "secured" && p.smokeDose > DOWN_AT) {
                 p.state = "down";
                 p.downAt = S.clock.elapsed;
                 p.helper = false;
                 PRS.state.log(S, p.name + " (" + p.seat + ") stops coughing and goes quiet.", "bad");
                 PRS.audio.play("bad");
             }
-            if (p.smokeDose > CRITICAL_AT && p.state === "down" && !p.critical) {
+            if (p.smokeDose > CRITICAL_AT && p.state !== "secured" && !p.critical) {
                 p.critical = true;
                 PRS.state.note(S, p.name + " was unconscious in heavy smoke for an extended period.");
             }
@@ -221,6 +221,7 @@
     function helperTick(S, p, dt) {
         if (p.state === "down" || p.state === "dead") { p.helper = false; return; }
         p.state = "helping";
+        spreadHelping(S, p, dt);
         p.taskLeft = (p.taskLeft || 0) - dt;
         if (p.taskLeft > 0) return;
 
@@ -266,10 +267,13 @@
         best.claimedBy = p.id;
         p.helperTarget = best.id;
         p.helperPhase = "carry";
-        // Reach them, get them out of the seat, and carry them forward. Two thirds your speed.
+        // Reach them, get them out of the seat, and carry them forward. Slower than you,
+        // and slower again in smoke, because they have no idea what they are doing.
         const dist = Math.abs(best.x - p.x) + Math.abs(best.y - p.y) +
                      Math.abs(best.x - nearestSafeX(best.x));
-        p.taskLeft = (10 + best.kg * 0.16 + dist * 1.5) * 1.5;
+        const fog = 1 + clamp01(S.fire.smoke[cabin.idx(best.x, best.y)] / 100) * 0.8;
+        const fright = 1 + clamp01(p.panic / 100) * 0.5;
+        p.taskLeft = (16 + best.kg * 0.22 + dist * 2.1) * 1.05 * fog * fright;
         p.x = best.x; p.y = best.y;
     }
 
@@ -281,6 +285,34 @@
             if (d < bestD) { bestD = d; best = o; }
         }
         return best;
+    }
+
+    /**
+     * A helper who has been working for a while pulls somebody else in. This is the compounding
+     * that makes recruiting worth more than carrying: the fourth person you ask is not worth one
+     * person, they are worth everybody that person asks. It is capped, because a cabin has a
+     * finite number of people in it who are ever going to get out of their seat.
+     */
+    function spreadHelping(S, p, dt) {
+        if (S.cabinAwareness < 30) return;
+        if (helperCap(S) <= 0) return;
+        // About one conversion every two minutes per helper, at full credibility, and none at all
+        // while nobody believes anything is happening.
+        const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
+        if (!S.rng.chance(rate)) return;
+        const near = S.pax.filter((q) => !q.helper && q.state !== "down" && q.state !== "dead" &&
+            q.state !== "secured" && Math.abs(q.x - p.x) <= 3 &&
+            q.traits.indexOf("hostile") < 0);
+        if (!near.length) return;
+        const q = S.rng.pick(near);
+        if (resistance(S, q) > persuasion(S, 24) + S.rng.range(-10, 20)) return;
+        recruit(S, q, p.name + " asked them, which is not something you had to do.");
+    }
+
+    function helperCap(S) {
+        let n = 0;
+        for (const p of S.pax) if (p.helper) n++;
+        return 9 - n;
     }
 
     /** Turn somebody into a helper. The single highest-value thing in the game. */

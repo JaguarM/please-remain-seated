@@ -24,20 +24,20 @@
         let harm = p.smokeDose + p.burns * 1.5;
 
         if (p.state === "secured") {
-            harm *= 0.55;                                  // forward, low, by a door
-            harm -= 8;
+            harm *= 0.45;                                  // forward, low, by a door
+            harm -= 14;
         } else {
-            harm += f.smoke[i] * 0.42;                     // the last ninety seconds count double
-            harm += f.intensity[i] * 0.55;
-            if (!p.masked) harm += 6;
-            if (!p.braced) harm += 4;
-            if (p.state === "aisle" || p.state === "standing") harm += 9;  // upright, in the layer
-            if (p.state === "down") harm += 14;
+            harm += f.smoke[i] * 0.34;                     // the last ninety seconds count double
+            harm += f.intensity[i] * 0.42;
+            if (!p.masked) harm += 5;
+            if (!p.braced) harm += 3;
+            if (p.state === "aisle" || p.state === "standing") harm += 7;  // upright, in the layer
+            if (p.state === "down") harm += 11;
             const distToDoor = Math.min(
                 Math.abs(p.x - cabin.FWD_CROSS_X),
                 Math.abs(p.x - cabin.OVERWING_X),
                 Math.abs(p.x - cabin.AFT_CROSS_X));
-            harm += distToDoor * 1.5;
+            harm += distToDoor * 1.2;
         }
         if (p.traits.indexOf("elderly") >= 0) harm *= 1.22;
         if (p.traits.indexOf("infant") >= 0) harm *= 1.30;
@@ -48,9 +48,9 @@
 
         harm = Math.max(0, harm + S.rng.range(-7, 7));
 
-        if (harm < 22) return { key: "unhurt", harm: harm };
-        if (harm < 52) return { key: "treated", harm: harm };
-        if (harm < 78) return { key: "serious", harm: harm };
+        if (harm < 30) return { key: "unhurt", harm: harm };
+        if (harm < 66) return { key: "treated", harm: harm };
+        if (harm < 96) return { key: "serious", harm: harm };
         return { key: "lost", harm: harm };
     }
 
@@ -72,8 +72,8 @@
         let yourHarm = S.player.smokeDose + S.player.burns * 1.4;
         if (!S.player.alive) yourHarm = 120;
         if (st.wearing(S, "hood")) yourHarm *= 0.4;
-        you.outcome = yourHarm > 92 ? "lost" : yourHarm > 62 ? "serious"
-                    : yourHarm > 26 ? "treated" : "unhurt";
+        you.outcome = yourHarm > 100 ? "lost" : yourHarm > 70 ? "serious"
+                    : yourHarm > 32 ? "treated" : "unhurt";
         you.harm = Math.round(yourHarm);
 
         const secured = st.securedCount(S);
@@ -155,8 +155,7 @@
     ];
 
     function gradeOf(result) {
-        const score = result.secured + result.byHelpers * 0.5 -
-                      result.lost * 0.8;
+        const score = result.secured + result.byHelpers * 0.4 - result.lost * 1.6;
         for (const g of GRADES) if (score >= g.min) return g;
         return GRADES[GRADES.length - 1];
     }

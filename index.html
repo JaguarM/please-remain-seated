@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Please Remain Seated</title>
+<meta name="description" content="There is a fire in the overhead locker above 14C and you are
+the only person on this aeroplane who has noticed. The plane lands in fifteen minutes and the
+clock only moves when you do.">
+<link rel="stylesheet" href="game/style.css">
+</head>
+<body>
+
+<div id="app" class="screen"></div>
+
+<noscript>
+  <p style="color:#ddd;font:14px system-ui;padding:24px">
+    This is a game made of JavaScript. Without it, the aeroplane is just a folder.
+  </p>
+</noscript>
+
+<!--
+  Classic scripts, in order, on purpose. The game has to run from a double-clicked index.html and
+  a file:// page may not load an ES module or fetch a sibling JSON, so every file assigns to one
+  global and the order below is the dependency graph. The two art files are generated:
+      python pixel-workshop/make_cabin_textures.py
+      python tools/bundle_nauvis_sprites.py
+-->
+
+<script src="game/art/nauvis-sprites.js"></script>
+<script src="game/art/cabin-sprites.js"></script>
+
+<script src="game/engine/core.js"></script>
+<script src="game/engine/atlas.js"></script>
+<script src="game/engine/audio.js"></script>
+
+<script src="game/sim/cabin.js"></script>
+<script src="game/sim/fire.js"></script>
+<script src="game/sim/pax.js"></script>
+<script src="game/sim/crew.js"></script>
+<script src="game/sim/state.js"></script>
+<script src="game/sim/actions.js"></script>
+<script src="game/sim/scoring.js"></script>
+
+<script src="game/data/passengers.js"></script>
+<script src="game/data/characters.js"></script>
+<script src="game/data/items.js"></script>
+<script src="game/data/events.js"></script>
+<script src="game/data/medals.js"></script>
+<script src="game/data/endings.js"></script>
+
+<script src="game/data/actions-move.js"></script>
+<script src="game/data/actions-fire.js"></script>
+<script src="game/data/actions-people.js"></script>
+<script src="game/data/actions-crew.js"></script>
+<script src="game/data/actions-cabin.js"></script>
+<script src="game/data/actions-self.js"></script>
+<script src="game/data/actions-items.js"></script>
+<script src="game/data/actions-desperate.js"></script>
+
+<script src="game/engine/render.js"></script>
+<script src="game/ui/play.js"></script>
+<script src="game/ui/screens.js"></script>
+<script src="game/main.js"></script>
+
+</body>
+</html>
