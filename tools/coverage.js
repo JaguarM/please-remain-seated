@@ -93,7 +93,7 @@ function build(opts) {
     Object.assign(S.flags, opts.bare ? { havePhoto: true } : {
         havePhoto: true, haveIce: true, bagFull: true, sinkFull: true, haveJug: true,
         haveBlankets: 4, haveCushion: true, knowTheList: true, wilburSaid: true,
-        chipConfessed: true, usedPA: true, tookAVote: true, iguanaOut: true,
+        chipConfessed: true, usedPA: true, tookAVote: true,
         holdingCase: !!opts.holdingCase, caseInLav: !!opts.caseInLav,
         holdingCushion: !!opts.holdingCushion, lavClosed: true, panelOpen: false,
         cockpitOpened: !!opts.cockpit,

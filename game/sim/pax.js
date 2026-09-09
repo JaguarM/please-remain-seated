@@ -314,7 +314,8 @@
         if (helperCap(S) <= 0) return;
         // About one conversion every two minutes per helper, at full credibility, and none at all
         // while nobody believes anything is happening.
-        const rate = (PRS.state.hasPerk(S, "flock") ? 0.0068 : 0.0036) * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
+        const rate = (PRS.state.hasPerk(S, "flock") ? 0.0068
+                      : PRS.state.hasPerk(S, "deferred") ? 0.0014 : 0.0036) * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
         if (!S.rng.chance(rate)) return;
         const near = S.pax.filter((q) => !q.helper && q.state !== "down" && q.state !== "dead" &&
             q.state !== "secured" && Math.abs(q.x - p.x) <= 3 &&

@@ -128,65 +128,21 @@
           blurb: "Sixty-one per cent. No signal. A camera.",
           note: "Film the fire and people believe you. Show them and they believe you faster." },
 
-        { id: "powerbank", name: "Power bank", kg: 0.4, sprite: "cabin:power_bank",
-          uses: null, tags: ["battery", "hazard"],
-          blurb: "Twenty thousand milliamp hours of exactly the thing that started this.",
-          note: "You are carrying the same fire that is in the bin. Do not lose track of it." },
 
-        { id: "laptop", name: "Work laptop", kg: 1.7, sprite: "cabin:laptop",
-          uses: null, tags: ["shield", "hazard", "battery"],
-          blurb: "It has the deck on it. The deck no longer matters.",
-          note: "A heavy flat thing you can hold in front of your face. Also a second battery." },
 
-        { id: "pillow", name: "Memory foam neck pillow", kg: 0.3, sprite: "cabin:neck_pillow",
-          uses: null, tags: ["cushion", "cover", "wettable"],
-          blurb: "Grey, slightly damp, the shape of a horseshoe and of regret.",
-          note: "Wet, held over a mouth, it is a filter. Dry, it is fuel." },
 
-        { id: "wipes", name: "Packet of wet wipes", kg: 0.2, sprite: "nauvis:plastic_bar",
-          uses: 6, agent: "wetcloth", tags: ["cloth", "mask", "douse"],
-          blurb: "Aloe. Forty of them. Individually useless, collectively not.",
-          note: "Six small wet things. Each one buys one person one breath." },
 
         { id: "pretzels", name: "Bag of pretzels", kg: 0.15, sprite: "cabin:pretzels",
           uses: 1, tags: ["food", "bribe", "hazard"],
           blurb: "Salted. Airside price. You have been saving them.",
           note: "You can bribe a child with these. It works. It should not, but it works." },
 
-        { id: "crossword", name: "Book of cryptic crosswords", kg: 0.3, sprite: "cabin:crossword",
-          uses: null, tags: ["calm", "bribe", "paper", "hazard"],
-          blurb: "Half done, in pen, badly.",
-          note: "Hand it to a panicking person and they will stop panicking to be annoyed by it." },
 
-        { id: "rosary", name: "Rosary", kg: 0.05, sprite: "cabin:rosary",
-          uses: null, tags: ["calm", "faith"],
-          blurb: "Olive wood, from a shop near a basilica, bought for somebody who died.",
-          note: "It does nothing. It does a great deal. Both of these are true." },
 
-        { id: "harmonica", name: "Harmonica in C", kg: 0.1, sprite: "cabin:harmonica",
-          uses: null, tags: ["calm", "loud", "absurd"],
-          blurb: "You are learning. You are not good. You are learning.",
-          note: "Playing it in a burning cabin is one of the twelve endings." },
 
-        { id: "headphones", name: "Noise cancelling headphones", kg: 0.3, sprite: "cabin:headphones",
-          uses: null, tags: ["ears", "calm", "hazard"],
-          blurb: "Over-ear. The good ones. The reason you have not heard anything all flight.",
-          note: "Wearing them calms you and deafens you. Choose a moment." },
 
-        { id: "sock", name: "A spare sock", kg: 0.05, sprite: "cabin:sock",
-          uses: null, tags: ["cloth", "mask", "absurd", "wettable"],
-          blurb: "One. Not a pair. You have thought about why and stopped.",
-          note: "Wet, over a face, a sock is exactly as good as a flannel and never feels it." },
 
-        { id: "earplugs", name: "Foam earplugs", kg: 0.02, sprite: "nauvis:sulfur",
-          uses: null, tags: ["ears", "calm", "absurd"],
-          blurb: "Orange. In a tiny plastic barrel. Free from a hotel.",
-          note: "You cannot hear anyone telling you to sit down. This is a real advantage." },
 
-        { id: "goldfish", name: "Emotional support iguana", kg: 1.4, sprite: "cabin:iguana",
-          uses: null, tags: ["animal", "chaos", "absurd", "rescue"],
-          blurb: "His name is Gerald and the airline has a letter about him.",
-          note: "Release him and the cabin will believe something is wrong, for the wrong reason." },
 
         { id: "carrier", name: "Soft pet carrier (empty)", kg: 0.5, sprite: "cabin:pet_carrier",
           uses: null, tags: ["bag", "carry", "rescue"],
@@ -198,15 +154,7 @@
           blurb: "Wind-proof to sixty kilometres an hour, according to the tag.",
           note: "You can reach a bin latch from the aisle without standing under it." },
 
-        { id: "ball", name: "Cricket ball", kg: 0.16, sprite: "nauvis:solid_fuel",
-          uses: null, tags: ["throw", "absurd", "reach"],
-          blurb: "For your nephew. Red, seamed, heavier than it looks.",
-          note: "You can hit a call button, a smoke detector or a person from eleven rows away." },
 
-        { id: "laser", name: "Laser pointer", kg: 0.03, sprite: "nauvis:battery",
-          uses: null, tags: ["point", "absurd", "light"],
-          blurb: "Green, from a conference, banned in several countries.",
-          note: "You can point at the exact bin from your seat. Nobody will look at it." },
 
         // -------------------------------------------------------- things that make it worse ---
         { id: "gin", name: "Four duty-free miniatures", kg: 0.4, sprite: "cabin:mini_gin",
@@ -214,15 +162,7 @@
           blurb: "Gin, whisky, rum, and one you cannot identify. Forty per cent, all of them.",
           note: "Forty per cent alcohol is sixty per cent water and one hundred per cent a mistake." },
 
-        { id: "perfume", name: "Duty-free perfume, 100ml", kg: 0.4, sprite: "cabin:perfume",
-          uses: 2, agent: "perfume", tags: ["hazard", "bribe", "gift"],
-          blurb: "For your mother. In the bag. In the box. In the other bag.",
-          note: "Eighty per cent ethanol in an aerosol. Please do not." },
 
-        { id: "sanitiser", name: "Large hand sanitiser", kg: 0.5, sprite: "cabin:sanitiser",
-          uses: 3, agent: "sanitiser", tags: ["hazard", "clean"],
-          blurb: "Five hundred millilitres, seventy per cent alcohol, since 2020.",
-          note: "It is a gel that burns with a flame you cannot see. Genuinely, do not." },
 
         { id: "thermos", name: "Thermos of coffee", kg: 0.9, sprite: "cabin:coffee_pot",
           uses: 2, agent: "coffee", tags: ["drink", "hot", "douse", "refillable"], refill: "tap",
@@ -234,10 +174,12 @@
           blurb: "Sponsored. Sugar-free. The taste is a warning.",
           note: "It is mostly water. The rest of it caramelises, which smells appalling." },
 
-        { id: "vape", name: "Your own vape", kg: 0.06, sprite: "cabin:vape",
-          uses: null, tags: ["hazard", "battery", "absurd", "irony"],
-          blurb: "Identical to the one in the bin. Same brand. Same battery. Same everything.",
-          note: "You are carrying the murder weapon. There is an ending about this." },
+        // Not in the bag screen and not on any passenger. It is in the aft lavatory waste bin,
+        // and it is the only thing left in this game that does not help.
+        { id: "vape", name: "A vape that is not yours", kg: 0.06, sprite: "cabin:vape",
+          uses: null, tags: ["hazard", "battery", "irony"],
+          blurb: "Found in a bin at the back. Same brand as the one in the locker. Same battery.",
+          note: "It does nothing. Somebody put it there and said nothing, and now you know." },
     ];
 
     // ------------------------------------------------------------------ where a thing lives ---
@@ -256,19 +198,21 @@
 
     // What a person plausibly has on them or in the seat pocket in front of them.
     const BAG_POOL = [
-        "water_big", "wet_towel", "blanket", "phone", "multitool", "torch",
-        "hood", "goggles", "gin", "harmonica", "crossword", "vape",
+        "water_big", "wet_towel", "blanket", "phone", "multitool",
+        "torch", "hood", "goggles", "first_aid", "strap",
     ];
 
     // What is stowed somewhere in the aeroplane, for whoever goes and looks.
-    const CABIN_POOL = [
-        "first_aid", "binbag", "thermos", "scissors", "energy", "sock", "pillow", "wipes",
-    ];
+    const CABIN_POOL = ["binbag", "thermos", "scissors", "energy"];
+
+    // Found, not packed, and it is the only thing left in the game that does nothing.
+    const HIDDEN = ["vape"];
 
     // Everything else is in somebody's lap, and the only way to it is to ask them.
     for (const item of ITEMS) {
         item.where = BAG_POOL.indexOf(item.id) >= 0 ? "bag"
-                   : CABIN_POOL.indexOf(item.id) >= 0 ? "cabin" : "pax";
+                   : CABIN_POOL.indexOf(item.id) >= 0 ? "cabin"
+                   : HIDDEN.indexOf(item.id) >= 0 ? "hidden" : "pax";
     }
 
     /** The twelve the bag screen offers, in the order they are listed above. */
@@ -299,15 +243,16 @@
         { id: "documentary", name: "The one who saw the documentary",
           note: "Everything for surviving it yourself and nothing at all for anybody else.",
           items: ["hood", "goggles", "torch"] },
+        { id: "hands", name: "Two hands and a plan",
+          note: "For getting people out of seats and along a floor, which is the whole job.",
+          items: ["multitool", "strap", "first_aid"] },
         { id: "evidence", name: "Proving it",
           note: "Nobody believes you. These are for changing that, which is most of the game.",
           items: ["phone", "multitool", "water_big"] },
-        { id: "chaos", name: "No plan whatsoever",
-          note: "You packed in nine minutes and you have never once been afraid of anything.",
-          items: ["harmonica", "gin", "vape"] },
+
     ];
 
     PRS.data = PRS.data || {};
-    PRS.data.items = { ITEMS, SLOTS, ALLOWANCE, PRESETS, BAG_POOL, CABIN_POOL,
+    PRS.data.items = { ITEMS, SLOTS, ALLOWANCE, PRESETS, BAG_POOL, CABIN_POOL, HIDDEN,
                        bagPool, byId, totalKg };
 })(window);

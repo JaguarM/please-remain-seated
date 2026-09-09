@@ -89,25 +89,23 @@
                   "that two pilots are contractually unable to ignore.", kind: "great" };
           } },
 
-        { id: "cabin.break_detector", deck: "cabin", tags: ["hands"], danger: "bad",
-          label: "Break the smoke detector", cost: 12,
-          when: (S) => atLav(S) && S.cabinFlags.detectorSounded,
-          run(S) {
-              S.cabinFlags.detectorSounded = false;
-              S.credibility = Math.max(0, S.credibility - 20);
-              return { text: "The noise stops. That is the only good thing about this and it is " +
-                  "not a good thing.", kind: "bad" };
-          } },
-
+        // The one thing left in this game that does not help. It is in a bin at the back of
+        // the aeroplane and it has an ending attached to it.
         { id: "cabin.lav_bin", deck: "cabin", tags: ["hands"],
           label: "Look in the lavatory waste bin", cost: 7,
           when: (S) => atLav(S) && !S.flags.lookedInBin,
           once: true,
           run(S) {
               st.setFlag(S, "lookedInBin");
-              return "Paper towels, a nappy, and a vape pen exactly like the one in the locker. " +
-                  "Somebody has been in here at some point in the last four hours doing exactly " +
-                  "the thing that is currently on fire eleven rows away.";
+              st.setFlag(S, "vapeFoundAt", Math.round(S.clock.elapsed));
+              st.give(S, "vape");
+              PRS.state.note(S, "A second personal vaporiser, of the same make and with the same " +
+                  "cell type as the source unit, was recovered from the aft lavatory waste bin.");
+              return { text: "Paper towels, a nappy, and — under both — a vape pen. Same brand as " +
+                  "the one in the locker. Same battery. Somebody stood in this cubicle at some " +
+                  "point in the last four hours, used it, panicked, and put it in the bin, and it " +
+                  "has been sitting eleven rows from the fire ever since.\n\nYou put it in your " +
+                  "pocket. You do not entirely know why.", kind: "great" };
           } },
 
         { id: "cabin.lav_door", deck: "cabin", tags: ["hands"], danger: "good",
@@ -176,18 +174,6 @@
               st.setFlag(S, "haveJug");
               return "Two litres in a steel jug with a spout, which is a much better shape for " +
                   "putting water into a locker than a bottle is.";
-          } },
-
-        { id: "cabin.jug_pour", deck: "cabin", tags: ["fire", "hands"], danger: "good",
-          label: "Pour the galley jug into the bin", cost: 8,
-          when: (S) => S.flags.haveJug && Math.abs(S.player.x - S.fire.core.x) <= 1,
-          run(S) {
-              st.setFlag(S, "haveJug", false);
-              F.apply(S.fire, S.fire.core.x, S.fire.core.y, "water", 1.6, 0.3);
-              S.stats.agentsUsed++;
-              PRS.audio.play("pour");
-              return { text: "Two litres straight down the seam of the locker, from a spout, " +
-                  "which puts it where a bottle cannot.", kind: "good" };
           } },
 
         { id: "cabin.stow_trolley", deck: "cabin", tags: ["hands"], danger: "good",
@@ -306,60 +292,6 @@
           } },
 
         // ---------------------------------------------------------------------- doors and exits ---
-        { id: "cabin.look_exit", deck: "cabin", tags: ["look"],
-          label: "Look at the exit and the handle", cost: 6,
-          when: (S) => atExit(S) || S.player.x === cabin.OVERWING_X,
-          run(S) {
-              return "Red handle, arrows, a placard, and a small window with a wing under it. It " +
-                  "is armed. Opening it on the ground fires a slide; opening it now does not open " +
-                  "it, because there are four hundred kilonewtons on the other side of it.";
-          } },
-
-        { id: "cabin.open_exit", deck: "cabin", tags: ["hands"], danger: "bad",
-          label: "Pull the exit handle", cost: 14,
-          detail: "It will not open. Something else will happen.",
-          when: (S) => (atExit(S) || S.player.x === cabin.OVERWING_X) && !S.cabinFlags.slideDeployed,
-          run(S) {
-              S.cabinFlags.slideDeployed = true;
-              S.cabinPanic = Math.min(100, S.cabinPanic + 40);
-              S.credibility = Math.max(0, S.credibility - 30);
-              const x = S.player.x;
-              S.cabinFlags.aisleBlocked[x] = 9999;
-              PRS.audio.play("bad");
-              PRS.state.note(S, "Door handle operated in flight; slide pack deployed into cabin.");
-              return { text: "The door does not move a millimetre — it cannot, and it was never " +
-                  "going to. What does move is the slide pack, which fires into the cabin and " +
-                  "inflates to the size of a small car in about a second and a half.\n\nThe " +
-                  "cabin is now in two halves and you are in one of them.", kind: "bad" };
-          } },
-
-        { id: "cabin.disarm", deck: "cabin", tags: ["hands"],
-          label: "Disarm the door", cost: 10,
-          detail: "So that when they do open it on the ground, nobody goes down a slide.",
-          when: (S) => atExit(S) && S.cabinFlags.exitsArmed,
-          run(S) {
-              S.cabinFlags.exitsArmed = false;
-              return { text: "You put the girt bar lever to disarmed. It is the wrong call and " +
-                  "it is confidently made.", kind: "bad" };
-          } },
-
-        { id: "cabin.window", deck: "cabin", tags: ["look", "waste"],
-          label: "Look out of the window", cost: 5,
-          when: (S) => S.player.y === 0 || S.player.y === 8 ||
-                       (inRow(S) && (S.player.y === 1 || S.player.y === 7)),
-          run(S) {
-              const t = S.clock.remaining;
-              if (t > 600) return "Cloud, and a grey line where the sea is. Nothing about the " +
-                  "view suggests anything at all.";
-              if (t > 300) return "You are through the cloud. There are fields and a motorway and " +
-                  "a roundabout with a lorry on it, and everybody down there is fine.";
-              if (t > 120) return "Low. Very low. You can see individual cars and a school and " +
-                  "somebody's washing, and there is a fire engine on a road that is going the " +
-                  "same way you are.";
-              return { text: "Runway lights. Three of them, then a hundred of them. There are " +
-                  "eleven vehicles with blue lights waiting at the intersection and they have " +
-                  "been there for a while.", kind: "pa" };
-          } },
 
         { id: "cabin.safety_card", deck: "cabin", tags: ["look"],
           label: "Read the safety card. Actually read it.", cost: 16,
@@ -385,26 +317,6 @@
                   kind: "good" };
           } },
 
-        { id: "cabin.curtain", deck: "cabin", tags: ["hands"],
-          label: "Pull the galley curtain across", cost: 6,
-          detail: "It will not stop smoke. It will stop people watching.",
-          when: (S) => S.player.x <= cabin.FWD_CROSS_X || S.player.x >= cabin.AFT_CROSS_X,
-          run(S) {
-              S.cabinPanic = Math.max(0, S.cabinPanic - 6);
-              return "You draw the curtain across the galley. Sixty people can no longer see what " +
-                  "is happening at the front, which turns out to help.";
-          } },
-
-        { id: "cabin.tray_tables", deck: "cabin", tags: ["hands"],
-          label: (S) => "Stow the tray tables in row " + cabin.rowAt(S.player.x),
-          detail: "Six tables down across the aisle is six things to catch a person on.",
-          when: (S) => inRow(S),
-          cost: 10,
-          run(S) {
-              return "You put six tray tables up and latch them. If anybody has to get out of " +
-                  "this row in the dark, they now can.";
-          } },
-
         { id: "cabin.bags_out", deck: "cabin", tags: ["hands"], danger: "good",
           label: "Clear the bags out of the aisle", cost: 18,
           when: (S) => Object.keys(S.cabinFlags.aisleBlocked)
@@ -418,27 +330,6 @@
               }
               return { text: "You throw " + (n * 2 + 1) + " cabin bags over the seat backs into " +
                   "rows that are not using their footwells. Somebody objects. They are wrong.",
-                  kind: "good" };
-          } },
-
-        { id: "cabin.seat_cushion", deck: "cabin", tags: ["hands"],
-          label: "Pull a seat cushion off", cost: 8,
-          detail: "It comes off with a strap. It floats, and it is also a shield.",
-          when: (S) => inRow(S) && !S.flags.haveCushion,
-          run(S) {
-              st.setFlag(S, "haveCushion");
-              return "The cushion comes away from the pan with two pops. It is a flotation device " +
-                  "over water and today it is a square metre of fire-blocking foam with a handle.";
-          } },
-
-        { id: "cabin.cushion_shield", deck: "cabin", tags: ["fire"], danger: "good",
-          label: "Hold the seat cushion up against the heat", cost: 12,
-          when: (S) => S.flags.haveCushion &&
-                       S.fire.intensity[cabin.idx(S.player.x, S.player.y)] > 8,
-          run(S) {
-              S.player.burns = Math.max(0, S.player.burns - 8);
-              return { text: "Modern seat cushions are fire blocking by regulation and this is " +
-                  "the one time in the life of the aeroplane that anybody finds out.",
                   kind: "good" };
           } },
 

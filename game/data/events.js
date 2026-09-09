@@ -194,14 +194,6 @@
                              "you need. Ask them.", kind: "great" };
           } },
 
-        { id: "iguana_loose", weight: 6, once: true,
-          when: (S) => S.flags.iguanaOut,
-          run(S) {
-              S.cabinAwareness = Math.min(100, S.cabinAwareness + 12);
-              S.cabinPanic = Math.min(100, S.cabinPanic + 10);
-              return { text: "Gerald has reached row 4 and is on a tray table. Two people have " +
-                             "now stood up who would not stand up for a fire.", kind: "plain" };
-          } },
 
         { id: "bruno", weight: 7, once: true,
           when: (S) => PRS.fire.totalSmoke(S.fire) > 14,

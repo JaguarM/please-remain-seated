@@ -50,19 +50,6 @@
                   "again about anything.", kind: "great" };
           } },
 
-        { id: "extra.sceptic_admit", deck: "people", tags: ["social"],
-          targets: withTrait("sceptic"),
-          label: (S, c) => "Ask " + who(c) + " what would change their mind",
-          detail: "It is a real question and it has a real answer.",
-          cost: 14,
-          run(S, c) {
-              c.p.trust = Math.min(100, c.p.trust + 22);
-              const wants = S.rng.pick(["“An announcement.”", "“A member of crew saying it.”",
-                  "“Seeing it. Actually seeing it.”", "“Somebody who isn't you.”",
-                  "“Honestly? Nothing. I've decided.”"]);
-              return c.p.name + " thinks about it properly, which nobody has done yet. " + wants;
-          } },
-
         // ---------------------------------------------------------------------- the hostile ---
         { id: "extra.hostile_agree", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("hostile"),
@@ -202,16 +189,6 @@
               return { text: "“Count everybody who goes past you. Out loud. Start now.” " +
                   c.p.name + " starts counting and stops shaking, in that order, about four " +
                   "seconds apart.", kind: "good" };
-          } },
-
-        { id: "extra.nervous_breathe", deck: "people", tags: ["social"],
-          targets: withTrait("nervous"),
-          label: (S, c) => "Breathe with " + who(c),
-          cost: 16,
-          run(S, c) {
-              c.p.panic = Math.max(0, c.p.panic - 38);
-              S.player.panic = Math.max(0, S.player.panic - 12);
-              return "In for four, out for eight, twice, together, in an aisle. Both of you.";
           } },
 
         // -------------------------------------------------------------------- children and pets ---
@@ -383,32 +360,6 @@
                   "that is what cooling means.", kind: "great" };
           } },
 
-        { id: "extra.count_cells", deck: "fire", tags: ["fire", "look"],
-          label: "Count how many times it has gone off", cost: 8,
-          when: (S) => S.fire.core.vented > 0,
-          run(S) {
-              const v = S.fire.core.vented;
-              const left = S.fire.core.cells;
-              return { text: v + " so far. If it is a battery pack there will be a number of " +
-                  "them and it will be a round number." +
-                  (st.hasPerk(S, "reads_fire") || S.flags.wilburSaid
-                      ? " There are " + left + " left."
-                      : " You do not know how many are left and that is the whole problem."),
-                  kind: "plain" };
-          } },
-
-        { id: "extra.time_the_vents", deck: "fire", tags: ["fire", "look"], danger: "good",
-          label: "Time the gaps between them", cost: 22,
-          when: (S) => S.fire.core.vented >= 2 && !S.flags.timedVents,
-          once: true,
-          run(S) {
-              st.setFlag(S, "timedVents");
-              return { text: "You watch the second hand for twenty-two seconds and work out that " +
-                  "they are getting closer together, not further apart. Every one of them heats " +
-                  "the next one. This is going to accelerate and it is going to keep " +
-                  "accelerating until it runs out.", kind: "bad" };
-          } },
-
         { id: "extra.warn_row", deck: "fire", tags: ["social"], danger: "good",
           label: (S) => "Clear the two rows either side of the fire",
           detail: "Not because they are burning. Because in ninety seconds they will be.",
@@ -471,16 +422,6 @@
                   "somebody because they assumed somebody else had them.", kind: "great" };
           } },
 
-        { id: "extra.prop_door", deck: "cabin", tags: ["hands"],
-          label: "Wedge the lavatory door open with the bin", cost: 10,
-          detail: "So the next person carrying something on fire does not need a free hand.",
-          when: (S) => cabin.kindAt(S.player.x, S.player.y) === "lav" && !S.flags.lavPropped,
-          run(S) {
-              st.setFlag(S, "lavPropped");
-              return "The waste bin holds it open. Ten seconds now, and every trip back here is " +
-                  "four seconds shorter for the rest of the flight.";
-          } },
-
         { id: "extra.clear_exit_row", deck: "cabin", tags: ["social"], danger: "good",
           label: "Clear the overwing exit row", cost: 26,
           detail: "It is the only safe zone in the middle of the aeroplane and there are bags in it.",
@@ -493,85 +434,7 @@
                   "somebody to is now a place you can put somebody down.", kind: "great" };
           } },
 
-        { id: "extra.wet_the_row", deck: "cabin", tags: ["fire"], danger: "good",
-          label: (S) => "Soak the seats in row " + cabin.rowAt(S.player.x),
-          detail: "Upholstery that is wet does not light. It is that simple and nobody does it.",
-          when: (S) => cabin.rowAt(S.player.x) !== null && S.flags.bagFull,
-          run(S) {
-              st.setFlag(S, "bagFull", false);
-              const x = S.player.x;
-              for (let y = 1; y <= 7; y++) {
-                  const i = cabin.idx(x, y);
-                  S.fire.suppress[i] = Math.min(100, S.fire.suppress[i] + 62);
-              }
-              S.stats.agentsUsed++;
-              return { text: "Nine litres over six seats. Row " + cabin.rowAt(x) + " is now the " +
-                  "hardest place on this aeroplane for a fire to get through.", kind: "great" };
-          } },
-
         // --------------------------------------------------------------------- more of yourself ---
-        { id: "extra.mark_yourself", deck: "self", tags: ["self"],
-          label: "Write your seat number on your arm", cost: 12,
-          detail: "In biro. It is what you would do for a child and you are not a child.",
-          when: (S) => !S.flags.markedArm,
-          once: true,
-          run(S) {
-              st.setFlag(S, "markedArm");
-              PRS.state.note(S, "A passenger had written a seat number and a name on their " +
-                  "forearm in ballpoint pen.");
-              return { text: "9C, and a name, and a phone number, on the inside of your left " +
-                  "forearm. Twelve seconds. It is the least optimistic thing you have done all " +
-                  "day and you feel enormously better for it.", kind: "plain" };
-          } },
-
-        { id: "extra.tie_hair", deck: "self", tags: ["self"],
-          label: "Tie your hair back and take off anything loose", cost: 10,
-          when: (S) => !S.flags.tidied,
-          once: true,
-          run(S) {
-              st.setFlag(S, "tidied");
-              S.player.burns = Math.max(0, S.player.burns - 3);
-              return "Hair back, watch off, lanyard tucked in, sleeves down. Ten seconds of the " +
-                  "kind of preparation that only ever looks obvious afterwards.";
-          } },
-
-        { id: "extra.shoes", deck: "self", tags: ["self"],
-          label: "Put your shoes back on", cost: 8,
-          when: (S) => !S.flags.shoesOn,
-          once: true,
-          run(S) {
-              st.setFlag(S, "shoesOn");
-              return "You had taken them off somewhere over the Channel, like everybody does, " +
-                  "and you are about to walk eleven rows over a burning floor.";
-          } },
-
-        { id: "extra.memorise", deck: "self", tags: ["self", "look"],
-          label: "Memorise four faces", cost: 16,
-          detail: "So that afterwards you can tell somebody who was where.",
-          when: (S) => S.clock.remaining < 420,
-          once: true,
-          run(S) {
-              const four = S.pax.filter((p) => p.state !== "secured" && p.state !== "dead")
-                                .slice(0, 4);
-              PRS.state.note(S, "A passenger was able to give investigators the seat numbers and " +
-                  "descriptions of four people they had not been able to reach.");
-              return { text: PRS.util.listSentence(four.map((p) => p.name + " in " + p.seat)) +
-                  ". You will be able to say those four names in eleven months in a room with a " +
-                  "recording light on, and it will matter to four families that somebody could.",
-                  kind: "plain" };
-          } },
-
-        { id: "extra.check_watch", deck: "self", tags: ["look"],
-          label: "Look at the time", cost: 3,
-          run(S) {
-              const t = S.clock.remaining;
-              if (t > 600) return "Eleven minutes. It is an enormous amount of time and it is " +
-                  "going to turn out not to be.";
-              if (t > 300) return PRS.util.mmss(t) + ". You have done " + S.actions.length +
-                  " things and secured " + st.securedCount(S) + " people.";
-              if (t > 120) return PRS.util.mmss(t) + ". Whatever you are going to do, this is it.";
-              return { text: PRS.util.mmss(t) + ".", kind: "bad" };
-          } },
 
         // ------------------------------------------------------------------ more of the crew ---
         { id: "extra.crew_zone", deck: "crew", tags: ["social"], danger: "good",
@@ -623,7 +486,52 @@
           } },
 
         // ------------------------------------------------------------- more of the desperate ---
-        { id: "extra.roll_call", deck: "desperate", tags: ["social"], danger: "good",
+    ]);
+
+    // ------------------------------------------- what used to be the desperate deck ------------
+    // Four survivors out of thirty-two. The other twenty-eight were options that cost real
+    // seconds and did nothing, which is a fine joke once and a bad game to play twice.
+
+    A.register([
+        { id: "people.speech", deck: "people", tags: ["social"], danger: "good",
+          label: "Stand on a seat and address the cabin", cost: 30,
+          detail: "Everybody within six rows, once, and you only get one of these.",
+          when: (S) => cabin.rowAt(S.player.x) !== null && !S.flags.gaveSpeech,
+          run(S) {
+              st.setFlag(S, "gaveSpeech");
+              let convinced = 0;
+              for (const p of st.withinEarshot(S, 6)) {
+                  p.awareness = Math.min(100, p.awareness + 30);
+                  if (P.convince(S, p, 6).ok) {
+                      p.trust = Math.min(100, p.trust + 30);
+                      convinced++;
+                  }
+              }
+              S.credibility = Math.min(100, S.credibility + 10);
+              return { text: "You stand on an armrest and give thirty seconds of the worst and " +
+                  "most sincere speech of your life. " + convinced + " people are moved by it. " +
+                  "The rest of them are embarrassed, which is a thing people can still be eleven " +
+                  "minutes into this.", kind: convinced > 3 ? "great" : "plain" };
+          } },
+
+        { id: "people.delegate", deck: "people", tags: ["social"], danger: "good",
+          targets: (S) => st.reachable(S)
+              .filter((p) => !p.helper && p.state !== "down" && p.state !== "secured")
+              .map((p) => ({ key: p.id, p: p })),
+          label: (S, c) => "Put " + c.p.name + " in charge instead of you",
+          detail: "Hand the whole thing over. Some people are better at it than you are.",
+          cost: 16,
+          run(S, c) {
+              if (P.convince(S, c.p, 4).ok) {
+                  P.recruit(S, c.p, "You have handed the whole thing over.");
+                  return { text: "“You do it. You're better at this than me.” " + c.p.name +
+                      " looks at you, and takes it, and is better at it than you.", kind: "great" };
+              }
+              return { text: c.p.name + " says no. It is the correct answer and it does not help.",
+                       kind: "bad" };
+          } },
+
+        { id: "people.roll_call", deck: "people", tags: ["social"], danger: "good",
           label: "Shout the seat numbers of everybody who cannot walk", cost: 24,
           detail: "Not to them. To everybody else.",
           when: (S) => !!S.flags.knowTheList,
@@ -633,10 +541,9 @@
               for (const p of S.pax) {
                   if (p.helper || p.state === "secured" || p.state === "down") continue;
                   if (P.needsCarrying(p)) continue;
-                  const roll = P.convince(S, p, 14);
-                  if (roll.ok && P.recruit(S, p, "They heard a seat number and went to it.")) {
-                      helped++;
-                      if (helped >= 3) break;
+                  if (P.convince(S, p, 14).ok &&
+                      P.recruit(S, p, "They heard a seat number and went to it.")) {
+                      if (++helped >= 3) break;
                   }
               }
               return { text: "You shout eleven seat numbers down a burning aeroplane, twice, " +
@@ -645,56 +552,24 @@
                   kind: helped ? "great" : "bad" };
           } },
 
-        { id: "extra.thank_them", deck: "desperate", tags: ["social"],
-          label: "Thank everybody, out loud, by name", cost: 26,
-          when: (S) => S.clock.remaining < 150 && st.helperCount(S) >= 2,
+        { id: "cabin.safety_demo", deck: "cabin", tags: ["social"], danger: "good",
+          label: "Perform the safety demonstration", cost: 34,
+          detail: "From memory, with the hand gestures, at the front, like they do.",
+          when: (S) => S.player.x <= cabin.FWD_CROSS_X,
           once: true,
           run(S) {
-              const names = S.pax.filter((p) => p.helper).map((p) => p.name);
-              for (const p of S.pax) if (p.helper) p.panic = Math.max(0, p.panic - 30);
-              return { text: PRS.util.listSentence(names) + ". You say all of it in twenty-six " +
-                  "seconds you could have spent carrying somebody, and every one of them is " +
-                  "going to remember being thanked by name in a burning aeroplane for the rest " +
-                  "of their lives.", kind: "good" };
-          } },
-
-        { id: "extra.blame", deck: "desperate", tags: ["social", "waste"], danger: "bad",
-          label: "Tell the cabin whose fault this is", cost: 20,
-          when: (S) => !!S.flags.chipConfessed,
-          once: true,
-          run(S) {
-              S.cabinPanic = Math.min(100, S.cabinPanic + 24);
-              const chip = S.pax.filter((p) => p.name === "Chip Vanterpool")[0];
-              if (chip) { chip.trust = -80; chip.panic = 100; }
-              PRS.state.note(S, "A passenger publicly identified the owner of the device during " +
-                  "the descent. The investigator notes that this served no operational purpose.");
-              return { text: "You tell four rows whose vape it was, at volume, with the seat " +
-                  "number. It changes nothing about the fire and it changes everything about " +
-                  "the next four minutes of one man's life.", kind: "bad" };
-          } },
-
-        { id: "extra.what_would_they_do", deck: "desperate", tags: ["look"],
-          label: "Ask yourself what a professional would do", cost: 11,
-          once: true,
-          run(S) {
-              return { text: "Cool the cell, protect the exits, move the people who cannot move " +
-                  "themselves, and tell somebody with a radio. In that order. You know all four " +
-                  "of those and you have been doing three of them in the wrong order for nine " +
-                  "minutes.", kind: "plain" };
-          } },
-
-        { id: "extra.write_it", deck: "desperate", tags: ["absurd"],
-          label: "Write down what is happening on the safety card", cost: 28,
-          detail: "The time, the row, the smell, the bin. Somebody will want it.",
-          when: (S) => cabin.rowAt(S.player.x) !== null,
-          once: true,
-          run(S) {
-              PRS.state.note(S, "A contemporaneous handwritten account was recovered from a " +
-                  "safety card in seat pocket " + S.player.seat + ". It is the most accurate " +
-                  "record of the first nine minutes in the entire investigation.");
-              return { text: "In biro, on the back of a laminated card, in the aisle, in smoke: " +
-                  "the time it started, the row, the smell, and what it sounded like. It is " +
-                  "going to be an exhibit.", kind: "good" };
+              let n = 0;
+              for (const p of S.pax) {
+                  if (p.state === "secured" || p.state === "dead") continue;
+                  p.braced = true;
+                  p.knowsRows = true;
+                  n++;
+              }
+              return { text: "You stand in the forward cross-aisle and do the whole demonstration " +
+                  "with both arms — exits, brace, masks, vests — to a cabin that is finally, for " +
+                  "the first time in the history of commercial aviation, watching it.\\n\\n" + n +
+                  " people now know where the doors are and what the brace position is.",
+                  kind: "great" };
           } },
     ]);
 })(window);

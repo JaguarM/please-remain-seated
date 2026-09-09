@@ -341,17 +341,6 @@
                   kind: "great" };
           } },
 
-        { id: "crew.ask_procedure", deck: "crew", tags: ["social"],
-          targets: near,
-          label: (S, t) => "Ask " + t.c.name + " what the procedure is",
-          cost: 16,
-          run(S, t) {
-              cred(S, 6);
-              return "“Locate, identify, extinguish, monitor. We do not open stowages. We do not " +
-                  "guess.” It is a good procedure, delivered flawlessly, by somebody who has not " +
-                  "yet located it.";
-          } },
-
         { id: "crew.follow", deck: "crew", tags: ["move"],
           targets: near,
           label: (S, t) => "Stay with " + t.c.name,
@@ -363,54 +352,7 @@
                   "not stop you.";
           } },
 
-        { id: "crew.block", deck: "crew", tags: ["social"], danger: "bad",
-          targets: near,
-          label: (S, t) => "Stand in " + t.c.name + "'s way",
-          cost: 12,
-          run(S, t) {
-              cred(S, -14);
-              t.c.refusals += 2;
-              return { text: "You put yourself in front of a member of cabin crew during an " +
-                  "in-flight emergency. There is a specific offence with a specific name for " +
-                  "this and it is going to be read out.", kind: "bad" };
-          } },
-
-        { id: "crew.grab", deck: "crew", tags: ["social"], danger: "bad",
-          targets: near,
-          label: (S, t) => "Take " + t.c.name + " by the arm",
-          cost: 10,
-          run(S, t) {
-              cred(S, -20);
-              S.cabinPanic = Math.min(100, S.cabinPanic + 8);
-              return { text: "You put a hand on a member of cabin crew. Four passengers stand up. " +
-                  "Not for the fire. For this.", kind: "bad" };
-          } },
-
-        { id: "crew.report_pax", deck: "crew", tags: ["social", "waste"],
-          targets: near,
-          label: (S, t) => "Complain to " + t.c.name + " about another passenger",
-          detail: "Somebody in this cabin is being extremely unhelpful and it is not you.",
-          cost: 24,
-          when: (S) => S.pax.some((p) => p.traits.indexOf("hostile") >= 0),
-          run(S, t) {
-              return { text: "You spend twenty-four seconds of a fifteen minute flight telling a " +
-                  "flight attendant about the man in 21F. She writes nothing down.", kind: "bad" };
-          } },
-
         // ---------------------------------------------------------------------- flight deck ---
-        { id: "crew.knock", deck: "crew", tags: ["social"],
-          label: "Knock on the flight deck door",
-          when: (S) => S.player.x <= 1,
-          cost: 12,
-          run(S) {
-              if (st.hasPerk(S, "flight_deck")) {
-                  return "You knock the way you knock, which is not the way a passenger knocks. " +
-                      "There is a pause, and then the interphone rings in the forward galley.";
-              }
-              return { text: "Nothing happens. It is a reinforced door with a camera on it and a " +
-                  "procedure behind it and it has been designed, very carefully, by people who " +
-                  "thought hard about somebody doing exactly this.", kind: "bad" };
-          } },
 
         { id: "crew.cockpit", deck: "crew", tags: ["social"], danger: "good",
           label: "Get into the flight deck",
@@ -451,22 +393,6 @@
                       "smoke they had been managing not to see.", kind: "good" };
               }
               return { text: "“We dim for landing.”", kind: "bad" };
-          } },
-
-        { id: "crew.obey", deck: "crew", tags: ["social", "waste"], danger: "bad",
-          targets: near,
-          label: (S, t) => "Do what " + t.c.name + " says",
-          detail: "Go back to your seat. Sit down. Fasten your belt.",
-          cost: 46,
-          run(S, t) {
-              const r = A.route(S, S.player.homeX, S.player.homeY);
-              if (r) A.travel(S, r);
-              S.player.seatedTurns++;
-              cred(S, 6);
-              t.c.obliging++;
-              return { text: "You go back to " + S.player.seat + " and you sit down and you " +
-                  "fasten your seatbelt, and for forty-six seconds you are the best passenger on " +
-                  "this aeroplane.", kind: "bad" };
           } },
     ]);
 })(window);

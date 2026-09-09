@@ -83,12 +83,12 @@ const FILES = [
     "game/data/endings.js",
     "game/data/actions-move.js",
     "game/data/actions-fire.js",
+    "game/data/actions-douse.js",
     "game/data/actions-people.js",
     "game/data/actions-crew.js",
     "game/data/actions-cabin.js",
     "game/data/actions-self.js",
     "game/data/actions-items.js",
-    "game/data/actions-desperate.js",
     "game/data/actions-extra.js",
     "game/data/actions-loot.js",
 ];
@@ -128,14 +128,16 @@ const BOTS = {
     },
 
     carry(PRS, S, list) {
-        const carrying = S.player.carrying.length;
+        const hands = S.player.carrying.length || (S.player.dragging ? 1 : 0);
         const safe = PRS.cabin.isSafeZone(S.player.x, S.player.y);
         return pickBy(list, (e) => {
-            if (carrying && safe && e.id === "people.put_down") return 200;
-            if (carrying && e.id === "move.fwd_galley") return 150;
-            if (carrying && e.id === "move.overwing") return 160;
-            if (!carrying && e.id === "people.carry") return 120 - e.cost * 0.3;
-            if (!carrying && e.id === "move.to_row") return 40 - e.cost * 0.4;
+            if (hands && safe && (e.id === "people.put_down" || e.id === "people.stop_drag")) return 200;
+            if (hands && (e.id === "move.fwd_galley" || e.id === "move.overwing")) return 160;
+            // Dragging is how you move anybody heavier than your arms, which for most of the cast
+            // is most of the aeroplane.
+            if (!hands && (e.id === "people.carry" || e.id === "people.drag")) return 120 - e.cost * 0.3;
+            if (!hands && e.id === "move.step") return 45;      // into the row, where the people are
+            if (!hands && e.id === "move.to_row") return 40 - e.cost * 0.4;
             if (e.deck === "move") return 10;
             return 0;
         });
@@ -144,24 +146,28 @@ const BOTS = {
     // What the game is actually about: recruit, delegate, and only then carry.
     good(PRS, S, list) {
         const st = PRS.state;
-        const carrying = S.player.carrying.length;
+        const carrying = S.player.carrying.length || (S.player.dragging ? 1 : 0);
         const safe = PRS.cabin.isSafeZone(S.player.x, S.player.y);
         const helpers = st.helperCount(S);
         return pickBy(list, (e) => {
-            if (carrying && safe && e.id === "people.put_down") return 300;
+            if (carrying && safe && (e.id === "people.put_down" ||
+                                     e.id === "people.stop_drag")) return 300;
             if (carrying && (e.id === "move.overwing" || e.id === "move.fwd_galley")) return 250;
             if (e.id === "fire.photograph" && !S.flags.havePhoto) return 240;
             if (e.id === "crew.show_photo") return 230;
             if (e.id === "cabin.trigger_detector" && !S.cabinFlags.detectorSounded) return 220;
-            if (e.id === "people.recruit" && helpers < 6) return 210 - e.cost * 0.2;
-            if (e.id === "people.recruit_row" && helpers < 6) return 215;
+            // Recruit early, then use your own arms. A helper found at minute two works for
+            // thirteen minutes; one found at minute twelve works for three.
+            const early = S.clock.elapsed < 330;
+            if (e.id === "people.recruit" && helpers < 6) return (early ? 210 : 120) - e.cost * 0.2;
+            if (e.id === "people.recruit_row" && helpers < 6) return early ? 215 : 100;
             if (e.id === "people.follow") return 200 - e.cost * 0.5;
-            if (e.id === "people.chain") return 205;
+            if (e.id === "people.chain") return 205 - e.cost * 0.6;
             if (e.id === "fire.tape_bin" || e.id === "fire.close_bin") return 180;
             if (e.id === "cabin.stow_trolley") return 175;
             // Once there are enough helpers, the best thing you can do is be a fourteenth pair
             // of arms yourself.
-            if (!carrying && e.id === "people.carry") {
+            if (!carrying && (e.id === "people.carry" || e.id === "people.drag")) {
                 const p = e.ctx && e.ctx.p;
                 const urgent = p && (p.state === "down" ||
                     p.traits.indexOf("immobile") >= 0 || p.traits.indexOf("elderly") >= 0);

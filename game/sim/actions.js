@@ -27,8 +27,7 @@
         crew:      { name: "Crew",        order: 3, hint: "They have the equipment and the procedure." },
         cabin:     { name: "The cabin",   order: 4, hint: "Bins, masks, doors, the trolley, the lav." },
         self:      { name: "Yourself",    order: 5, hint: "You are also a person on this aeroplane." },
-        items:     { name: "Your bag",    order: 6, hint: "Eight kilos of decisions made on the ground." },
-        desperate: { name: "Desperate",   order: 7, hint: "It is a long fifteen minutes." },
+        items:     { name: "Your bag",    order: 6, hint: "Three things and whatever you have found." },
     };
 
     function register(list) {

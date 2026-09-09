@@ -51,7 +51,6 @@
                 filmedAt: 0,
                 seatedTurns: 0,
                 lookedAtFire: ch.perks.indexOf("denial") < 0,
-                usedGun: false,
                 alive: true,
                 downedAt: null,
             },
@@ -79,7 +78,6 @@
                 lavAftOccupied: false,
                 binsOpen: {},
                 exitsArmed: true,
-                slideDeployed: false,
                 depressurised: false,
             },
 
@@ -98,7 +96,7 @@
                 stepsTaken: 0, carriesCompleted: 0, metresCarried: 0,
                 agentsUsed: 0, wordsSpoken: 0, timeArguing: 0, timeCarrying: 0,
                 timeFighting: 0, timeWasted: 0, helpersRecruited: 0, revives: 0,
-                gunShots: 0, filmed: 0,
+                filmed: 0,
             },
             ended: null,
         };

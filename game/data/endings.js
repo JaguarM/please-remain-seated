@@ -1,4 +1,4 @@
-// Fourteen ways for fifteen minutes to end.
+// Ten ways for fifteen minutes to end.
 //
 // None of them is "you put the fire out", because the fire does not go out, and none of them is a
 // clean win, because there is no arrangement of sixty seats and nine hundred seconds that gets
@@ -31,64 +31,28 @@
             },
         },
         {
-            id: "harmonica",
-            title: "THE HARMONICA",
-            when: (S, R) => (S.counts["desperate.harmonica"] || 0) >= 3,
+            id: "second_vape",
+            title: "THE OTHER ONE",
+            when: (S, R) => !!PRS.state.slotOf(S, "vape"),
             text(S, R) {
-                return "You played the harmonica three times on a burning aeroplane.\n\n" +
-                    "Sixty-one people were on board. " + R.secured + " of them were forward and " +
-                    "low when it landed. Every single one of the survivors, in every single one " +
-                    "of their statements, mentions the harmonica. Not the fire. Not the smoke. " +
-                    "Not the eleven-year-old you carried past four rows of people who were " +
-                    "telling you to sit down.\n\nThe harmonica.\n\n" +
-                    "The investigator's note reads, in full: “Witnesses consistent.”";
+                return "In your pocket, when they took your coat off you on the taxiway, there " +
+                    "was a vape pen.\n\nIt is not yours. You found it in the waste bin of the " +
+                    "aft lavatory " + PRS.util.mmss(S.flags.vapeFoundAt || 0) + " into the " +
+                    "descent and you put it in your pocket without deciding to, the way you " +
+                    "pick up a thing that should not be where it is.\n\nIt is the same make as " +
+                    "the one in the locker. The same cell, from the same batch, sold in the same " +
+                    "airside shop in the same terminal. Somebody used it in that cubicle, an hour " +
+                    "out, got frightened by how hot it was getting, and put it in a bin eleven " +
+                    "rows from the one that was already going.\n\nThey did not say anything. " +
+                    "They are on the taxiway too, in a foil blanket, being handed a cup of tea, " +
+                    "and they are never going to say anything.\n\n" + R.secured + " souls " +
+                    "secured. " + R.tally.unhurt + " walked off. " + R.lost + " not accounted " +
+                    "for.\n\nThe investigator will log the second unit as an incidental " +
+                    "recovery and it will appear once, in an appendix, in a list of items found " +
+                    "in the cabin, between a paperback and a single shoe.";
             },
         },
-        {
-            id: "gerald",
-            title: "GERALD",
-            when: (S, R) => S.flags.iguanaOut && R.secured >= 4,
-            text(S, R) {
-                return "At six minutes and forty seconds you released an iguana into a cabin " +
-                    "with a fire in it.\n\nWithin ninety seconds, eleven passengers who had " +
-                    "refused to acknowledge a fire were standing in the aisle. Four of them were " +
-                    "on their seats. Two had opened the overhead bins. One had found the smoke.\n\n" +
-                    R.secured + " souls were secured forward, and the reason " +
-                    "the cabin finally moved was not the smoke detector, the halon, the public " +
-                    "address system or you.\n\nGerald was recovered on the ground, unharmed, from " +
-                    "the flight deck door handle. He has been retired from service.";
-            },
-        },
-        {
-            id: "gunfire",
-            title: "DISCHARGE OF A FIREARM",
-            when: (S, R) => S.stats.gunShots > 0,
-            text(S, R) {
-                return "A firearm was discharged " + PRS.util.plural(S.stats.gunShots, "time") +
-                    " inside the pressure hull of an aircraft in flight, in the presence of an " +
-                    "uncontained fire.\n\n" + R.secured + " souls were secured forward. The " +
-                    "report is not going to talk about that part. The report is going to be " +
-                    "about the other part, for four hundred pages, and there is going to be a " +
-                    "second report about how the first report was handled.\n\n" +
-                    "You were right about the bin. That is going to come up in about eighteen " +
-                    "months and it is going to be a footnote.";
-            },
-        },
-        {
-            id: "slide",
-            title: "DOOR IN THE FLIGHT REGIME",
-            when: (S, R) => S.cabinFlags.slideDeployed,
-            text(S, R) {
-                return "You operated a door handle at altitude. It did not open, because it " +
-                    "cannot open, because there are four hundred kilonewtons of differential " +
-                    "pressure holding it shut and the handle is a very good handle.\n\n" +
-                    "What it did do was disarm, arm, and fire a slide pack into the cabin.\n\n" +
-                    "The slide is now the largest object in the aeroplane. It is between rows 14 " +
-                    "and 18. Everything aft of it is aft of it.\n\n" + R.secured +
-                    " souls were secured, all of them from the forward side, and " + R.lost +
-                    " were not, all of them from the other one.";
-            },
-        },
+
         {
             id: "sink",
             title: "THE ONE THING THAT WORKED",
@@ -139,24 +103,6 @@
                     R.lost + " not accounted for.\n\n" +
                     "The recommendation, when it comes, will be one sentence long and it will be " +
                     "about believing passengers.";
-            },
-        },
-        {
-            id: "duty_free",
-            title: "AN ACCELERANT EVENT",
-            when: (S, R) => (S.counts["fire.gin"] || 0) + (S.counts["fire.perfume"] || 0) +
-                            (S.counts["fire.sanitiser"] || 0) >= 3,
-            text(S, R) {
-                return "Three separate times, you put an alcohol on a fire.\n\n" +
-                    "The gin was forty per cent. The perfume was eighty. The hand gel was " +
-                    "seventy and it burns with a flame you cannot see in a lit cabin, which is " +
-                    "why you did it twice.\n\n" +
-                    "The fire reached " + R.fire.peak + " on a scale where thirty is a seat and " +
-                    "seventy is a row. " + R.secured + " souls were secured forward and " +
-                    R.lost + " were not.\n\n" +
-                    "You were the only person on this aeroplane who saw the fire coming. You were " +
-                    "also, and the report will have to find a way to say both of these things, " +
-                    "the largest single contributor to its growth.";
             },
         },
         {

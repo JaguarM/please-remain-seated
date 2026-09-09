@@ -192,6 +192,10 @@
         const spreadTo = [];
         let spread = 0;
 
+        // Containment leaks. Whatever you have done to the locker, the heat is working on it,
+        // so holding the fire in is something you keep doing rather than something you did.
+        f.core.contained = Math.max(0, f.core.contained - 0.006 * dt);
+
         // The core climbs. Nothing in the cabin stops this; things only slow it.
         const coreRate = f.core.rate
             * (f.core.inSink ? 0.30 : 1)
@@ -209,7 +213,7 @@
             f.ventCount++;
             f.core.lastVent = S.clock.elapsed;
             const ci = cabin.idx(f.core.x, f.core.y);
-            const violence = (1 - f.core.contained) * (f.core.inSink ? 0.35 : 1);
+            const violence = (1 - 0.55 * f.core.contained) * (f.core.inSink ? 0.35 : 1);
             f.intensity[ci] = Math.min(100, f.intensity[ci] + 55 * violence + 20);
             f.suppress[ci] = f.suppress[ci] * 0.25;
             f.smoke[ci] = Math.min(100, f.smoke[ci] + 34 * violence);

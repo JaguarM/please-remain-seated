@@ -17,38 +17,6 @@
 
     A.register([
         // -------------------------------------------------------------------------- the bag ---
-        { id: "items.inventory", deck: "items", tags: ["look"],
-          label: "Go through the bag", cost: 8,
-          run(S) {
-              if (!S.inventory.length) return "Nothing. You brought nothing. You are doing this " +
-                  "with your hands.";
-              const lines = S.inventory.map(function (s) {
-                  const uses = s.uses === null ? "" : " (" + s.uses + " left)";
-                  return s.item.name + uses + (s.wet ? " — wet" : "") +
-                         (s.spent ? " — finished" : "");
-              });
-              return "In the bag: " + PRS.util.listSentence(lines) + ".";
-          } },
-
-        { id: "items.read_note", deck: "items", tags: ["look"],
-          targets: (S) => S.inventory.filter((s) => !s.spent)
-                                     .map((s) => ({ key: s.id, s: s })),
-          label: (S, c) => "Think about the " + c.s.item.name.toLowerCase(),
-          detail: (S, c) => c.s.item.blurb,
-          cost: 4,
-          run(S, c) { return c.s.item.note; } },
-
-        { id: "items.drop", deck: "items", tags: ["hands"],
-          targets: (S) => S.inventory.filter((s) => !s.spent && s.item.kg > 0.8)
-                                     .map((s) => ({ key: s.id, s: s })),
-          label: (S, c) => "Drop the " + c.s.item.name.toLowerCase(),
-          detail: (S, c) => c.s.item.kg + "kg you are currently carrying around a burning aeroplane.",
-          cost: 3,
-          run(S, c) {
-              S.inventory = S.inventory.filter((s) => s !== c.s);
-              return "You put " + c.s.item.name.toLowerCase() + " on a seat and leave it. " +
-                  c.s.item.kg + " kilos lighter.";
-          } },
 
         { id: "items.give", deck: "items", tags: ["hands"],
           targets(S) {
@@ -81,37 +49,6 @@
           } },
 
         // ------------------------------------------------------------------ making things wet ---
-        { id: "items.soak_pillow", deck: "items", tags: ["hands"],
-          label: "Soak the neck pillow", cost: 10,
-          detail: "Memory foam holds a surprising amount of water and makes a real filter.",
-          when: (S) => atLav(S) && have(S, "pillow") && !slot(S, "pillow").wet,
-          run(S) {
-              slot(S, "pillow").wet = true;
-              S.player.wearing.pillow = true;
-              return { text: "Sixty pounds of memory foam neck pillow, held under a tap until it " +
-                  "stops taking any more, then over your face. You look like a person in the " +
-                  "worst photograph ever taken and you are breathing filtered air.", kind: "good" };
-          } },
-
-        { id: "items.soak_sock", deck: "items", tags: ["hands", "absurd"],
-          label: "Wet a sock and put it over your face", cost: 9,
-          when: (S) => atLav(S) && have(S, "sock"),
-          run(S) {
-              S.player.wearing.sock = true;
-              return { text: "A wet sock across the nose and mouth is, physically, exactly as " +
-                  "good as a wet flannel. It is the same object. You will never once feel that " +
-                  "way about it.", kind: "good" };
-          } },
-
-        { id: "items.tape_hood", deck: "items", tags: ["fiddly"], danger: "good",
-          label: "Tape the smoke hood seal down", cost: 14,
-          when: (S) => st.wearing(S, "hood") && have(S, "tape") && !S.flags.hoodTaped,
-          run(S) {
-              st.useCharge(S, slot(S, "tape"));
-              st.setFlag(S, "hoodTaped");
-              return { text: "Two turns of duct tape round the neck seal. It is not going to " +
-                  "come off and neither are you.", kind: "good" };
-          } },
 
         // -------------------------------------------------------------------- making a noise ---
         { id: "items.airhorn", deck: "items", tags: ["loud"], danger: "bad",
@@ -151,54 +88,7 @@
                   "which is you, which is what you wanted.";
           } },
 
-        { id: "items.megaphone_row", deck: "items", tags: ["loud", "social"], danger: "good",
-          label: (S) => "Give row " + cabin.rowAt(S.player.x) + " instructions through the megaphone",
-          when: (S) => have(S, "megaphone") && cabin.rowAt(S.player.x) !== null,
-          cost: 14,
-          run(S) {
-              const row = cabin.rowAt(S.player.x);
-              let n = 0;
-              for (const p of S.pax) {
-                  if (p.row !== row) continue;
-                  p.awareness = Math.min(100, p.awareness + 40);
-                  p.trust = Math.min(100, p.trust + 18);
-                  n++;
-              }
-              return { text: "You tell row " + row + ", loudly and simply, what is happening and " +
-                  "what to do. " + n + " people hear the same sentence at the same time, which " +
-                  "has not happened once this flight.", kind: "good" };
-          } },
-
         // ------------------------------------------------------------------------- the iguana ---
-        { id: "items.release_iguana", deck: "items", tags: ["absurd"], danger: "neutral",
-          label: "Release Gerald", cost: 8,
-          detail: "An iguana in a cabin will do what nine minutes of shouting has not.",
-          when: (S) => have(S, "goldfish") && !S.flags.iguanaOut,
-          run(S) {
-              st.setFlag(S, "iguanaOut");
-              for (const p of S.pax) {
-                  p.awareness = Math.min(100, p.awareness + 26);
-                  if (p.state === "asleep") p.state = "seated";
-              }
-              S.cabinAwareness = Math.min(100, S.cabinAwareness + 26);
-              S.cabinPanic = Math.min(100, S.cabinPanic + 20);
-              return { text: "Gerald goes down the aisle at a speed no iguana has any business " +
-                  "having. Nine people who would not stand up for a fire stand up for Gerald. " +
-                  "Two of them are now, technically, in the aisle and available.", kind: "neutral" };
-          } },
-
-        { id: "items.catch_iguana", deck: "items", tags: ["absurd", "waste"],
-          label: "Catch Gerald", cost: 34,
-          when: (S) => !!S.flags.iguanaOut && !S.flags.iguanaCaught,
-          run(S) {
-              if (S.rng.chance(0.4)) {
-                  st.setFlag(S, "iguanaCaught");
-                  return "Thirty-four seconds, four rows, and one apology to a woman whose lap he " +
-                      "went across. You have the iguana.";
-              }
-              return { text: "Thirty-four seconds of an adult chasing an iguana up a burning " +
-                  "aeroplane. He is now on the flight deck door handle.", kind: "bad" };
-          } },
 
         { id: "items.carrier_child", deck: "items", tags: ["carry"], danger: "good",
           targets: (S) => st.reachable(S).filter((p) => PRS.pax.isChild(p) || PRS.pax.isPet(p))
@@ -280,68 +170,6 @@
                   "worth about ninety seconds to everybody in the last six rows.", kind: "good" };
           } },
 
-        { id: "items.laptop_wedge", deck: "items", tags: ["absurd"],
-          label: "Wedge the laptop under the bin latch", cost: 12,
-          when: (S) => have(S, "laptop") && Math.abs(S.player.x - S.fire.core.x) <= 1,
-          run(S) {
-              PRS.fire.starve(S.fire, S.fire.core.x, S.fire.core.y, 0.5);
-              S.inventory = S.inventory.filter((s) => s.id !== "laptop");
-              return { text: "You jam seventeen hundred quid of work laptop into the gap between " +
-                  "the locker and the ceiling panel to hold it shut. It is the best thing that " +
-                  "laptop has ever done.", kind: "good" };
-          } },
-
-        { id: "items.powerbank_away", deck: "items", tags: ["hands"], danger: "good",
-          label: "Get the power bank away from you", cost: 10,
-          detail: "You are carrying twenty thousand milliamp hours of the same problem.",
-          when: (S) => have(S, "powerbank") && !S.flags.powerbankDitched,
-          run(S) {
-              st.setFlag(S, "powerbankDitched");
-              S.inventory = S.inventory.filter((s) => s.id !== "powerbank");
-              return { text: "You put it in the lavatory sink under the tap and leave it there, " +
-                  "which is exactly what should have happened to the one in the locker at some " +
-                  "point in the last nine minutes.", kind: "good" };
-          } },
-
-        { id: "items.crossword_self", deck: "items", tags: ["absurd", "waste"],
-          label: "Do a clue", cost: 20,
-          detail: "Nineteen across. Four letters. You have had it since Tuesday.",
-          when: (S) => have(S, "crossword"),
-          run(S) {
-              S.player.panic = Math.max(0, S.player.panic - 30);
-              const n = (S.counts["items.crossword_self"] || 0) + 1;
-              if (n === 1) return "Nineteen across: “Burning issue, ultimately, in a container " +
-                  "aloft (4).” You stare at it for twenty seconds. It is not going to be that. " +
-                  "It cannot be that.";
-              return "You do another clue standing in an aisle at eleven thousand feet and your " +
-                  "hands stop shaking for as long as it takes.";
-          } },
-
-        { id: "items.rosary", deck: "items", tags: ["self"],
-          label: "Hold the rosary", cost: 8,
-          when: (S) => have(S, "rosary"),
-          run(S) {
-              S.player.panic = Math.max(0, S.player.panic - 18);
-              st.setFlag(S, "prayed");
-              return "Olive wood, worn smooth at one decade and not at the others. You are not " +
-                  "praying. You are holding it.";
-          } },
-
-        { id: "items.laser_pax", deck: "items", tags: ["absurd", "social"],
-          targets: (S) => S.pax.filter((p) => p.state !== "secured" && p.state !== "dead" &&
-                                              Math.abs(p.x - S.player.x) > 2)
-                                .slice(0, 8).map((p) => ({ key: p.id, p: p })),
-          when: (S) => have(S, "laser"),
-          label: (S, c) => "Put the laser dot on " + c.p.name,
-          detail: "From here. They will look. Everybody looks at a laser dot.",
-          cost: 5,
-          run(S, c) {
-              c.p.awareness = Math.min(100, c.p.awareness + 20);
-              c.p.trust -= 6;
-              return c.p.name + " looks down at the green dot on their chest, then up, then all " +
-                  "round the cabin, and does not once look at the locker.";
-          } },
-
         { id: "items.tape_seat", deck: "items", tags: ["fiddly"],
           label: "Tape a route marker on the seat backs", cost: 18,
           detail: "A strip of tape every row so somebody in smoke can follow it forward.",
@@ -353,22 +181,6 @@
               return { text: "You run a strip of duct tape along the aisle seat backs, one per " +
                   "row, all the way to the forward cross-aisle. In smoke you cannot see through, " +
                   "a hand can follow that.", kind: "great" };
-          } },
-
-        { id: "items.harmonica_calm", deck: "items", tags: ["absurd", "social"],
-          label: "Play something on the harmonica", cost: 20,
-          when: (S) => have(S, "harmonica"),
-          run(S) {
-              let n = 0;
-              for (const p of st.withinEarshot(S, 3)) {
-                  p.panic = Math.max(0, p.panic - 26);
-                  n++;
-              }
-              S.player.panic = Math.max(0, S.player.panic - 20);
-              S.counts["desperate.harmonica"] = (S.counts["desperate.harmonica"] || 0) + 1;
-              return { text: "You play about eleven bars of something in C, badly, in a burning " +
-                  "aeroplane. " + n + " people stop panicking. Nobody can tell you why and " +
-                  "neither can the game.", kind: "good" };
           } },
     ]);
 })(window);

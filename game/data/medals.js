@@ -1,9 +1,8 @@
-// Forty-eight things you can be found to have done, checked after every action and printed at
-// the bottom of the incident report under the heading OTHER OBSERVATIONS.
+// The things you can be found to have done, checked after every action and printed at the
+// bottom of the incident report under the heading OTHER OBSERVATIONS.
 //
-// They are not achievements in the sense of being good. About a third of them are the report
-// noticing something embarrassing, and two of them are the only way to unlock the last two
-// characters.
+// They are not achievements in the sense of being good, and ten of them are the only way to
+// unlock the ten characters you do not start with.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -23,12 +22,6 @@
         { id: "thirty_agents", name: "Not the point",
           text: "Thirty applications of suppressant. Thirty. The report has counted them.",
           when: (S) => S.stats.agentsUsed >= 30 },
-        { id: "accelerant", name: "Chemically illiterate",
-          text: "Put an alcohol on a fire, on purpose, having been told.",
-          when: (S) => used(S, "fire.gin") || used(S, "fire.perfume") || used(S, "fire.sanitiser") },
-        { id: "all_three", name: "The complete duty free",
-          text: "Spirits, perfume and hand gel. All three. In one flight.",
-          when: (S) => used(S, "fire.gin") && used(S, "fire.perfume") && used(S, "fire.sanitiser") },
         { id: "starved", name: "Understood the problem",
           text: "Closed the bin instead of fighting the flame, which is what the manual says.",
           when: (S) => S.fire.core.contained > 0.5 },
@@ -130,41 +123,18 @@
         { id: "calm", name: "Never above thirty",
           text: "Went through the whole thing without your panic reaching thirty.",
           when: (S) => S.clock.landed && S.stats.maxPanic !== undefined && S.stats.maxPanic < 30 },
-        { id: "never_sat", name: "Never sat down",
-          text: "Was asked to sit down repeatedly and did not, once.",
-          when: (S) => S.clock.landed && !has(S, "self.sit") },
-        { id: "sat_down", name: "Sat down",
-          text: "Was asked to sit down, and did.",
-          when: (S) => used(S, "self.sit") },
+        { id: "found_vape", name: "The other one",
+          text: "Found a second vape, of the same make and with the same cell, in the aft " +
+                "lavatory bin, eleven rows from the fire. Somebody put it there and said nothing.",
+          when: (S) => !!PRS.state.slotOf(S, "vape") },
         { id: "filmed_it", name: "Content",
           text: "Filmed the fire. The footage is very good. That is the problem.",
           when: (S) => S.stats.filmed >= 3 },
 
         // -------------------------------------------------------------------------- absurd ---
-        { id: "harmonica", name: "Played the harmonica",
-          text: "Played a harmonica in a burning cabin. There are witnesses.",
-          when: (S) => used(S, "desperate.harmonica") },
-        { id: "named_it", name: "Named the fire",
-          text: "Gave the fire a name. The report has recorded the name.",
-          when: (S) => !!S.flags.fireName },
-        { id: "apologised", name: "Apologised to the fire",
-          text: "Apologised. To the fire. Out loud. In front of people.",
-          when: (S) => used(S, "desperate.apologise") },
-        { id: "gerald", name: "Released Gerald",
-          text: "Released an iguana into a cabin that was already having a difficult afternoon.",
-          when: (S) => !!S.flags.iguanaOut },
-        { id: "gun", name: "Discharged a firearm",
-          text: "Fired a gun. Inside an aeroplane. That was on fire.",
-          when: (S) => S.stats.gunShots > 0 },
-        { id: "slide", name: "Deployed a slide",
-          text: "Deployed an evacuation slide at altitude. The airline will be writing to you.",
-          when: (S) => S.cabinFlags.slideDeployed },
         { id: "call_button", name: "Forty times",
           text: "Pressed the call button forty times. It was heard. It was ignored.",
           when: (S) => has(S, "crew.call_button") >= 40 },
-        { id: "ate_pretzels", name: "Ate the pretzels",
-          text: "Ate the pretzels yourself, during, standing up.",
-          when: (S) => used(S, "self.pretzels") },
 
         // ------------------------------------------------ the ones that open a character ------
         { id: "five_down", name: "Sixteen went quiet",

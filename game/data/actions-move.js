@@ -229,22 +229,6 @@
         },
 
         {
-            id: "move.own_seat",
-            deck: "move",
-            tags: ["move"],
-            label: (S) => "Go back to " + S.player.seat,
-            detail: "Where several people have suggested you should be.",
-            when: (S) => (S.player.x !== S.player.homeX || S.player.y !== S.player.homeY) &&
-                         !!route(S, S.player.homeX, S.player.homeY),
-            cost: (S) => { const r = route(S, S.player.homeX, S.player.homeY); return r ? r.cost : 99; },
-            run(S) {
-                const r = route(S, S.player.homeX, S.player.homeY);
-                travel(S, r);
-                return "You are back in " + S.player.seat + ". It is exactly as you left it.";
-            },
-        },
-
-        {
             id: "move.to_lav",
             deck: "move",
             tags: ["move"],
@@ -389,28 +373,6 @@
                 }
                 return "You go under the seats on your front, past " + moved + " rows of ankles, " +
                        "in air nobody else on this aeroplane can reach. " + arrival(S);
-            },
-        },
-
-        {
-            id: "move.look_around",
-            deck: "move",
-            tags: ["look"],
-            label: "Look down the cabin",
-            detail: "Stop. Actually look at it. Count.",
-            cost: 6,
-            run(S) {
-                const f = S.fire;
-                const burning = PRS.fire.burningTiles(f);
-                const smoke = PRS.fire.totalSmoke(f);
-                const standing = S.pax.filter((p) => p.state === "aisle" || p.state === "standing").length;
-                const down = st.downCount(S);
-                const secured = st.securedCount(S);
-                return "You stop and count. " + burning + " tiles of this cabin have flame in " +
-                    "them. The smoke is " + PRS.fire.describeSmoke(smoke) + ". " + standing +
-                    " people are on their feet, " + down + " are not conscious, and " + secured +
-                    " are forward and out of it. Sixty-one souls. You have " +
-                    PRS.util.mmss(S.clock.remaining) + ".";
             },
         },
     ]);

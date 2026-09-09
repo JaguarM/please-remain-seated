@@ -209,13 +209,14 @@
             blurb: "Seat 20A, aisle side, back to the bulkhead, eleven years of watching people " +
                    "and a sidearm that is about to be of no use whatsoever.",
             stats: { strength: 8, speed: 6, lungs: 6, nerve: 8, voice: 7 },
-            perks: ["authority", "restrain", "armed"],
+            perks: ["authority", "restrain", "deferred"],
             perkName: "Authority",
             perkText: "The badge ends any argument instantly, and you can physically restrain the " +
                       "passengers who are getting in everyone's way.",
-            flawName: "Armed",
-            flawText: "You are carrying a firearm in a pressurised cabin with a fire in it. Every " +
-                      "single use of it makes today worse. It is always in the list.",
+            flawName: "Deferred to",
+            flawText: "A cabin with somebody in charge in it stops organising itself. People " +
+                      "wait to be told, and then wait to be told again, so the helpers you " +
+                      "recruit bring almost nobody else in.",
             hair: "#2b2118", skin: "#d9a279", shirt: "#4f5a68",
             open: "You have been watching seat 14C for an hour. For the wrong reasons.",
             locked: true,

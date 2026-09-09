@@ -44,6 +44,10 @@ the meal service, pointing at a closed locker. Credibility rises when the eviden
 — a photograph, an open bin, a burn on your hand, the lavatory smoke detector — and every social
 action in the game is gated behind it.
 
+**You cannot ask the fire how it is doing.** There is no action that reads out its intensity, how
+many cells are left, or when the next one goes. You can see the fire, on the screen, in the row it
+is in. That is the readout, and it is the same one everybody else on the aeroplane has.
+
 **You cannot save everybody.** You can carry about fourteen people in fifteen minutes. There are
 sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference
 between three and twenty-seven, and the route to the top of that range is not in the fire deck.
@@ -57,27 +61,29 @@ its own locked card, so the roster is a list of things to try rather than a wall
 What is in it
 -------------
 
-- **325 hand-written actions** across eight decks, each with its own cost, conditions and line of
-  text. Actions with targets appear once per target, so a turn offers **a hundred and thirty
-  concrete options** at the median and over four hundred at the worst moment in the cabin — and
-  the list only ever contains things that are actually possible right now.
+- **188 hand-written actions** across seven decks, each with its own cost, conditions and line of
+  text. A turn offers about **seventy concrete options**, and the list only ever contains things
+  that are actually possible right now. There were 325 of them until a playtest said the options
+  were the ridiculous part rather than the story; the 139 that went were flavour, near-duplicates,
+  readouts of the fire's state, and things whose only function was to make the day worse.
 - **Twelve playable characters**, two to start and ten earned, on five stats — strength, speed,
   lungs, nerve, voice — with a signature ability and a genuine flaw each. A retired fire officer
   who is the slowest person in the cast. An eight-year-old who fits under the seats and cannot
   lift an adult. An air marshal with a firearm and no useful application for it.
 - **Six outfits**, which do nothing at all except move your five numbers, and **three item slots**
   — the airline's cabin baggage allowance, still being enforced while its aeroplane is on fire.
-- **Forty-three items**, of which only twelve are ever in your bag. The rest are already aboard:
-  eight in the galley drawers, the seat pockets and the footwells, and **twenty-three in other
-  passengers' laps**, which means the way you get equipped is by talking to people.
+- **Twenty-eight items**, of which ten are ever in your bag. The rest are already aboard: four in
+  the galley drawers, the seat pockets and the footwells, and **thirteen in other passengers'
+  laps**, which means the way you get equipped is by talking to people. And one more, which is in
+  a bin at the back and does nothing at all.
 - **Sixty named passengers**, each with a weight, a temperament, a seat and an opinion, and a
   **helper system** that is the only thing in the game that scales.
 - Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
 - A **fire, smoke and heat simulation** over a 30×9 cabin grid, ventilation-limited, with a core
   that suppression cannot touch.
-- **Forty-eight medals**, **fourteen endings**, and an **incident report** written in the flat
-  voice of an air accident investigator: every soul on board by seat with what happened to them,
-  your own actions quoted back in order, and where the fifteen minutes went.
+- **Forty-three medals**, **ten endings**, and an **incident report** written in the flat voice of
+  an air accident investigator: every soul on board by seat with what happened to them, your own
+  actions quoted back in order, and where the fifteen minutes went.
 
 Controls
 --------
@@ -130,7 +136,7 @@ palette key without a colour.
 Testing it
 ----------
 
-The game is three hundred and twenty-five hand-written functions that all touch one world, so it is tested by
+The game is a couple of hundred hand-written functions that all touch one world, so it is tested by
 being played, a great many times, by things that are not people.
 
 ```bash
@@ -140,6 +146,9 @@ node tools/coverage.js --verbose  # ...and print what each one said
 
 node tools/dump_frame.js --at=480 --seed=447   # play to a moment and dump it
 python tools/render_frame.py --scale=4         # draw that moment as a PNG
+
+python tools/trim_actions.py --list            # every action id, by file
+python tools/trim_actions.py fire.spit         # remove one, brace-matched, comment and all
 ```
 
 `simulate.js` finds the crashes and prints the tuning table. The numbers below are what the design
@@ -147,18 +156,23 @@ is aiming at, and they were found with it rather than guessed:
 
 | bot | what it does | souls secured of 60 | not accounted for |
 |-----|--------------|---------------------|-------------------|
-| `fire` | only fights the fire | **1.9** | 17.5 |
-| `novelty` | always takes the thing it has taken least | 4.0 | 14.4 |
-| `idle` | never leaves its seat | 6.9 | 16.3 |
-| `random` | picks uniformly from everything | 8.1 | 13.2 |
-| `carry` | carries people, one at a time | 16.4 | 11.3 |
-| `good` | recruits, delegates, then carries | **17.8** (best 28) | 12.3 |
+| `fire` | only fights the fire | **2.7** | 6.7 |
+| `idle` | never leaves its seat | 6.1 | 16.8 |
+| `novelty` | always takes the thing it has taken least | 10.5 | 6.3 |
+| `random` | picks uniformly from everything | 10.7 | 11.8 |
+| `carry` | carries and drags, one at a time | 21.1 | 11.3 |
+| `good` | recruits early, then carries | **26.4** (best 38) | 11.1 |
+
+The fire bot is the interesting row. It secures almost nobody and it has the fewest casualties,
+because holding a fire down really does keep a cabin breathable — it just leaves everybody in the
+seat they started in. That tension is the game: the score is souls you moved, and the fire is a
+thing you can spend your whole afternoon on and be able to justify afterwards.
 
 If the fire bot ever scores well, the game has stopped being about the thing it is about.
 
-`coverage.js` walks the registry instead of playing: for each of the 325 definitions it builds a
+`coverage.js` walks the registry instead of playing: for each of the 188 definitions it builds a
 world designed to make that one possible, stands the player in every plausible place, and performs
-it. It currently reports **325 of 325 reachable, none throw**. It has already found one action
+it. It currently reports **188 of 188 reachable, none throw**. It has already found one action
 that asked for an item which had never been added to `items.js`, and so could never have appeared
 in a real game at all.
 

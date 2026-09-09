@@ -106,20 +106,6 @@
         },
 
         {
-            id: "people.carry_blocked", deck: "people", tags: ["carry"], danger: "neutral",
-            targets: (S) => reach(S).filter((c) => c.p.state !== "carried" &&
-                                                   c.p.state !== "secured"),
-            when: (S, c) => !P.canCarry(S, c.p),
-            label: (S, c) => "Try to lift " + who(c),
-            detail: (S, c) => c.p.kg + "kg. You have doubts.",
-            cost: 8,
-            run(S, c) {
-                PRS.audio.play("refuse");
-                return { text: P.refusalFor(S, c.p), kind: "bad" };
-            },
-        },
-
-        {
             id: "people.put_down", deck: "people", tags: ["carry"], danger: "good",
             targets: carried,
             label: (S, c) => cabin.isSafeZone(S.player.x, S.player.y)
@@ -484,69 +470,6 @@
         },
 
         {
-            id: "people.plead", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            label: (S, c) => "Beg " + who(c),
-            detail: "Please. It is not dignified and it is not nothing.",
-            cost: 16,
-            run(S, c) {
-                const roll = say(S, c.p, "please", { bonus: 12 });
-                if (roll.ok) {
-                    c.p.trust = Math.min(100, c.p.trust + 24);
-                    c.p.belted = false;
-                    return { text: "“...All right. All right, don't. All right.” " + c.p.name +
-                        " gets up.", kind: "good" };
-                }
-                return { text: c.p.name + " looks away from you, which is somehow the worst " +
-                    "response available.", kind: "bad" };
-            },
-        },
-
-        {
-            id: "people.name", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            label: (S, c) => "Ask " + who(c) + " their name",
-            detail: "People do things for people who know their name. It is a cheap trick.",
-            cost: 9,
-            run(S, c) {
-                c.p.trust = Math.min(100, c.p.trust + 20);
-                c.p.panic = Math.max(0, c.p.panic - 8);
-                return "“" + c.p.name + ".” You say it back to them. Something in their face " +
-                    "changes and they are, from now on, slightly easier to talk to.";
-            },
-        },
-
-        {
-            id: "people.hold_hand", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            label: (S, c) => "Hold " + who(c) + "'s hand",
-            cost: 12,
-            run(S, c) {
-                c.p.panic = Math.max(0, c.p.panic - 30);
-                c.p.trust = Math.min(100, c.p.trust + 20);
-                S.player.panic = Math.max(0, S.player.panic - 8);
-                return "You hold " + c.p.name + "'s hand for twelve seconds. Both of you are " +
-                    "steadier afterwards and neither of you says anything about it.";
-            },
-        },
-
-        {
-            id: "people.pray_with", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            when: (S) => !!st.slotOf(S, "rosary") || st.hasPerk(S, "flock"),
-            label: (S, c) => "Pray with " + who(c),
-            cost: 18,
-            run(S, c) {
-                c.p.panic = Math.max(0, c.p.panic - 40);
-                c.p.trust = Math.min(100, c.p.trust + 30);
-                st.setFlag(S, "prayed");
-                return "You pray with " + c.p.name + ". Neither of you is particularly good at " +
-                    "it. It works about as well as anything else in this deck and it takes " +
-                    "eighteen seconds you do not have.";
-            },
-        },
-
-        {
             id: "people.threaten", deck: "people", tags: ["social"], danger: "bad",
             targets: reachAwake,
             label: (S, c) => "Threaten " + who(c),
@@ -655,39 +578,6 @@
                 c.p.state = "seated";
                 c.p.awareness = Math.min(100, c.p.awareness + 40);
                 return c.p.name + " comes up out of it badly. " + c.p.refuse;
-            },
-        },
-
-        {
-            id: "people.slap", deck: "people", tags: ["hands"], danger: "bad",
-            targets: (S) => reach(S).filter((c) => c.p.state === "asleep" || c.p.state === "down"),
-            label: (S, c) => "Slap " + who(c),
-            cost: 5,
-            run(S, c) {
-                PRS.audio.play("slap");
-                if (c.p.state === "asleep") {
-                    c.p.state = "seated";
-                    c.p.awareness = 60;
-                    c.p.trust -= 25;
-                    return { text: "You slap " + c.p.name + " awake. It works instantly and it " +
-                        "has cost you the entire relationship.", kind: "plain" };
-                }
-                return { text: "Nothing. " + c.p.name + " is not asleep. Slapping does not treat " +
-                    "smoke inhalation and you knew that.", kind: "bad" };
-            },
-        },
-
-        {
-            id: "people.check", deck: "people", tags: ["hands"],
-            targets: (S) => reach(S).filter((c) => c.p.state === "down"),
-            label: (S, c) => "Check " + who(c) + " for a pulse",
-            cost: 8,
-            run(S, c) {
-                const cond = P.condition(c.p);
-                if (cond.tier >= 4) return { text: "There is one. It is fast and it is small and " +
-                    c.p.name + " needs to be somewhere else in the next four minutes.", kind: "bad" };
-                return "There is a pulse and there is breathing. " + c.p.name + " has stopped " +
-                    "being able to help and has not stopped being alive.";
             },
         },
 
@@ -821,20 +711,6 @@
             },
         },
 
-        {
-            id: "people.armrest", deck: "people", tags: ["hands", "fiddly"],
-            targets: (S) => reach(S).filter((c) => c.p.traits.indexOf("large") >= 0 ||
-                                                   c.p.state === "down"),
-            label: (S, c) => "Lift the armrest beside " + who(c),
-            detail: "It goes up. Almost nobody knows it goes up.",
-            cost: 6,
-            run(S, c) {
-                c.p.armrestUp = true;
-                return "The armrest goes up into the seat back. Getting " + c.p.name + " out of " +
-                    "that row just got a great deal easier.";
-            },
-        },
-
         // -------------------------------------------------------------------------- giving ---
         {
             id: "people.give_water", deck: "people", tags: ["hands"],
@@ -886,19 +762,6 @@
         },
 
         {
-            id: "people.give_crossword", deck: "people", tags: ["hands"],
-            targets: (S) => reachAwake(S).filter((c) => c.p.panic > 55),
-            when: (S) => !!st.slotOf(S, "crossword"),
-            label: (S, c) => "Give " + who(c) + " the crossword",
-            cost: 6,
-            run(S, c) {
-                c.p.panic = Math.max(0, c.p.panic - 44);
-                return c.p.name + " stops panicking in order to be annoyed that you have done " +
-                    "eleven across in pen and got it wrong.";
-            },
-        },
-
-        {
             id: "people.give_torch", deck: "people", tags: ["hands"],
             targets: reachAwake,
             when: (S) => !!st.slotOf(S, "torch"),
@@ -913,83 +776,7 @@
             },
         },
 
-        {
-            id: "people.take_phone", deck: "people", tags: ["hands"], danger: "bad",
-            targets: (S) => reachAwake(S).filter((c) => c.p.panic > 40),
-            label: (S, c) => "Take " + who(c) + "'s phone off them",
-            cost: 7,
-            run(S, c) {
-                c.p.trust -= 30;
-                c.p.panic = Math.min(100, c.p.panic + 18);
-                return { text: "You take a stranger's phone out of their hands. It is the single " +
-                    "most provocative thing you have done all afternoon and you have set fire " +
-                    "to things today.", kind: "bad" };
-            },
-        },
-
         // ------------------------------------------------------------------------- the ones ---
-        {
-            id: "people.message", deck: "people", tags: ["social"],
-            targets: (S) => reachAwake(S).filter((c) => c.p.panic > 60),
-            label: (S, c) => "Take a message from " + who(c),
-            detail: "For afterwards. In case there is an afterwards for one of you and not the other.",
-            cost: 22,
-            run(S, c) {
-                c.p.panic = Math.max(0, c.p.panic - 30);
-                c.p.trust = Math.min(100, c.p.trust + 40);
-                st.setFlag(S, "carriedAMessage");
-                PRS.state.note(S, "Passenger " + c.p.name + " asked a fellow passenger to pass on " +
-                    "a message. The message was passed on.");
-                return { text: c.p.name + " tells you a name and an address and one sentence, and " +
-                    "makes you say it back. Twenty-two seconds. You will remember all of it for " +
-                    "the rest of your life.", kind: "plain" };
-            },
-        },
-
-        {
-            id: "people.goodbye", deck: "people", tags: ["social"],
-            targets: (S) => reach(S).filter((c) => P.condition(c.p).tier >= 3),
-            label: (S, c) => "Say goodbye to " + who(c),
-            cost: 15,
-            run(S, c) {
-                S.player.panic = Math.min(100, S.player.panic + 12);
-                return { text: "You say goodbye to " + c.p.name + ", who does not hear it, in a " +
-                    "cabin where sixty people are doing something else.", kind: "plain" };
-            },
-        },
-
-        {
-            id: "people.apologise", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            label: (S, c) => "Apologise to " + who(c),
-            cost: 8,
-            run(S, c) {
-                c.p.trust = Math.min(100, c.p.trust + 16);
-                return "You apologise to " + c.p.name + " for something, and neither of you is " +
-                    "entirely clear what.";
-            },
-        },
-
-        {
-            id: "people.swap_seat", deck: "people", tags: ["social"], danger: "good",
-            targets: (S) => reachAwake(S).filter((c) => c.p.row > 12),
-            label: (S, c) => "Swap seats with " + who(c),
-            detail: "Your seat is further forward than theirs. That is the whole offer.",
-            when: (S, c) => c.p.row > cabin.rowAt(S.player.homeX),
-            cost: 26,
-            run(S, c) {
-                const roll = P.convince(S, c.p, 20);
-                if (!roll.ok) return { text: c.p.name + " does not want your seat, on principle, " +
-                    "which is a principle they are going to revisit.", kind: "bad" };
-                c.p.homeX = S.player.homeX; c.p.homeY = S.player.homeY;
-                c.p.x = c.p.homeX; c.p.y = c.p.homeY;
-                c.p.row = cabin.rowAt(c.p.homeX);
-                st.reindex(S);
-                return { text: c.p.name + " takes your seat, eight rows further from the fire, and " +
-                    "you take theirs. Nothing about the fire has changed and one person's " +
-                    "afternoon has.", kind: "good" };
-            },
-        },
 
         {
             id: "people.follow", deck: "people", tags: ["social"], danger: "good",
