@@ -348,3 +348,55 @@ button.big:hover { background: #4b6191; }
 ::-webkit-scrollbar-track { background: #12151a; }
 ::-webkit-scrollbar-thumb { background: #333a46; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #454e5d; }
+
+/* --------------------------------------------------- the three-step picker (v2 loadout) --- */
+
+/* A locked character is a goal, not a blank. The card shows the name, the face and exactly what
+   you have to do, because a row of question marks is not something anybody can aim at. */
+.char.locked { opacity: 1; cursor: default; filter: grayscale(0.7); }
+.char.locked .char-face { opacity: .45; }
+.char.locked:hover { background: var(--panel); border-color: var(--line); }
+.char-lock { grid-column: 2; margin-top: 6px; }
+.lock-tag {
+  font: 9px var(--mono); letter-spacing: .12em; color: var(--ink-faint);
+  border: 1px solid var(--line); border-radius: 2px; padding: 1px 4px;
+}
+.char-lock i { display: block; font-style: normal; font-size: 11px; color: var(--warn); margin-top: 4px; }
+
+.stat-fill.up { background: var(--good); }
+.stat-fill.down { background: #b06a5a; }
+.stat b.up { color: var(--good); }
+.stat b.down { color: #e08076; }
+.big-stats .stat { grid-template-columns: 30px 1fr 18px; margin-bottom: 3px; }
+.big-stats .stat-track { height: 6px; }
+.big-stats .stat span, .big-stats .stat b { font-size: 11px; }
+
+.outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.outfit { text-align: left; background: var(--panel); padding: 11px 12px; }
+.outfit.on { border-color: var(--gold); background: #2b2f38; }
+.outfit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.outfit-head b { font-size: 14px; }
+.outfit-mod { font: 10px var(--mono); color: var(--gold); white-space: nowrap; }
+.outfit i { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim); margin: 6px 0 4px; }
+.outfit u { display: block; text-decoration: none; font-size: 11px; color: var(--blue); }
+
+/* Three slots, drawn as three slots, so the size of the decision is visible before it is made. */
+.slots { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.slot {
+  display: flex; align-items: center; gap: 8px; min-width: 210px;
+  border: 1px dashed var(--line); border-radius: 4px; padding: 8px 10px;
+  background: #191c22;
+}
+.slot.filled { border-style: solid; border-color: var(--good); background: #202a24; }
+.slot b { font-size: 12px; font-weight: 500; }
+.slot:not(.filled) b { color: var(--ink-faint); font-weight: 400; }
+.slot-empty {
+  width: 48px; height: 48px; display: grid; place-items: center;
+  font: 700 20px var(--mono); color: #2f3540;
+}
+
+/* The bag grid lost its weight column when the allowance became a slot count. */
+.item { grid-template-columns: 48px 1fr; }
+/* A full bag dims the rest rather than blocking them: clicking one swaps out the oldest. */
+.item.dim { opacity: .62; }
+.item.dim:hover { opacity: 1; }

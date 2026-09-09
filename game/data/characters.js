@@ -35,6 +35,9 @@
                       "you more than it costs anyone else.",
             hair: "#dfe3e6", skin: "#e5b791", shirt: "#4f5a68",
             open: "You have smelled this before. Nobody else on this aeroplane has.",
+            locked: true,
+            unlock: "Open the overhead locker and look at what is actually in it.",
+            unlockKey: "seen_it",
         },
         {
             id: "kip",
@@ -71,6 +74,9 @@
                       "extra credibility to land.",
             hair: "#1d1712", skin: "#c08a5e", shirt: "#3f7d8a",
             open: "You have already worked out who on this aeroplane is going to die first.",
+            locked: true,
+            unlock: "Be on board for five passengers going quiet.",
+            unlockKey: "five_down",
         },
         {
             id: "gordy",
@@ -89,6 +95,9 @@
                       "thing to be good at. The smoke fills you twice as fast.",
             hair: "#4a3220", skin: "#e5b791", shirt: "#8a4526",
             open: "Everything on this aeroplane is lighter than your opener.",
+            locked: true,
+            unlock: "Carry somebody who weighs more than ninety kilos.",
+            unlockKey: "carried_heavy",
         },
         {
             id: "miriam",
@@ -125,6 +134,9 @@
                       "costs you eight seconds more than it costs anyone else.",
             hair: "#2b2118", skin: "#a06b42", shirt: "#1c2130",
             open: "You know the regulation. You know the case law. You know how this reads later.",
+            locked: true,
+            unlock: "Get cabin crew credibility above eighty.",
+            unlockKey: "believed",
         },
         {
             id: "mo",
@@ -143,6 +155,9 @@
                       "game is played on the wrong side of your own nervous system.",
             hair: "#6b4423", skin: "#f2d0b4", shirt: "#4a5a86",
             open: "You have rehearsed this in your head four hundred times. None of them had a fire.",
+            locked: true,
+            unlock: "Let your own panic reach ninety and keep working.",
+            unlockKey: "panicking",
         },
         {
             id: "rusk",
@@ -161,6 +176,9 @@
                       "does not slow down to match. You will have less time, not more.",
             hair: "#9aa0a6", skin: "#e5b791", shirt: "#1c2130",
             open: "You have flown this approach nine hundred times. Never from row 22.",
+            locked: true,
+            unlock: "Get the flight deck to declare an emergency.",
+            unlockKey: "declared",
         },
         {
             id: "yuki",
@@ -179,6 +197,9 @@
                       "only, and nobody believes a word you say.",
             hair: "#1d1712", skin: "#e5b791", shirt: "#b8617f",
             open: "The lady said she would come back and check on you. That was a long time ago.",
+            locked: true,
+            unlock: "Get a child forward to a safe zone.",
+            unlockKey: "child_secured",
         },
         {
             id: "dale",
@@ -197,6 +218,9 @@
                       "single use of it makes today worse. It is always in the list.",
             hair: "#2b2118", skin: "#d9a279", shirt: "#4f5a68",
             open: "You have been watching seat 14C for an hour. For the wrong reasons.",
+            locked: true,
+            unlock: "See the aisle blocked in three places at once.",
+            unlockKey: "jammed",
         },
 
         // ------------------------------------------------------------------------ unlockable ---
@@ -249,10 +273,17 @@
         return CHARACTERS.filter((c) => c.id === id)[0] || CHARACTERS[0];
     }
 
-    /** Everything derived from the five numbers, in one place so the tuning is visible. */
-    function derive(ch) {
-        const s = ch.stats;
+    /**
+     * Everything derived from the five numbers, in one place so the tuning is visible. The outfit
+     * moves the numbers before anything is derived from them, which is the whole of what an
+     * outfit does.
+     */
+    function derive(ch, outfit) {
+        const s = outfit && PRS.data.outfits
+            ? PRS.data.outfits.apply(ch.stats, outfit)
+            : ch.stats;
         return {
+            stats: s,
             // A step in the aisle for a 6-speed character is one second flat.
             moveMul: 1.55 - s.speed * 0.09,
             // A carry for a 6-strength character is about a second a kilo over twelve rows.
@@ -266,6 +297,21 @@
         };
     }
 
+    /** The two you start with, and the reason the character screen is not a wall. */
+    const STARTERS = ["kip", "miriam"];
+
+    function isUnlocked(ch) {
+        if (!ch.locked) return true;
+        return PRS.medals ? PRS.medals.unlocked(ch.unlockKey) : false;
+    }
+
+    /** Unlocked first, then the ones still to earn, so the screen opens on what you can play. */
+    function inPickOrder() {
+        const open = CHARACTERS.filter(isUnlocked);
+        const shut = CHARACTERS.filter((c) => !isUnlocked(c));
+        return open.concat(shut);
+    }
+
     PRS.data = PRS.data || {};
-    PRS.data.characters = { CHARACTERS, byId, derive };
+    PRS.data.characters = { CHARACTERS, STARTERS, byId, derive, isUnlocked, inPickOrder };
 })(window);

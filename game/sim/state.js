@@ -16,12 +16,14 @@
         const seed = opts.seed || (Date.now() >>> 0);
         const rng = util.makeRng(seed);
         const ch = PRS.data.characters.byId(opts.characterId);
-        const derived = PRS.data.characters.derive(ch);
+        const outfit = PRS.data.outfits.byId(opts.outfitId);
+        const derived = PRS.data.characters.derive(ch, outfit);
 
         const S = {
             seed: seed,
             rng: rng,
             character: ch,
+            outfit: outfit,
             derived: derived,
             difficulty: opts.difficulty || "normal",
 
@@ -102,6 +104,7 @@
         };
 
         buildPassengers(S);
+        buildStash(S);
         PRS.crew.create(S);
 
         // Two of the crew are in the aisle with the trolley, which is a wall you cannot pass.
@@ -114,7 +117,8 @@
         const data = PRS.data.passengers;
         const rng = S.rng;
         S.pax = data.ROSTER.map(function (row, n) {
-            const [name, seat, kg, hairKey, skinKey, shirtKey, traits, says, refuse] = row;
+            const [name, seat, kg, hairKey, skinKey, shirtKey, traits, says, refuse,
+                   carries] = row;
             const rowNum = parseInt(seat, 10);
             const letter = seat.replace(/[0-9]/g, "");
             const x = cabin.xOfRow(rowNum);
@@ -136,6 +140,8 @@
                 shirt: data.SHIRT[shirtKey] || shirtKey,
                 says: says,
                 refuse: refuse,
+                carries: carries || null,   // what is in their lap, if anything
+                revealed: false,            // whether you have asked them about it
                 state: asleep ? "asleep" : "seated",
                 awareness: asleep ? 0 : rng.irange(0, 14),
                 panic: rng.irange(0, 8),
@@ -160,6 +166,37 @@
         // A passenger index by tile, rebuilt whenever anybody moves. The action list asks "who is
         // next to me" forty times a second, so it cannot be a scan.
         reindex(S);
+    }
+
+    /**
+     * Where the cabin keeps the things you did not pack. Eight items across three kinds of hiding
+     * place, shuffled per run, so searching the galley is a real decision about thirteen seconds
+     * rather than a lever with a known output.
+     */
+    function buildStash(S) {
+        const rng = S.rng;
+        S.stash = {
+            galley:    rng.shuffle(["first_aid", "binbag", "thermos", "energy"]),
+            pocket:    rng.shuffle(["scissors", "wipes"]),
+            underseat: rng.shuffle(["sock", "pillow"]),
+        };
+    }
+
+    /** Put an item into your hands. Topping up something you already have counts. */
+    function give(S, itemId, uses) {
+        const item = PRS.data.items.byId(itemId);
+        if (!item) return null;
+        const held = slotOf(S, itemId);
+        if (held) {
+            if (item.uses !== null) { held.uses = uses === undefined ? item.uses : uses; }
+            held.spent = false;
+            return held;
+        }
+        const slot = { id: itemId, item: item, wet: false, spent: false,
+                       uses: uses === undefined ? item.uses : uses };
+        S.inventory.push(slot);
+        S.stats.itemsFound = (S.stats.itemsFound || 0) + 1;
+        return slot;
     }
 
     function reindex(S) {
@@ -294,7 +331,8 @@
 
     PRS.state = {
         FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
-        inventoryHas, inventoryAll, slotOf, useCharge, has, setFlag, hasPerk, wearing,
+        inventoryHas, inventoryAll, slotOf, useCharge, give, buildStash,
+        has, setFlag, hasPerk, wearing,
         securedCount, downCount, helperCount, log, note, line,
     };
 })(window);

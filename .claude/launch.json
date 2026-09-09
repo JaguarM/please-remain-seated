@@ -4,8 +4,11 @@
     {
       "name": "please-remain-seated",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8731"],
-      "port": 8731
+      "runtimeArgs": [
+        "tools/serve.py",
+        "8742"
+      ],
+      "port": 8742
     }
   ]
 }

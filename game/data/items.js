@@ -240,7 +240,43 @@
           note: "You are carrying the murder weapon. There is an ending about this." },
     ];
 
-    const ALLOWANCE = 8.0;
+    // ------------------------------------------------------------------ where a thing lives ---
+    //
+    // The loadout screen used to be forty-three items against an eight-kilo allowance, which is a
+    // decision with more states than a chess opening, made by somebody who has never seen the
+    // aeroplane. So the bag is now three things out of twelve, and everything else was moved into
+    // the aircraft: into the galley and the lavatory and the seat pockets, and above all into
+    // other people's hands.
+    //
+    // That last part is the point. The way you get equipped is by talking to passengers, which is
+    // the thing the game already wanted you to spend your fifteen minutes doing.
+
+    /** Three. That is the cabin baggage allowance and it is still being enforced. */
+    const SLOTS = 3;
+
+    // What a person plausibly has on them or in the seat pocket in front of them.
+    const BAG_POOL = [
+        "water_big", "wet_towel", "blanket", "phone", "multitool", "torch",
+        "hood", "goggles", "gin", "harmonica", "crossword", "vape",
+    ];
+
+    // What is stowed somewhere in the aeroplane, for whoever goes and looks.
+    const CABIN_POOL = [
+        "first_aid", "binbag", "thermos", "scissors", "energy", "sock", "pillow", "wipes",
+    ];
+
+    // Everything else is in somebody's lap, and the only way to it is to ask them.
+    for (const item of ITEMS) {
+        item.where = BAG_POOL.indexOf(item.id) >= 0 ? "bag"
+                   : CABIN_POOL.indexOf(item.id) >= 0 ? "cabin" : "pax";
+    }
+
+    /** The twelve the bag screen offers, in the order they are listed above. */
+    function bagPool() {
+        return BAG_POOL.map(byId).filter(Boolean);
+    }
+
+    const ALLOWANCE = 8.0;   // kept for the report's arithmetic; the bag is counted in slots now
 
     function byId(id) {
         for (const item of ITEMS) if (item.id === id) return item;
@@ -255,28 +291,23 @@
     }
 
     /** A few loadouts with names, for players who do not want to read forty blurbs. */
+    /** Four one-click answers, so a first-time player can skip the screen entirely. */
     const PRESETS = [
-        { id: "sensible", name: "The sensible bag",
-          note: "What a person who has thought about this would bring. It is not a fun bag.",
-          items: ["water_big", "wet_towel", "blanket", "gloves", "multitool", "first_aid",
-                  "torch", "strap"] },
-        { id: "prepper", name: "The one who saw the documentary",
-          note: "Everything for surviving it yourself, and very little for anybody else.",
-          items: ["hood", "goggles", "gloves", "torch", "inhaler", "multitool", "tape", "whistle"] },
-        { id: "authority", name: "Command presence",
-          note: "You have no authority. You have the appearance of authority, which is most of it.",
-          items: ["hivis", "clipboard", "lanyard", "megaphone", "whistle", "water_big",
-                  "wet_towel", "tape"] },
-        { id: "dutyfree", name: "Duty free",
-          note: "Every item in this bag makes the fire bigger. Every single one.",
-          items: ["gin", "perfume", "sanitiser", "energy", "vape", "powerbank", "laptop",
-                  "pretzels"] },
-        { id: "chaos", name: "Absolutely no plan at all",
-          note: "The bag of a person who packed in nine minutes and has never been afraid.",
-          items: ["goldfish", "harmonica", "airhorn", "laser", "ball", "crossword", "earplugs",
-                  "pretzels"] },
+        { id: "sensible", name: "The sensible three",
+          note: "What somebody who has thought about this would carry. It is not a fun bag.",
+          items: ["water_big", "wet_towel", "blanket"] },
+        { id: "documentary", name: "The one who saw the documentary",
+          note: "Everything for surviving it yourself and nothing at all for anybody else.",
+          items: ["hood", "goggles", "torch"] },
+        { id: "evidence", name: "Proving it",
+          note: "Nobody believes you. These are for changing that, which is most of the game.",
+          items: ["phone", "multitool", "water_big"] },
+        { id: "chaos", name: "No plan whatsoever",
+          note: "You packed in nine minutes and you have never once been afraid of anything.",
+          items: ["harmonica", "gin", "vape"] },
     ];
 
     PRS.data = PRS.data || {};
-    PRS.data.items = { ITEMS, ALLOWANCE, PRESETS, byId, totalKg };
+    PRS.data.items = { ITEMS, SLOTS, ALLOWANCE, PRESETS, BAG_POOL, CABIN_POOL,
+                       bagPool, byId, totalKg };
 })(window);

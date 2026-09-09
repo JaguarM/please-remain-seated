@@ -13,7 +13,11 @@
     const F = PRS.fire;
 
     function atLav(S) { return cabin.kindAt(S.player.x, S.player.y) === "lav"; }
-    function atGalley(S) { return cabin.kindAt(S.player.x, S.player.y) === "galley"; }
+    function atGalley(S) {
+        const kind = cabin.kindAt(S.player.x, S.player.y);
+        return (S.player.x === cabin.FWD_GALLEY_X || S.player.x === cabin.AFT_GALLEY_X) &&
+               (kind === "galley" || kind === "aisle");
+    }
     function atExit(S) { return cabin.kindAt(S.player.x, S.player.y) === "exit"; }
     function inRow(S) { return cabin.rowAt(S.player.x) !== null; }
     function slot(S, id) { return st.slotOf(S, id); }

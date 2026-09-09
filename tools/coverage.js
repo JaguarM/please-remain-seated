@@ -42,7 +42,8 @@ function build(opts) {
     opts = opts || {};
     const S = PRS.state.create({
         characterId: opts.character || "beverley",
-        items: PRS.data.items.ITEMS.map((i) => i.id),   // the allowance is not enforced here
+        outfitId: opts.outfit || "work",
+        items: PRS.data.items.ITEMS.map((i) => i.id),   // the three-slot limit is not enforced here
         seed: opts.seed || 4242,
     });
     // Kit the crew hand over, which normally has to be asked for.
@@ -80,6 +81,9 @@ function build(opts) {
     // Every one-shot story flag the chains hang off, unless the action under test is the one
     // that sets it.
     if (opts.noBag) S.inventory = [];
+    // The loot deck needs passengers whose pockets you have already looked into, and a player who
+    // does not already own the thing they are holding.
+    if (opts.revealAll) for (const p of S.pax) if (p.carries) p.revealed = true;
     if (opts.bare) {
         // Nothing fetched, nothing carried, nothing used: the world the "go and get it" actions
         // live in. Everything above is undone.
@@ -195,6 +199,8 @@ const SCENARIOS = [
     { name: "bare late",    opts: { elapsed: 820, bare: true, crewPhase: 4, detector: true,
                                     panic: 90 } },
     { name: "empty bag",    opts: { elapsed: 300, bare: true, noBag: true, crewPhase: 3 } },
+    { name: "asked around", opts: { elapsed: 300, bare: true, noBag: true,
+                                    revealAll: true, crewPhase: 3 } },
     { name: "empty handed", opts: { elapsed: 300, emptyBottle: true, bare: true } },
     { name: "jammed",       opts: { elapsed: 300, blockAisle: true, binsOpen: true,
                                     cartOut: true } },

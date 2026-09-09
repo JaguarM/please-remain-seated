@@ -11,7 +11,7 @@
     const { el, $, $$, clear, mmss, costLabel, listSentence, plural, store } = PRS.util;
 
     let host = null;
-    const choice = { characterId: "volk", items: [] };
+    const choice = { characterId: "kip", outfitId: "gym", items: [] };
 
     function mount(node) { host = node; }
     function show(builder) {
@@ -88,6 +88,11 @@
                     "difficulty. What you are actually playing for is the difference between " +
                     "three and twenty, and the way to find the top of that range is not in the " +
                     "fire deck."),
+                para("Most of the equipment is not in your bag.", "You carry three things. The " +
+                    "other forty are aboard already: in the galley drawers, under the seats, in " +
+                    "the lavatory cabinet, and — twenty-three of them — in other passengers' " +
+                    "laps. Asking somebody what they have got costs seven seconds and is the " +
+                    "same conversation that turns them into a helper."),
                 para("The controls.", "Click an action, or press 1–9 for the first nine. Arrow " +
                     "keys or WASD to step. Click a tile to walk there or to reach the person on " +
                     "it. Tab cycles the decks. Slash focuses the filter box."),
@@ -108,15 +113,17 @@
     function characters() {
         show(function (root) {
             root.className = "screen picker";
-            const list = PRS.data.characters.CHARACTERS;
+            const C = PRS.data.characters;
+            const list = C.inPickOrder();
+            const openCount = list.filter(C.isUnlocked).length;
             const grid = el("div", { class: "char-grid" });
 
             for (const ch of list) {
-                const locked = ch.locked && !PRS.medals.unlocked(ch.unlockKey);
-                const card = el("button", {
+                const open = C.isUnlocked(ch);
+                grid.appendChild(el("button", {
                     class: "char" + (choice.characterId === ch.id ? " on" : "") +
-                           (locked ? " locked" : ""),
-                    onclick: locked ? null : function () {
+                           (open ? "" : " locked"),
+                    onclick: !open ? null : function () {
                         choice.characterId = ch.id;
                         PRS.audio.unlock();
                         PRS.audio.play("select");
@@ -127,19 +134,24 @@
                         PRS.atlas.icon("pax", 5, { h: ch.hair, s: ch.skin, c: ch.shirt }),
                     ]),
                     el("div", { class: "char-id" }, [
-                        el("b", { text: locked ? "?????" : ch.name }),
-                        el("i", { text: locked ? "Locked" : ch.age + " · " + ch.title }),
+                        el("b", { text: ch.name }),
+                        el("i", { text: ch.age + " · " + ch.title }),
                     ]),
-                    el("div", { class: "char-stats" }, statBars(ch)),
-                    el("div", { class: "char-perk" }, [
-                        el("span", { class: "good", text: locked ? "—" : ch.perkName }),
-                        el("span", { class: "bad", text: locked ? "—" : ch.flawName }),
-                    ]),
-                ]);
-                grid.appendChild(card);
+                    open
+                        ? el("div", { class: "char-stats" }, statBars(ch))
+                        : el("div", { class: "char-lock" }, [
+                              el("span", { class: "lock-tag", text: "LOCKED" }),
+                              el("i", { text: ch.unlock }),
+                          ]),
+                    open ? el("div", { class: "char-perk" }, [
+                        el("span", { class: "good", text: ch.perkName }),
+                        el("span", { class: "bad", text: ch.flawName }),
+                    ]) : null,
+                ]));
             }
 
-            const ch = PRS.data.characters.byId(choice.characterId);
+            if (!C.isUnlocked(C.byId(choice.characterId))) choice.characterId = C.STARTERS[0];
+            const ch = C.byId(choice.characterId);
             const detail = el("div", { class: "char-detail" }, [
                 el("h3", { text: ch.name }),
                 el("div", { class: "sub", text: ch.age + " · " + ch.title }),
@@ -149,114 +161,178 @@
                 el("div", { class: "perkbox bad" }, [
                     el("b", { text: ch.flawName }), el("p", { text: ch.flawText })]),
                 el("div", { class: "title-buttons" }, [
-                    el("button", { class: "big", text: "Choose " + ch.name.split(" ")[0],
-                                   onclick: loadout }),
+                    el("button", { class: "big", text: "Next — what you are wearing",
+                                   onclick: outfits }),
                     el("button", { text: "Back", onclick: title }),
                 ]),
             ]);
 
             root.appendChild(el("h2", { text: "Who is in seat 9C" }));
             root.appendChild(el("p", { class: "lede", text:
-                "Ten people who could have been on this flight, and two you have to earn. Nobody " +
-                "here is strictly better than anybody else; every one of them has something " +
-                "that makes their fifteen minutes genuinely worse." }));
+                openCount + " of " + list.length + " available. The rest are unlocked by things " +
+                "that happen on the aeroplane, and every condition is printed on its card, so " +
+                "they are somewhere to aim rather than something withheld." }));
             root.appendChild(el("div", { class: "picker-body" }, [grid, detail]));
         });
     }
 
-    function statBars(ch) {
+    /** Five bars. With an outfit passed, the changed ones are coloured and the numbers move. */
+    function statBars(ch, outfit) {
         const names = { strength: "STR", speed: "SPD", lungs: "LNG", nerve: "NRV", voice: "VOI" };
+        const base = ch.stats;
+        const now = outfit ? PRS.data.outfits.apply(base, outfit) : base;
         const out = [];
         for (const key in names) {
-            const v = ch.stats[key];
+            const v = now[key];
+            const delta = v - base[key];
+            const dir = delta > 0 ? " up" : delta < 0 ? " down" : "";
             out.push(el("div", { class: "stat" }, [
                 el("span", { text: names[key] }),
                 el("div", { class: "stat-track" }, [
-                    el("div", { class: "stat-fill", style: { width: (v * 10) + "%" } }),
+                    el("div", { class: "stat-fill" + dir, style: { width: (v * 10) + "%" } }),
                 ]),
-                el("b", { text: String(v) }),
+                el("b", { class: dir.trim(), text: String(v) }),
             ]));
         }
         return out;
     }
 
-    // --------------------------------------------------------------------------------- loadout ---
+    // --------------------------------------------------------------------------- the clothes ---
 
-    function loadout() {
-        if (!choice.items.length) choice.items = PRS.data.items.PRESETS[0].items.slice();
+    function outfits() {
         show(function (root) {
             root.className = "screen picker";
-            const D = PRS.data.items;
-            const kg = D.totalKg(choice.items);
+            const O = PRS.data.outfits;
+            const ch = PRS.data.characters.byId(choice.characterId);
+            const grid = el("div", { class: "outfit-grid" });
+
+            for (const outfit of O.OUTFITS) {
+                grid.appendChild(el("button", {
+                    class: "outfit" + (choice.outfitId === outfit.id ? " on" : ""),
+                    onclick: function () {
+                        choice.outfitId = outfit.id;
+                        PRS.audio.unlock();
+                        PRS.audio.play("select");
+                        outfits();
+                    },
+                }, [
+                    el("div", { class: "outfit-head" }, [
+                        el("b", { text: outfit.name }),
+                        el("span", { class: "outfit-mod", text: O.summary(outfit) }),
+                    ]),
+                    el("i", { text: outfit.blurb }),
+                    el("u", { text: outfit.note }),
+                ]));
+            }
+
+            const chosen = O.byId(choice.outfitId);
+            const panel = el("div", { class: "char-detail" }, [
+                el("div", { class: "you-name" }, [
+                    PRS.atlas.icon("pax", 4, { h: ch.hair, s: ch.skin, c: ch.shirt }),
+                    el("div", {}, [
+                        el("b", { text: ch.name }),
+                        el("i", { text: chosen.name }),
+                    ]),
+                ]),
+                el("div", { class: "char-stats big-stats" }, statBars(ch, chosen)),
+                el("p", { text: chosen.note }),
+                el("div", { class: "title-buttons" }, [
+                    el("button", { class: "big", text: "Next — what is on you",
+                                   onclick: loadout }),
+                    el("button", { text: "Back", onclick: characters }),
+                ]),
+            ]);
+
+            root.appendChild(el("h2", { text: "What you are wearing" }));
+            root.appendChild(el("p", { class: "lede", text:
+                "One of six, and it does nothing except move your five numbers. Two points of " +
+                "speed is a second off every step of nine hundred of them; two points of voice " +
+                "is the difference between being believed at minute four and at minute nine." }));
+            root.appendChild(el("div", { class: "picker-body" }, [grid, panel]));
+        });
+    }
+
+    // ------------------------------------------------------------------------------- the bag ---
+
+    function loadout() {
+        const D = PRS.data.items;
+        if (!choice.items.length) choice.items = D.PRESETS[0].items.slice();
+        choice.items = choice.items.filter((id) => D.BAG_POOL.indexOf(id) >= 0).slice(0, D.SLOTS);
+        show(function (root) {
+            root.className = "screen picker";
+            const full = choice.items.length >= D.SLOTS;
 
             const grid = el("div", { class: "item-grid" });
-            for (const item of D.ITEMS) {
+            for (const item of D.bagPool()) {
                 const on = choice.items.indexOf(item.id) >= 0;
-                const wouldBe = on ? kg : kg + item.kg;
-                const blocked = !on && wouldBe > D.ALLOWANCE;
-                const [sheet, sprite] = item.sprite.split(":");
                 grid.appendChild(el("button", {
-                    class: "item" + (on ? " on" : "") + (blocked ? " blocked" : ""),
+                    class: "item" + (on ? " on" : "") + (!on && full ? " dim" : ""),
                     onclick: function () {
-                        if (on) choice.items = choice.items.filter((i) => i !== item.id);
-                        else if (!blocked) choice.items.push(item.id);
-                        else { PRS.audio.play("refuse"); return; }
+                        if (on) {
+                            choice.items = choice.items.filter((i) => i !== item.id);
+                        } else {
+                            // A full bag swaps rather than refusing: three slots is a small
+                            // enough decision that making somebody undo one first is just rude.
+                            if (choice.items.length >= D.SLOTS) choice.items.shift();
+                            choice.items.push(item.id);
+                        }
                         PRS.audio.unlock();
                         PRS.audio.play(on ? "back" : "select");
                         loadout();
                     },
                 }, [
-                    PRS.atlas.icon(sprite, 3),
+                    PRS.atlas.icon(item.sprite.split(":")[1], 3),
                     el("div", { class: "item-text" }, [
                         el("b", { text: item.name }),
                         el("i", { text: item.blurb }),
                         el("u", { text: item.note }),
                     ]),
-                    el("span", { class: "item-kg", text: item.kg.toFixed(2) + "kg" }),
                 ]));
             }
 
             const presets = el("div", { class: "presets" });
-            for (const p of D.PRESETS) {
+            for (const preset of D.PRESETS) {
                 presets.appendChild(el("button", {
                     class: "preset", onclick: function () {
-                        choice.items = p.items.slice();
+                        choice.items = preset.items.slice();
                         PRS.audio.play("select");
                         loadout();
                     },
-                }, [el("b", { text: p.name }), el("i", { text: p.note })]));
+                }, [el("b", { text: preset.name }), el("i", { text: preset.note })]));
             }
 
             const ch = PRS.data.characters.byId(choice.characterId);
-            root.appendChild(el("h2", { text: "What is in the bag" }));
+            root.appendChild(el("h2", { text: "What is on you" }));
             root.appendChild(el("p", { class: "lede", text:
-                "Eight kilos of cabin allowance, which the airline is going to keep enforcing " +
-                "while its aeroplane is on fire. The correct answer is boring. It is right " +
-                "there, and next to it there is a megaphone." }));
-            root.appendChild(el("div", { class: "weigh" }, [
-                el("div", { class: "weigh-bar" }, [
-                    el("div", { class: "weigh-fill" + (kg > D.ALLOWANCE ? " over" : ""),
-                                style: { width: Math.min(100, kg / D.ALLOWANCE * 100) + "%" } }),
-                ]),
-                el("b", { text: kg.toFixed(2) + " / " + D.ALLOWANCE.toFixed(2) + " kg" }),
-                el("i", { text: plural(choice.items.length, "item") + " packed" }),
-            ]));
+                "Three things. That is the cabin baggage allowance, and the airline is going to " +
+                "keep enforcing it while its aeroplane is on fire. Everything else in this game " +
+                "is already aboard — in the galleys, under the seats, and in other " +
+                "passengers' laps — and the way you get it is by asking." }));
+            root.appendChild(el("div", { class: "slots" },
+                [0, 1, 2].map(function (i) {
+                    const id = choice.items[i];
+                    const item = id ? D.byId(id) : null;
+                    return el("div", { class: "slot" + (item ? " filled" : "") }, [
+                        item ? PRS.atlas.icon(item.sprite.split(":")[1], 3)
+                             : el("span", { class: "slot-empty", text: String(i + 1) }),
+                        el("b", { text: item ? item.name : "empty" }),
+                    ]);
+                })));
             root.appendChild(presets);
             root.appendChild(grid);
             root.appendChild(el("div", { class: "title-buttons sticky" }, [
                 el("button", { class: "big", text: "Board — " + ch.name, onclick: begin }),
                 el("button", { text: "Take nothing", onclick: function () {
                     choice.items = []; loadout(); } }),
-                el("button", { text: "Back", onclick: characters }),
+                el("button", { text: "Back", onclick: outfits }),
             ]));
         });
     }
 
-    // ----------------------------------------------------------------------------------- play ---
-
     function begin() {
         const S = PRS.state.create({
             characterId: choice.characterId,
+            outfitId: choice.outfitId,
             items: choice.items.slice(),
             seed: (Math.random() * 0xffffffff) >>> 0,
         });
@@ -384,11 +460,14 @@
             inner.appendChild(el("div", { class: "title-buttons" }, [
                 el("button", { class: "big", text: "Fly it again", onclick: characters }),
                 el("button", { text: "Same person, new bag", onclick: loadout }),
+                el("button", { text: "Different clothes", onclick: outfits }),
                 el("button", { text: "Title", onclick: title }),
             ]));
             inner.appendChild(el("p", { class: "footnote", text:
-                "Seed " + R.seed + " · " + R.actions + " actions taken · " +
-                R.distinctActions + " of " + PRS.actions.count() + " distinct actions used" }));
+                S.character.name + " in " + S.outfit.name.toLowerCase() + " · seed " +
+                R.seed + " · " + R.actions + " actions taken · " + R.distinctActions +
+                " of " + PRS.actions.count() + " distinct actions used · " +
+                (S.stats.itemsFound || 0) + " things found aboard" }));
 
             root.appendChild(inner);
         });
@@ -465,6 +544,7 @@
         });
     }
 
-    PRS.screens = { mount, title, brief, characters, loadout, begin, report, flights, gallery,
+    PRS.screens = { mount, title, brief, characters, outfits, loadout, begin, report,
+                    flights, gallery,
                     choice };
 })(window);

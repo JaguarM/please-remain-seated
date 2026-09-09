@@ -20,7 +20,7 @@ own simulation with the game's own sprite maps, so the picture regenerates from 
 If your browser is unusually strict about `file://`, any static server will do:
 
 ```bash
-python -m http.server 8731
+python tools/serve.py
 ```
 
 The rules
@@ -48,19 +48,28 @@ action in the game is gated behind it.
 sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference
 between three and twenty-seven, and the route to the top of that range is not in the fire deck.
 
+**Almost nothing is decided before you board.** Three decisions, none of them longer than twenty
+seconds: who you are, what you are wearing, and which three things are on you. Everything else —
+the other forty items, and ten of the twelve characters — is found in the aeroplane or earned by
+flying it. The only thing progress gates is characters, and every unlock condition is printed on
+its own locked card, so the roster is a list of things to try rather than a wall.
+
 What is in it
 -------------
 
-- **315 hand-written actions** across eight decks, each with its own cost, conditions and line of
+- **325 hand-written actions** across eight decks, each with its own cost, conditions and line of
   text. Actions with targets appear once per target, so a turn offers **a hundred and thirty
   concrete options** at the median and over four hundred at the worst moment in the cabin — and
   the list only ever contains things that are actually possible right now.
-- **Twelve playable characters**, ten available and two earned, on five stats — strength, speed,
+- **Twelve playable characters**, two to start and ten earned, on five stats — strength, speed,
   lungs, nerve, voice — with a signature ability and a genuine flaw each. A retired fire officer
   who is the slowest person in the cast. An eight-year-old who fits under the seats and cannot
   lift an adult. An air marshal with a firearm and no useful application for it.
-- **Forty-three loadout items** against an eight-kilo cabin allowance the airline keeps enforcing
-  while its aeroplane is on fire. The correct answer is boring and next to it there is a megaphone.
+- **Six outfits**, which do nothing at all except move your five numbers, and **three item slots**
+  — the airline's cabin baggage allowance, still being enforced while its aeroplane is on fire.
+- **Forty-three items**, of which only twelve are ever in your bag. The rest are already aboard:
+  eight in the galley drawers, the seat pockets and the footwells, and **twenty-three in other
+  passengers' laps**, which means the way you get equipped is by talking to people.
 - **Sixty named passengers**, each with a weight, a temperament, a seat and an opinion, and a
   **helper system** that is the only thing in the game that scales.
 - Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
@@ -86,11 +95,13 @@ game/
   art/                generated sprite data (two files, both regenerable)
   engine/             seeded RNG, sprite atlas, synthesised audio, canvas renderer
   sim/                cabin geometry, fire, passengers, crew, the action engine, scoring
-  data/               characters, items, the roster, events, medals, endings, the action decks
+  data/               characters, outfits, items, the roster, events, medals, endings,
+                      and the nine files of action decks
   ui/                 the play screen and the menu screens
   style.css
 pixel-workshop/       the ProjectNauvis pixel workshop, plus make_cabin_textures.py
-tools/                the play-testers and the sprite bundler
+tools/                the play-testers, the frame renderer, the sprite bundler and a
+                      no-cache dev server
 ```
 
 Everything assigns to one global, `window.PRS`, because the game has to run from a file you can
@@ -119,7 +130,7 @@ palette key without a colour.
 Testing it
 ----------
 
-The game is three hundred hand-written functions that all touch the same world, so it is tested by
+The game is three hundred and twenty-five hand-written functions that all touch one world, so it is tested by
 being played, a great many times, by things that are not people.
 
 ```bash
@@ -136,17 +147,18 @@ is aiming at, and they were found with it rather than guessed:
 
 | bot | what it does | souls secured of 60 | not accounted for |
 |-----|--------------|---------------------|-------------------|
-| `fire` | only fights the fire | **1.9** | 18.8 |
-| `idle` | never leaves its seat | 6.8 | 14.7 |
-| `random` | picks uniformly from everything | 8.5 | 12.6 |
-| `carry` | carries people, one at a time | 19.1 | 10.3 |
-| `good` | recruits, delegates, then carries | **19.3** (best 31) | 11.4 |
+| `fire` | only fights the fire | **1.9** | 17.5 |
+| `novelty` | always takes the thing it has taken least | 4.0 | 14.4 |
+| `idle` | never leaves its seat | 6.9 | 16.3 |
+| `random` | picks uniformly from everything | 8.1 | 13.2 |
+| `carry` | carries people, one at a time | 16.4 | 11.3 |
+| `good` | recruits, delegates, then carries | **17.8** (best 28) | 12.3 |
 
 If the fire bot ever scores well, the game has stopped being about the thing it is about.
 
-`coverage.js` walks the registry instead of playing: for each of the 315 definitions it builds a
+`coverage.js` walks the registry instead of playing: for each of the 325 definitions it builds a
 world designed to make that one possible, stands the player in every plausible place, and performs
-it. It currently reports **315 of 315 reachable, none throw**. It has already found one action
+it. It currently reports **325 of 325 reachable, none throw**. It has already found one action
 that asked for an item which had never been added to `items.js`, and so could never have appeared
 in a real game at all.
 

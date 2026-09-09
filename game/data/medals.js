@@ -36,8 +36,10 @@
           text: "Got the case into a sink full of water. Nobody has ever thought of this in time.",
           when: (S) => S.fire.core.inSink },
         { id: "seen_it", name: "Looked at it",
-          text: "Actually opened the bin and looked at the thing that is doing all this.",
-          when: (S) => S.fire.core.exposed },
+          text: "Actually opened the bin and looked at the thing that is doing all this. " +
+                "Deidre Volk is now available.",
+          when: (S) => S.fire.core.exposed,
+          unlocks: "seen_it" },
         { id: "vent_survivor", name: "Six cells",
           text: "Was standing in the cabin for six separate thermal runaway events.",
           when: (S) => S.fire.core.vented >= 6 },
@@ -94,9 +96,12 @@
           when: (S) => S.pax.some((p) => p.helper && p.traits.indexOf("hostile") >= 0) },
 
         // ----------------------------------------------------------------------------- crew ---
-        { id: "believed", name: "Believed",
-          text: "Got cabin crew credibility above eighty. It took most of the flight.",
-          when: (S) => S.credibility >= 80 },
+        { id: "believed", name: "Believed, and quickly",
+          text: "Got cabin crew credibility above eighty inside six minutes, which nobody " +
+                "manages by talking. " +
+                "Terrence Ubel is now available.",
+          when: (S) => S.credibility >= 80 && S.clock.elapsed < 360,
+          unlocks: "believed" },
         { id: "phase3_fast", name: "Four minutes early",
           text: "Had the crew fighting the fire before the eight minute mark.",
           when: (S) => S.crewPhase >= 3 && S.crewPhaseAt < 420 },
@@ -118,8 +123,10 @@
           text: "Put on a smoke hood you bought after watching a documentary.",
           when: (S) => st.wearing(S, "hood") },
         { id: "panicking", name: "Ninety",
-          text: "Panic reached ninety and your hands still worked.",
-          when: (S) => S.player.panic >= 90 },
+          text: "Panic reached ninety and your hands still worked. " +
+                "Mo Achterberg is now available.",
+          when: (S) => S.player.panic >= 90,
+          unlocks: "panicking" },
         { id: "calm", name: "Never above thirty",
           text: "Went through the whole thing without your panic reaching thirty.",
           when: (S) => S.clock.landed && S.stats.maxPanic !== undefined && S.stats.maxPanic < 30 },
@@ -158,6 +165,31 @@
         { id: "ate_pretzels", name: "Ate the pretzels",
           text: "Ate the pretzels yourself, during, standing up.",
           when: (S) => used(S, "self.pretzels") },
+
+        // ------------------------------------------------ the ones that open a character ------
+        { id: "five_down", name: "Sixteen went quiet",
+          text: "Sixteen people on this aeroplane stopped coughing and stopped moving, and " +
+                "you were still upright at the end of it. " +
+                "Dr Priya Ansel is now available.",
+          when: (S) => st.downCount(S) >= 16, unlocks: "five_down" },
+        { id: "carried_heavy", name: "Ninety kilos",
+          text: "Got somebody who weighs more than ninety kilos moving, by lifting them or " +
+                "by dragging them because you could not. Gordy Mach is now available.",
+          when: (S) => !!S.flags.carriedHeavy, unlocks: "carried_heavy" },
+        { id: "declared", name: "Declared early",
+          text: "Had the flight deck declare an emergency inside five minutes, which is " +
+                "six minutes before it would have happened on its own. " +
+                "Captain Nell Rusk is now available.",
+          when: (S) => S.crewPhase >= 4 && S.clock.elapsed < 300, unlocks: "declared" },
+        { id: "child_secured", name: "A child, forward",
+          text: "Got one of the children to a safe zone. " +
+                "Yuki Tanaka-Brandt is now available.",
+          when: (S) => S.pax.some((p) => PRS.pax.isChild(p) && p.state === "secured"),
+          unlocks: "child_secured" },
+        { id: "jammed", name: "Asked to sit down, repeatedly",
+          text: "Three separate passengers told you, personally, to sit down. The cabin " +
+                "turned on you before the fire did. Dale Kowalczyk is now available.",
+          when: (S) => (S.stats.sitDowns || 0) >= 3, unlocks: "jammed" },
 
         // ------------------------------------------------------------------------ the score ---
         { id: "ten_souls", name: "Ten souls",

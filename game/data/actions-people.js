@@ -144,16 +144,22 @@
 
         {
             id: "people.drag", deck: "people", tags: ["carry"], danger: "neutral",
+            // Dragging is the answer to somebody you cannot lift, so it offers itself for the
+            // unconscious, for the wheelchair users, and for anybody heavier than your arms.
             targets: (S) => reach(S).filter((c) => c.p.state === "down" ||
-                                                   c.p.traits.indexOf("immobile") >= 0),
-            when: (S, c) => !S.player.dragging && S.player.carrying.length === 0,
+                                                   c.p.traits.indexOf("immobile") >= 0 ||
+                                                   !P.canCarry(S, c.p)),
+            when: (S, c) => !S.player.dragging && S.player.carrying.length === 0 &&
+                            c.p.state !== "secured" && c.p.state !== "dead",
             label: (S, c) => "Drag " + who(c) + " along the floor",
-            detail: "Slower than carrying and it works on people you cannot lift.",
+            detail: (S, c) => c.p.kg + "kg. Slower than carrying, and it works on people you " +
+                              "cannot lift.",
             cost: (S, c) => 8 + c.p.kg * 0.06,
             run(S, c) {
                 S.player.dragging = c.p.id;
                 c.p.state = "carried";
                 c.p.carriedBy = "player";
+                if (c.p.kg > 90) st.setFlag(S, "carriedHeavy");
                 st.reindex(S);
                 return "You get " + c.p.name + " under the arms and start dragging. It is " +
                     "undignified, it is slow, and it is under the smoke.";

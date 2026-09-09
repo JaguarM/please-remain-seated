@@ -261,6 +261,7 @@
               c.p.state = "carried";
               c.p.carriedBy = "player";
               c.p.strapped = true;
+                if (c.p.kg > 90) st.setFlag(S, "carriedHeavy");
               st.reindex(S);
               return { text: "Under the arms, across the chest, buckle at the back, and you have " +
                   "a handle. " + c.p.name + " weighs " + c.p.kg + " kilos and now weighs about " +
