@@ -88,7 +88,7 @@
         opts = opts || {};
         fx.items.push({ kind: "say", x: x, y: y, text: text, colour: colour || "#ffd54a",
                         born: now(), ms: opts.ms || 1400, rise: opts.rise === undefined ? 14 : opts.rise,
-                        size: opts.size || 5.5 });
+                        size: opts.size || 0.36 });
     }
 
     /** A ring that expands out of a tile once. Where an action landed. */
@@ -170,14 +170,18 @@
             }
         }
 
-        // ---- the overhead bins, drawn as a lip over the top of each seat bank ---------------
+        // ---- the overhead bins, on the hull rather than on the seats -----------------------
+        // They used to be a nine-pixel lid drawn over the top of row A and the bottom of row F,
+        // in the hull's own grey, which made the wall look like it was eating the two outboard
+        // seats in every row. They are six pixels now and they sit against the wall, where a
+        // locker is.
         for (let x = 0; x < cabin.W; x++) {
             if (cabin.rowAt(x) === null) continue;
             for (const y of [1, 7]) {
                 const side = y < cabin.AISLE_Y ? "left" : "right";
                 const open = S.cabinFlags.binsOpen[cabin.binKey(x, side)];
-                const py = y === 1 ? (y * T) : (y * T + T - 9 * scale);
-                atlas.blitAlpha(ctx, open ? "bin_open" : "bin_closed", x * T, py, scale, 0.76);
+                const py = y === 1 ? (T - 6 * scale) : ((cabin.H - 1) * T);
+                atlas.blit(ctx, open ? "bin_open" : "bin_closed", x * T, py, scale);
             }
         }
 
@@ -241,15 +245,17 @@
             }
         }
         ctx.save();
-        ctx.font = "700 " + (5 * scale) + "px ui-monospace, monospace";
-        ctx.textAlign = "right";
+        const cs = Math.round(T * TEXT.count), cbox = Math.round(cs * 1.4);
+        ctx.font = "700 " + cs + "px ui-monospace, monospace";
+        ctx.textAlign = "center";
         for (const key in stacks) {
             if (stacks[key] < 3) continue;
             const [sx, sy] = key.split(",");
-            ctx.fillStyle = "rgba(16,19,24,0.85)";
-            ctx.fillRect(sx * T + T - 7 * scale, sy * T + T - 7 * scale, 7 * scale, 7 * scale);
+            const bx = sx * T + T - cbox, by = sy * T + T - cbox;
+            ctx.fillStyle = "rgba(16,19,24,0.9)";
+            ctx.fillRect(bx, by, cbox, cbox);
             ctx.fillStyle = "#dfe4ec";
-            ctx.fillText(String(stacks[key]), sx * T + T - scale, sy * T + T - 1.6 * scale);
+            ctx.fillText(String(stacks[key]), bx + cbox / 2, by + cbox * 0.78);
         }
         ctx.restore();
 
@@ -389,9 +395,14 @@
 
     const ZONE_TINT = ["#5fd67a", "#e8c53a", "#d4483a"];
 
+    // The two ends of the aeroplane, and not the middle. The overwing exit row is a place you can
+    // put somebody down and it is drawn as what it is - a clear column of floor with a door at
+    // each end - rather than painted green and promised over. It reads as a break in the rows,
+    // which is all it needs to be.
+    const ZONES = [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.AFT_CROSS_X, cabin.AFT_GALLEY_X];
+
     function drawZones(ctx, S, T, t) {
-        for (const zx of [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.OVERWING_X,
-                          cabin.AFT_CROSS_X, cabin.AFT_GALLEY_X]) {
+        for (const zx of ZONES) {
             const air = zoneAir(S, zx);
             const tier = air.bad > 0.62 ? 2 : air.bad > 0.24 ? 1 : 0;
             ctx.save();
@@ -478,16 +489,20 @@
     /** The price, on the tile, so the cost of a thing is where the thing is. */
     function priceTag(ctx, x, y, T, scale, label, colour) {
         const hx = x * T, hy = y * T;
+        const size = Math.round(T * TEXT.price), box = Math.round(size * 1.34);
         ctx.save();
-        ctx.font = "700 " + (6 * scale) + "px ui-monospace, monospace";
-        const w = ctx.measureText(label).width + 3 * scale;
+        ctx.font = "700 " + size + "px ui-monospace, monospace";
+        const w = ctx.measureText(label).width + size * 0.5;
         const bx = Math.max(0, Math.min(cabin.W * T - w, hx + T / 2 - w / 2));
-        const by = hy - 8 * scale < 0 ? hy + T + scale : hy - 8 * scale;
-        ctx.fillStyle = "rgba(22,25,31,0.92)";
-        ctx.fillRect(bx, by, w, 8 * scale);
+        const by = hy - box < 0 ? hy + T : hy - box;
+        ctx.fillStyle = "rgba(22,25,31,0.94)";
+        ctx.fillRect(bx, by, w, box);
+        ctx.strokeStyle = colour;
+        ctx.lineWidth = Math.max(1, scale * 0.34);
+        ctx.strokeRect(bx + 0.5, by + 0.5, w - 1, box - 1);
         ctx.fillStyle = colour;
         ctx.textAlign = "center";
-        ctx.fillText(label, bx + w / 2, by + 6.2 * scale);
+        ctx.fillText(label, bx + w / 2, by + box * 0.76);
         ctx.restore();
     }
 
@@ -519,15 +534,24 @@
 
     // ------------------------------------------------------------------------------ labels ---
 
+    /**
+     * The words drawn on the aeroplane, sized off the tile rather than off the sprite scale.
+     *
+     * The canvas is 1440 pixels wide and the column it sits in usually is not, so everything on
+     * it arrives at the eye through a CSS downscale of a third or so. Text picked to look right
+     * in the canvas is text nobody can read on the screen, which is what these were.
+     */
+    const TEXT = { place: 0.42, row: 0.44, seat: 0.46, price: 0.5, count: 0.4 };
+
     function drawLabels(ctx, S, T, scale, opts) {
         ctx.save();
-        ctx.font = "700 " + (4.5 * scale) + "px ui-monospace, monospace";
+        ctx.font = "700 " + Math.round(T * TEXT.place) + "px ui-monospace, monospace";
         ctx.textAlign = "center";
-        const label = (text, x, y) => ctx.fillText(text, x * T + T / 2, y * T + T * 0.62);
+        const label = (text, x, y) => ctx.fillText(text, x * T + T / 2, y * T + T * 0.64);
 
         // The galleys are one tile wide and the word is not, so it is written down the column
         // the way it is written down the side of a galley.
-        ctx.fillStyle = "rgba(26,38,42,0.66)";
+        ctx.fillStyle = "rgba(20,32,36,0.8)";
         for (const [gx, gy] of [[cabin.FWD_GALLEY_X, 2], [cabin.FWD_GALLEY_X, 6],
                                 [cabin.AFT_GALLEY_X, 2.5], [cabin.AFT_GALLEY_X, 5.5]]) {
             ctx.save();
@@ -544,16 +568,13 @@
         // that it is the only thing in the middle of the aeroplane that is worth anything at all.
         // All three stop saying anything reassuring once the smoke arrives. The middle one goes
         // first, and it is supposed to.
-        for (const zx of [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X, cabin.OVERWING_X]) {
+        for (const zx of [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X]) {
             const air = zoneAir(S, zx);
             const tier = air.bad > 0.62 ? 2 : air.bad > 0.24 ? 1 : 0;
-            const word = zx === cabin.OVERWING_X
-                ? ["EXIT", "SMOKE", "GONE"][tier]
-                : ["SAFE", "SMOKE", "GONE"][tier];
-            ctx.fillStyle = ["rgba(120,214,140,0.85)", "rgba(232,197,58,0.9)",
-                             "rgba(212,72,58,0.95)"][tier];
-            label(word, zx, 2);
-            label(word, zx, 6);
+            ctx.fillStyle = ["rgba(120,214,140,0.95)", "rgba(232,197,58,0.95)",
+                             "rgba(212,72,58,1)"][tier];
+            label(["SAFE", "SMOKE", "GONE"][tier], zx, 2);
+            label(["SAFE", "SMOKE", "GONE"][tier], zx, 6);
         }
         ctx.restore();
 
@@ -562,21 +583,21 @@
         // Row numbers down the aisle, and the seat letters on the bulkheads at either end, so
         // that "the locker above 14C" is a place on the picture and not a piece of trivia.
         ctx.save();
-        ctx.fillStyle = "rgba(200,208,220,0.55)";
-        ctx.font = (5 * scale) + "px ui-monospace, monospace";
+        ctx.fillStyle = "rgba(210,218,230,0.8)";
+        ctx.font = "700 " + Math.round(T * TEXT.row) + "px ui-monospace, monospace";
         ctx.textAlign = "center";
         for (let x = 0; x < cabin.W; x++) {
             const row = cabin.rowAt(x);
             if (row === null || row % 2) continue;
             ctx.fillText(String(row), x * T + T / 2, cabin.AISLE_Y * T + T * 0.68);
         }
-        ctx.font = "700 " + (5 * scale) + "px ui-monospace, monospace";
-        ctx.fillStyle = "rgba(200,208,220,0.4)";
+        ctx.font = "700 " + Math.round(T * TEXT.seat) + "px ui-monospace, monospace";
+        ctx.fillStyle = "rgba(210,218,230,0.7)";
         for (let y = 1; y <= 7; y++) {
             const letter = cabin.seatLetter(y);
             if (!letter) continue;
-            ctx.fillText(letter, T / 2, y * T + T * 0.66);
-            ctx.fillText(letter, (cabin.W - 1) * T + T / 2, y * T + T * 0.66);
+            ctx.fillText(letter, T / 2, y * T + T * 0.68);
+            ctx.fillText(letter, (cabin.W - 1) * T + T / 2, y * T + T * 0.68);
         }
         ctx.restore();
     }
@@ -597,7 +618,7 @@
                 const x = it.x * T + T / 2;
                 const y = it.y * T + T * 0.3 - ease * it.rise * scale;
                 ctx.globalAlpha = k < 0.12 ? k / 0.12 : Math.min(1, (1 - k) * 3.2);
-                ctx.font = "700 " + (it.size * scale) + "px ui-monospace, monospace";
+                ctx.font = "700 " + Math.round(T * it.size) + "px ui-monospace, monospace";
                 ctx.lineWidth = Math.max(2, scale * 1.2);
                 ctx.strokeStyle = "rgba(12,14,18,0.92)";
                 ctx.strokeText(it.text, x, y);

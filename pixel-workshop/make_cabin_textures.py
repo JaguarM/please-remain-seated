@@ -120,56 +120,63 @@ aaaaaaaaaaaaaaaa
 aaaaaaaaaaaaaaaa
 """), {"a": "#3b4454", "w": "#47515f"})
 
-# A seat from above: headrest at the nose end, cushion, an armrest either side.
+# A seat from above, and the direction matters. The nose is at x=0, so a passenger faces left,
+# their back is at the tail end of the cell, and the two armrests run fore and aft alongside them
+# - which on this screen means across, not up and down. Drawn the other way round they read as
+# the arms of the seat in front, which is what they used to do.
+#
+#   d   the outline, and the gap between one seat and the next
+#   a   the armrests, the hard top edges either side, which catch the cabin lights
+#   l   the cushion
+#   b   the seat back, aft
+#   h   the top of the seat back, which is the bit you actually see from above
+#
 # The blue is the airline's blue, which is the same blue as every airline's blue.
 sprite("seat", m("""
+................
 .dddddddddddddd.
-.dhhhhhhhhhhhhd.
-.dhbbbbbbbbbbhd.
-ddbbbbbbbbbbbbdd
-dabbllllllllbbad
-dabbllllllllbbad
-dabblllllllllbad
-dabblllllllllbad
-dabblllllllllbad
-dabblllllllllbad
-dabbllllllllbbad
-dabbllllllllbbad
-ddbbbbbbbbbbbbdd
-.dbbbbbbbbbbbbd.
+.daaaaaaaaabbhd.
+.daaaaaaaaabbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.dlllllllllbbhd.
+.daaaaaaaaabbhd.
+.daaaaaaaaabbhd.
 .dddddddddddddd.
 ................
-"""), {"d": "#1a2230", "h": "#39445c", "b": "#2c3a55", "l": "#3f5177", "a": "#4b5468"})
+"""), {"d": "#131822", "h": "#5b6a92", "b": "#28324c", "l": "#42557d", "a": "#6f7a90"})
 
-# The same seat scorched, and the same seat gone: one map, three states of the day.
-variant("seat_scorched", "seat", {"h": "#3a3a3a", "b": "#2a2622", "l": "#453d34", "a": "#3c372f"})
-variant("seat_burnt", "seat", {"d": "#141414", "h": "#242020", "b": "#1c1918",
-                               "l": "#2a2422", "a": "#241f1c"})
+# The same seat scorched, and the same seat gone: one map, three states of the day. The armrest
+# stays the lightest thing on it all the way through, because it is the only part that is metal.
+variant("seat_scorched", "seat", {"h": "#4e463c", "b": "#2c2621", "l": "#453d34", "a": "#57503f"})
+variant("seat_burnt", "seat", {"d": "#101010", "h": "#2e2926", "b": "#181615",
+                               "l": "#2a2422", "a": "#3a3430"})
 
-# The overhead locker, seen from above as the lip over the seats: closed, and open.
+# The overhead locker, seen from above as a lip on the hull rather than a lid on the seats. Six
+# rows, drawn against the wall and not over the passenger in A, because a locker that covers half
+# of row A makes the aeroplane look like it has swallowed its own seats.
 sprite("bin_closed", m("""
 mmmmmmmmmmmmmmmm
 mhhhhhhhhhhhhhhm
-mhllllllllllllhm
-mhllllllllllllhm
-mhllllllllllllhm
-mhllllllllllllhm
+mllllllllllllllm
+mllllllllllllllm
 mmmmmmmmmmmmmmmm
-mkkkkkkkkkkkkkkm
-mmmmmmmmmmmmmmmm
-"""), {"m": "#4d525e", "h": "#8d94a2", "l": "#6e7684", "k": "#343842"})
+kkkkkkkkkkkkkkkk
+"""), {"m": "#3c414b", "h": "#7d8595", "l": "#565d6b", "k": "#171a20"})
 
 sprite("bin_open", m("""
 mmmmmmmmmmmmmmmm
 mhhhhhhhhhhhhhhm
-mmmmmmmmmmmmmmmm
-.vvvvvvvvvvvvvv.
-.vggggggggggggv.
-.vgbbbbggbbbbgv.
-.vgbbbbggbbbbgv.
-.vggggggggggggv.
-.vvvvvvvvvvvvvv.
-"""), {"m": "#4d525e", "h": "#8d94a2", "v": "#1b1e25", "g": "#2a2f38", "b": "#3b414d"})
+mvvvvvvvvvvvvvvm
+mvgbbbbggbbbbgvm
+mvvvvvvvvvvvvvvm
+kkkkkkkkkkkkkkkk
+"""), {"m": "#3c414b", "h": "#7d8595", "v": "#14171c", "g": "#22262e", "b": "#2b303a", "k": "#171a20"})
 
 # The wall, which is the only opaque tile in the cabin, and the window in it.
 sprite("wall", m("""

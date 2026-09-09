@@ -124,15 +124,14 @@ def render(frame, sprites, scale):
             elif kind == "cockpit":
                 blit(img, sprites, "cockpit_door", ox, oy, scale)
 
-    # ---- the overhead lockers, as a lip over each bank of seats -------------------------------
+    # ---- the overhead lockers, against the hull rather than over the seats ---------------------
     for x in range(W):
         if not frame["tiles"][1][x]["bin"]:
             continue
         for y, key in ((1, "binOpenL"), (7, "binOpenR")):
             t = frame["tiles"][y][x]
-            oy = y * T if y == 1 else (y * T + T - 9 * scale)
-            blit(img, sprites, "bin_open" if t[key] else "bin_closed", x * T, oy, scale,
-                 alpha=0.76)
+            oy = (T - 6 * scale) if y == 1 else ((H - 1) * T)
+            blit(img, sprites, "bin_open" if t[key] else "bin_closed", x * T, oy, scale)
 
     # ---- the zones, tinted by what is actually in the air in them ------------------------------
     px = img.load()

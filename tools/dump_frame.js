@@ -105,7 +105,9 @@ const frame = {
         dead: p.state === "dead", secured: p.state === "secured", helper: !!p.helper,
         masked: !!p.masked,
     })),
-    zones: [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.OVERWING_X, cabin.AFT_CROSS_X,
+    // The two ends, and not the overwing row: that one is a place you can put somebody down and
+    // it is not painted like one, because it is a door in the middle of a burning cabin.
+    zones: [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.AFT_CROSS_X,
             cabin.AFT_GALLEY_X].map((zx) => {
         let smoke = 0, fire = 0;
         for (let y = 1; y < cabin.H - 1; y++) {

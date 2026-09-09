@@ -692,11 +692,11 @@
         const gained = st.securedCount(S) - before.secured;
         if (gained > 0) {
             fx.say(S.player.x, S.player.y, "+" + gained + " ACCOUNTED FOR", "#8ae8a0",
-                   { ms: 1900, rise: 22, size: 5 });
+                   { ms: 1900, rise: 22, size: 0.32 });
             fx.flash("#5fd67a", 0.1);
         }
         if (st.helperCount(S) > before.helpers) {
-            fx.say(focus.x, focus.y, "HELPING", "#5fd67a", { ms: 1800, rise: 20, size: 5 });
+            fx.say(focus.x, focus.y, "HELPING", "#5fd67a", { ms: 1800, rise: 20, size: 0.3 });
         }
         if (S.player.burns > before.burns + 0.6) {
             fx.flash("#d4483a", 0.22);
@@ -707,7 +707,7 @@
         const grew = PRS.fire.worst(S.fire) - before.fire;
         if (grew > 6) { fx.shake(3); fx.flash("#ff7a10", 0.14); }
         if (S.credibility > before.cred + 4) {
-            fx.say(S.player.x, S.player.y, "BELIEVED", "#ffd54a", { ms: 1500, rise: 18, size: 5 });
+            fx.say(S.player.x, S.player.y, "BELIEVED", "#ffd54a", { ms: 1500, rise: 18, size: 0.3 });
         }
 
         if (S.clock.landed) {

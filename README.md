@@ -13,11 +13,11 @@ every file is a classic script, so a double-clicked `index.html` works from disk
 ![The cabin at four minutes to touchdown](docs/cabin.png)
 
 *Four minutes two to touchdown. Eleven souls secured, four people helping, three people on the
-floor, and the overwing exit row — the green column in the middle of the picture at the start of
-a flight — has gone red, because the fire got to it. Everybody with a green tick is somebody who
-is somewhere better than their seat. Not a screenshot: `tools/render_frame.py` draws the game's
-own simulation with the game's own sprite maps, and the bots roll their own dice off the run
-seed, so `--seed=606 --at=540` gives you this picture and not one like it.*
+floor, and the fire has taken the overwing exit row — the clear column in the middle, which was
+the only thing worth carrying anybody to for the first half of the flight. Everybody with a green
+tick is somebody who is somewhere better than their seat. Not a screenshot: `tools/render_frame.py`
+draws the game's own simulation with the game's own sprite maps, and the bots roll their own dice
+off the run seed, so `--seed=606 --at=540` gives you this picture and not one like it.*
 
 If your browser is unusually strict about `file://`, any static server will do:
 
@@ -64,13 +64,15 @@ calm, three rows at a time, ahead of the smoke. There is a meter for how much of
 noticed; there is not one for how frightened it is, because there are sixty people on the screen
 already and they are better at saying it than a bar would be.
 
-**Two of the three green columns are galleys and one of them is not.** The forward and aft zones
-are steel, doors, crew, and the furthest points in the aeroplane from the seat of the fire. The
-one in the middle is the overwing exit row, two rows from the locker that is burning, and it is on
-the list because without it the middle of the cabin is unplayable rather than because it is a nice
-place to be. So it is not painted with a promise: every zone is tinted by what is actually in the
-air in it and charged for it at touchdown, green to amber to red, and the middle one says EXIT
-rather than SAFE. It goes first. It is supposed to.
+**There are two green columns and three places to put somebody down.** The two that are painted
+are galleys: steel, doors, crew, and the furthest points in the aeroplane from the seat of the
+fire. The third is the overwing exit row, in the middle, and it is not painted, because it is two
+rows from the locker that is burning and it is not a promise. It is a break in the seats with a
+door at each end, and it is on the list because without it the middle of this cabin is unplayable
+rather than because it is a nice place to be. Being accounted for is not a force field either:
+what was in the air where you left somebody is charged for at touchdown, so the middle of the
+aeroplane is worth a great deal at minute two and very little at minute eleven, and the way you
+find that out is by looking at it.
 
 **You cannot save everybody.** You can carry about fourteen people in fifteen minutes. There are
 sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference
