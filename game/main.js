@@ -66,6 +66,26 @@
                 if (def.label === undefined) bad.push("Action " + def.id + " has no label.");
             }
         }
+        // The data modules the run cannot be built without.
+        for (const key of ["characters", "outfits", "items", "passengers"]) {
+            if (!PRS.data || !PRS.data[key]) bad.push("Missing data: PRS.data." + key + ".");
+        }
+        // Every item has to live somewhere, or the bag screen and the aeroplane disagree.
+        if (PRS.data && PRS.data.items) {
+            const homeless = PRS.data.items.ITEMS.filter((i) => !i.where);
+            if (homeless.length) bad.push(homeless.length + " items have no `where`.");
+        }
+        // Every character's unlock has to be a key some medal actually grants.
+        if (PRS.data && PRS.data.characters && PRS.medals) {
+            const granted = {};
+            for (const m of PRS.medals.MEDALS) if (m.unlocks) granted[m.unlocks] = true;
+            for (const ch of PRS.data.characters.CHARACTERS) {
+                if (ch.locked && !granted[ch.unlockKey]) {
+                    bad.push(ch.name + " is locked behind '" + ch.unlockKey +
+                             "', which no medal grants.");
+                }
+            }
+        }
         // Every sprite an item names must exist.
         if (PRS.data && PRS.data.items && PRS.atlas) {
             for (const item of PRS.data.items.ITEMS) {
