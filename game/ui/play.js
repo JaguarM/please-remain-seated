@@ -21,6 +21,7 @@
     let filter = "";
     let openDeck = null;
     let lastEntries = [];
+    let walkAnim = null;    // cosmetic: the marker walking the route it just walked
 
     function build(container, state) {
         S = state;
@@ -106,7 +107,49 @@
     function loop() {
         raf = requestAnimationFrame(loop);
         if (!canvas || !canvas.isConnected) return;
-        PRS.render.draw(ctx, S, { scale: scale, time: performance.now(), hover: hover });
+        const now = performance.now();
+        PRS.render.draw(ctx, S, {
+            scale: scale, time: now, hover: hover,
+            hoverRoute: hoverRoute(),
+            playerAt: walkPos(now),
+        });
+    }
+
+    /** Where to draw the marker this frame: along the last walk, or simply where you are. */
+    function walkPos(now) {
+        if (!walkAnim) return null;
+        const t = (now - walkAnim.start) / walkAnim.ms;
+        if (t >= 1) { walkAnim = null; return null; }
+        const path = walkAnim.path;
+        const at = t * (path.length - 1);
+        const i = Math.min(path.length - 2, Math.floor(at));
+        const f = at - i;
+        return { x: path[i][0] + (path[i + 1][0] - path[i][0]) * f,
+                 y: path[i][1] + (path[i + 1][1] - path[i][1]) * f };
+    }
+
+    /** The route the mouse is proposing, for the dotted line and the price on the tile. */
+    function hoverRoute() {
+        if (!hover || S.clock.landed) return null;
+        if (hover.x === S.player.x && hover.y === S.player.y) return null;
+        const r = A.route(S, hover.x, hover.y);
+        if (!r) return null;
+        return { path: r.path.map((i) => [cabin.xOf(i), cabin.yOf(i)]),
+                 cost: Math.max(1, Math.round(r.cost)),
+                 name: cabin.placeName(hover.x, hover.y) };
+    }
+
+    /** Walk to a tile. This is what the cabin is for. */
+    function walkTo(t) {
+        const hit = A.available(S, true).filter(
+            (e) => e.id === "move.walk" && e.ctx.x === t.x && e.ctx.y === t.y)[0];
+        if (!hit) return false;
+        const from = [S.player.x, S.player.y];
+        const path = hit.ctx.r.path.map((i) => [cabin.xOf(i), cabin.yOf(i)]);
+        run(hit);
+        walkAnim = { path: [from].concat(path), start: performance.now(),
+                     ms: Math.min(650, 80 + path.length * 50) };
+        return true;
     }
 
     // -------------------------------------------------------------------------------- paint ---
@@ -305,26 +348,19 @@
         paint();
     }
 
+    /**
+     * Clicking the cabin. If somebody on that tile is already in reach, pick them up; otherwise
+     * walk there. Twenty-three per cent of every action list used to be the words "go to"; it is
+     * a picture of an aeroplane and you should be able to point at it.
+     */
     function clickTile(t) {
-        // Clicking a tile does the cheapest sensible thing for it: step there, or reach the
-        // person on it. It is a shortcut into the list, never a thing the list cannot do.
         const entries = lastEntries.length ? lastEntries : A.available(S);
-        const here = st.paxAt(S, t.x, t.y);
-        if (here.length) {
-            const p = here[0];
+        for (const p of st.paxAt(S, t.x, t.y)) {
             const carry = entries.filter((e) => e.id === "people.carry" && e.ctx &&
                                                 e.ctx.p && e.ctx.p.id === p.id)[0];
             if (carry) return run(carry);
-            const tell = entries.filter((e) => e.id === "people.tell" && e.ctx &&
-                                               e.ctx.p && e.ctx.p.id === p.id)[0];
-            if (tell) return run(tell);
         }
-        const step = entries.filter((e) => e.id === "move.step" && e.ctx &&
-                                           e.ctx.x === t.x && e.ctx.y === t.y)[0];
-        if (step) return run(step);
-        const row = cabin.rowAt(t.x);
-        const goto = entries.filter((e) => e.id === "move.to_row" && e.ctx && e.ctx.row === row)[0];
-        if (goto) return run(goto);
+        walkTo(t);
     }
 
     // -------------------------------------------------------------------------------- keys ---
@@ -346,10 +382,8 @@
                        a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] };
         const d = dirs[ev.key];
         if (d) {
-            const entries = lastEntries.length ? lastEntries : A.available(S);
-            const step = entries.filter((e) => e.id === "move.step" && e.ctx &&
-                e.ctx.x === S.player.x + d[0] && e.ctx.y === S.player.y + d[1])[0];
-            if (step) { run(step); ev.preventDefault(); }
+            walkTo({ x: S.player.x + d[0], y: S.player.y + d[1] });
+            ev.preventDefault();
             return;
         }
         if (ev.key === "/") { $("#filter", root).focus(); ev.preventDefault(); }

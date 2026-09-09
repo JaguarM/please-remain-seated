@@ -115,7 +115,12 @@ function load() {
 // is the whole point of it.
 const BOTS = {
     random(PRS, S, list) {
-        return list[Math.floor(Math.random() * list.length)];
+        // Walking is hidden from the player's list and there are two hundred places to walk to, so
+        // a uniform pick over everything is a bot that paces. A confused person mostly does things.
+        const walks = list.filter((e) => e.id === "move.walk");
+        const rest = list.filter((e) => e.id !== "move.walk");
+        const pool = rest.length && Math.random() > 0.3 ? rest : (walks.length ? walks : rest);
+        return pool[Math.floor(Math.random() * pool.length)];
     },
 
     fire(PRS, S, list) {
@@ -230,7 +235,7 @@ function playOne(PRS, opts) {
     while (!S.clock.landed && steps < 3000) {
         let list;
         try {
-            list = PRS.actions.available(S);
+            list = PRS.actions.available(S, true);
         } catch (err) {
             errors.push({ where: "available", err: err });
             break;

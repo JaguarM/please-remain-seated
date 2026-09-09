@@ -137,7 +137,8 @@
 
         // ---- you ----------------------------------------------------------------------------
         const P = S.player;
-        const ppx = P.x * T, ppy = P.y * T;
+        const at = opts.playerAt || P;
+        const ppx = at.x * T, ppy = at.y * T;
         atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale,
                         0.55 + 0.45 * Math.abs(Math.sin(t * 0.004)));
         atlas.blit(ctx, P.crouching ? "pax_down" : "pax", ppx, ppy, scale,
@@ -228,14 +229,59 @@
             atlas.blitAlpha(ctx, "mark_saved", p.x * T, p.y * T, scale, 0.95);
         }
 
-        // ---- overlays ------------------------------------------------------------------------
+        // ---- where the mouse is pointing, and what walking there costs ---------------------
+        const hr = opts.hoverRoute;
+        if (hr && hr.path.length) {
+            ctx.save();
+            ctx.strokeStyle = "rgba(255,213,74,0.75)";
+            ctx.lineWidth = Math.max(1, scale);
+            ctx.setLineDash([scale * 2, scale * 3]);
+            ctx.beginPath();
+            ctx.moveTo(P.x * T + T / 2, P.y * T + T / 2);
+            for (const [px, py] of hr.path) ctx.lineTo(px * T + T / 2, py * T + T / 2);
+            ctx.stroke();
+            ctx.restore();
+        }
         if (opts.hover && cabin.inBounds(opts.hover.x, opts.hover.y)) {
+            const hx = opts.hover.x * T, hy = opts.hover.y * T;
             ctx.save();
             ctx.strokeStyle = "#ffd54a";
             ctx.lineWidth = Math.max(1, scale);
-            ctx.strokeRect(opts.hover.x * T + 0.5, opts.hover.y * T + 0.5, T - 1, T - 1);
+            ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
+            if (hr) {
+                // The price, on the tile, so the cost of a walk is where the walk is.
+                const label = hr.cost + "s";
+                ctx.font = "700 " + (6 * scale) + "px ui-monospace, monospace";
+                const w = ctx.measureText(label).width + 3 * scale;
+                const bx = Math.min(cabin.W * T - w, hx + T / 2 - w / 2);
+                const by = hy - 8 * scale < 0 ? hy + T + scale : hy - 8 * scale;
+                ctx.fillStyle = "rgba(22,25,31,0.92)";
+                ctx.fillRect(bx, by, w, 8 * scale);
+                ctx.fillStyle = "#ffd54a";
+                ctx.textAlign = "center";
+                ctx.fillText(label, bx + w / 2, by + 6.2 * scale);
+            }
             ctx.restore();
         }
+
+        // ---- the places, named on the picture ----------------------------------------------
+        ctx.save();
+        ctx.font = "700 " + (4.5 * scale) + "px ui-monospace, monospace";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(180,196,210,0.62)";
+        const label = (text, x, y) => ctx.fillText(text, x * T + T / 2, y * T + T * 0.62);
+        label("GALLEY", cabin.FWD_GALLEY_X, 2);
+        label("GALLEY", cabin.FWD_GALLEY_X, 6);
+        label("GALLEY", cabin.AFT_GALLEY_X, 3);
+        label("GALLEY", cabin.AFT_GALLEY_X, 5);
+        label("LAV", cabin.AFT_GALLEY_X, 1);
+        label("LAV", cabin.AFT_GALLEY_X, 7);
+        ctx.fillStyle = "rgba(120,214,140,0.8)";
+        for (const zx of [cabin.FWD_CROSS_X, cabin.OVERWING_X, cabin.AFT_CROSS_X]) {
+            label("SAFE", zx, 2);
+            label("SAFE", zx, 6);
+        }
+        ctx.restore();
 
         if (opts.rowNumbers !== false) {
             ctx.save();

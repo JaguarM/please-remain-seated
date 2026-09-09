@@ -103,7 +103,35 @@
 
     A.register([
         {
+            // What a click on the cabin does. Hidden, because the cabin is the button.
+            id: "move.walk",
+            deck: "move",
+            tags: ["move"],
+            hidden: true,
+            targets(S) {
+                const out = [];
+                for (let x = 0; x < cabin.W; x++) {
+                    for (let y = 0; y < cabin.H; y++) {
+                        if (x === S.player.x && y === S.player.y) continue;
+                        const r = route(S, x, y);
+                        if (!r) continue;
+                        out.push({ key: x + "," + y, x: x, y: y, r: r });
+                    }
+                }
+                return out;
+            },
+            label: (S, c) => "Go to " + cabin.placeName(c.x, c.y),
+            detail: (S, c) => cabin.placeName(c.x, c.y),
+            cost: (S, c) => c.r.cost,
+            run(S, c) {
+                travel(S, c.r);
+                return arrival(S);
+            },
+        },
+
+        {
             id: "move.step",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             targets(S) {
@@ -135,6 +163,7 @@
 
         {
             id: "move.aisle",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             label: "Get into the aisle",
@@ -152,6 +181,7 @@
 
         {
             id: "move.to_fire",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move", "fire"],
             label: "Go to the fire",
@@ -176,6 +206,7 @@
 
         {
             id: "move.fwd_galley",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             label: "Go to the forward galley",
@@ -194,6 +225,7 @@
 
         {
             id: "move.aft_galley",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             label: "Go to the aft galley",
@@ -212,6 +244,7 @@
 
         {
             id: "move.overwing",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             label: "Go to the overwing exits",
@@ -230,6 +263,7 @@
 
         {
             id: "move.to_lav",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             label: "Go to the aft lavatory",
@@ -248,6 +282,7 @@
 
         {
             id: "move.to_row",
+            hidden: true,   // on the map, not in the list
             deck: "move",
             tags: ["move"],
             targets(S) {

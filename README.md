@@ -61,8 +61,10 @@ its own locked card, so the roster is a list of things to try rather than a wall
 What is in it
 -------------
 
-- **188 hand-written actions** across seven decks, each with its own cost, conditions and line of
-  text. A turn offers about **fifty concrete options**, and the list only ever contains things
+- **189 hand-written actions** across seven decks, each with its own cost, conditions and line of
+  text. Walking is not one of them — it is on the map, where the aeroplane is — so a turn offers
+  about **twenty to forty concrete options**, every one of them a decision. Twenty-three per
+  cent of every list, every turn, used to be the words “go to”, and the list only ever contains things
   that are actually possible right now. There were 325 of them until a playtest said the options
   were the ridiculous part rather than the story; the 139 that went were flavour, near-duplicates,
   readouts of the fire's state, and things whose only function was to make the day worse.
@@ -88,9 +90,12 @@ What is in it
 Controls
 --------
 
-Click an action, or press **1–9** for the first nine. **Arrow keys** or **WASD** to step. **Click
-a tile** to walk there or reach the person on it. **Tab** cycles the decks, **/** focuses the
-filter box.
+**Click anywhere in the cabin to walk there.** The route and its cost in seconds are drawn on
+the aeroplane before you commit; click somebody already in reach and you pick them up instead.
+**Arrow keys** or **WASD** step one tile.
+
+The list is only what you do *where you are standing*. Click an action or press **1–9** for the
+first nine. **Tab** cycles the decks, **/** focuses the filter box.
 
 How it is built
 ---------------

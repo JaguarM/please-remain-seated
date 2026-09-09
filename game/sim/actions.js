@@ -21,7 +21,8 @@
     const BY_ID = {};
 
     const DECKS = {
-        move:      { name: "Move",        order: 0, hint: "Where you are is most of what you can do." },
+        move:      { name: "Move",        order: 0,
+                     hint: "Click the cabin to walk there. Arrows or WASD to step." },
         fire:      { name: "The fire",    order: 1, hint: "None of this puts it out." },
         people:    { name: "People",      order: 2, hint: "The only thing that scales." },
         crew:      { name: "Crew",        order: 3, hint: "They have the equipment and the procedure." },
@@ -119,11 +120,18 @@
         };
     }
 
-    /** Everything you could do, right now, from where you are standing. */
-    function available(S) {
+    /**
+     * Everything you could do, right now, from where you are standing.
+     *
+     * `includeHidden` is for the play-testers. A hidden action is real and reachable and costs
+     * what it says; it is simply not in the list, because the player reaches it another way. The
+     * only ones are the walks, which are on the map where the aeroplane is.
+     */
+    function available(S, includeHidden) {
         if (S.clock.landed) return [];
         const out = [];
         for (const def of REGISTRY) {
+            if (def.hidden && !includeHidden) continue;
             if (def.once && S.counts[def.id]) continue;
             const entries = entriesFor(def, S);
             for (const e of entries) out.push(e);

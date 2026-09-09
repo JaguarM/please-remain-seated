@@ -93,9 +93,14 @@
                     "the lavatory cabinet, and — twenty-three of them — in other passengers' " +
                     "laps. Asking somebody what they have got costs seven seconds and is the " +
                     "same conversation that turns them into a helper."),
-                para("The controls.", "Click an action, or press 1–9 for the first nine. Arrow " +
-                    "keys or WASD to step. Click a tile to walk there or to reach the person on " +
-                    "it. Tab cycles the decks. Slash focuses the filter box."),
+                para("Walking is on the map, not in the list.", "Click anywhere in the cabin " +
+                    "to walk there; the route and what it costs in seconds appear on the " +
+                    "aeroplane before you commit. Click somebody already within reach and you " +
+                    "pick them up instead. Arrow keys or WASD to step one tile."),
+                para("The list is what you do where you are standing.", "Click an action, or " +
+                    "press 1–9 for the first nine. Tab cycles the decks, slash focuses the " +
+                    "filter box. Nothing in it is ever impossible, and nothing possible is " +
+                    "ever missing from it."),
                 el("div", { class: "title-buttons" }, [
                     el("button", { class: "big", text: "All right", onclick: characters }),
                     el("button", { text: "Back", onclick: title }),
