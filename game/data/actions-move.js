@@ -251,28 +251,39 @@
             deck: "move",
             tags: ["move"],
             targets(S) {
-                // Every row that has somebody in it worth going to, so the list is long but never
-                // pointless. Sorted by distance in the UI's own sort, by cost.
-                const out = [];
-                const seen = {};
+                // Twenty-three rows is twenty-three near-identical buttons, which is a list nobody
+                // reads. Six is a list somebody reads: the nearest few, and the nearest few that
+                // contain a person who cannot get out of their own seat.
+                const rows = {};
                 for (const p of S.pax) {
                     if (p.state === "secured" || p.state === "dead" || p.state === "carried") continue;
-                    if (seen[p.row]) continue;
                     const x = cabin.xOfRow(p.row);
                     if (x === null || x === S.player.x) continue;
-                    const r = route(S, x, cabin.AISLE_Y);
-                    if (!r) continue;
-                    seen[p.row] = true;
-                    out.push({ key: "r" + p.row, row: p.row, x: x, r: r });
+                    const row = rows[p.row] || (rows[p.row] = { row: p.row, x: x, n: 0,
+                                                                stuck: 0, down: 0 });
+                    row.n++;
+                    if (p.state === "down") row.down++;
+                    else if (PRS.pax.needsCarrying(p)) row.stuck++;
                 }
-                return out;
+                const out = [];
+                for (const key in rows) {
+                    const row = rows[key];
+                    const r = route(S, row.x, cabin.AISLE_Y);
+                    if (!r) continue;
+                    row.r = r;
+                    row.key = "r" + row.row;
+                    row.score = row.down * 6 + row.stuck * 4 + row.n - r.cost * 0.35;
+                    out.push(row);
+                }
+                out.sort((a, b) => b.score - a.score);
+                return out.slice(0, 6).sort((a, b) => a.r.cost - b.r.cost);
             },
             label: (S, c) => "Go to row " + c.row,
             detail: (S, c) => {
-                const here = S.pax.filter((p) => p.row === c.row && p.state !== "secured" &&
-                                                 p.state !== "dead");
-                const down = here.filter((p) => p.state === "down").length;
-                return here.length + " there" + (down ? ", " + down + " unconscious" : "") + ".";
+                const bits = [PRS.util.plural(c.n, "person", "people") + " there"];
+                if (c.down) bits.push(c.down + " unconscious");
+                if (c.stuck) bits.push(c.stuck + " who cannot walk");
+                return bits.join(", ") + ".";
             },
             cost: (S, c) => c.r.cost,
             run(S, c) {

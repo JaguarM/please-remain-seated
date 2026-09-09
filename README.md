@@ -62,7 +62,7 @@ What is in it
 -------------
 
 - **188 hand-written actions** across seven decks, each with its own cost, conditions and line of
-  text. A turn offers about **seventy concrete options**, and the list only ever contains things
+  text. A turn offers about **fifty concrete options**, and the list only ever contains things
   that are actually possible right now. There were 325 of them until a playtest said the options
   were the ridiculous part rather than the story; the 139 that went were flavour, near-duplicates,
   readouts of the fire's state, and things whose only function was to make the day worse.
