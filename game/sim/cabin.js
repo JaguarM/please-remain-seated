@@ -6,9 +6,9 @@
 //   x=1   forward galley. A safe zone, because it is steel and it is furthest from the fire.
 //   x=2   the forward cross-aisle, doors L1 and R1. Safe.
 //   x=3..14   rows 1 to 12
-//   x=15  the overwing exit row, doors L3 and R3. Counts as a zone, and is not a galley: it is
-//         two rows from the locker that is burning, and it is on the list because without it
-//         the middle of this aeroplane is unplayable rather than because it is a nice place.
+//   x=15  the overwing exit row, doors L3 and R3. Not a zone: it is a clear column of floor two
+//         rows from the locker that is burning, and somebody put down in it has been put down
+//         in the aisle.
 //   x=16..26  rows 13 to 23
 //   x=27  the aft cross-aisle, doors L2 and R2. Safe.
 //   x=28  the aft galley and the two lavatories. Safe, and it has a sink, which matters.
@@ -136,20 +136,17 @@
         return "the cabin";
     }
 
-    // The zones. A passenger left in one at touchdown is out of the seats, low, next to a door
-    // and - at either end - next to a member of crew, which is as good as this day is going to
-    // get for them. The middle one is an exit row over the wing rather than a galley, so how
-    // good it is depends entirely on what is in the air there by the time the gear comes down;
-    // scoring.js charges for that, and the cabin shows it going amber and then red.
+    // The zones: the two ends, and nothing in between. A passenger left in one at touchdown is
+    // out of the seats, low, next to a door and next to a member of crew, which is as good as
+    // this day is going to get for them. The overwing exit row is not one: it is two rows from
+    // the locker that is burning, and somebody put down there has been put down in the aisle.
     function isSafeZone(x, y) {
         if (kindAt(x, y) === "wall" || kindAt(x, y) === "bulkhead") return false;
-        return x <= FWD_CROSS_X + 0 || x >= AFT_CROSS_X || x === OVERWING_X;
+        return x <= FWD_CROSS_X || x >= AFT_CROSS_X;
     }
 
     function safeZoneName(x) {
-        if (x <= FWD_CROSS_X) return "the forward galley";
-        if (x === OVERWING_X) return "the overwing exits";
-        return "the aft galley";
+        return x <= FWD_CROSS_X ? "the forward galley" : "the aft galley";
     }
 
     function solid(x, y) {

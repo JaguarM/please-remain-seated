@@ -27,8 +27,7 @@
             harm *= 0.45;                                  // out of the seats, low, by a door
             harm -= 14;
             // Being accounted for is not a force field. A zone is worth exactly what is in the
-            // air in it, which is why the overwing row - two rows from the fire - is worth a
-            // great deal at minute two and very little at minute eleven.
+            // air in it by the time the gear comes down.
             harm += f.smoke[i] * 0.13;
             harm += f.intensity[i] * 0.22;
         } else {
@@ -40,7 +39,6 @@
             if (p.state === "down") harm += 11;
             const distToDoor = Math.min(
                 Math.abs(p.x - cabin.FWD_CROSS_X),
-                Math.abs(p.x - cabin.OVERWING_X),
                 Math.abs(p.x - cabin.AFT_CROSS_X));
             harm += distToDoor * 1.2;
         }

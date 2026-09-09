@@ -64,15 +64,12 @@ calm, three rows at a time, ahead of the smoke. There is a meter for how much of
 noticed; there is not one for how frightened it is, because there are sixty people on the screen
 already and they are better at saying it than a bar would be.
 
-**There are two green columns and three places to put somebody down.** The two that are painted
-are galleys: steel, doors, crew, and the furthest points in the aeroplane from the seat of the
-fire. The third is the overwing exit row, in the middle, and it is not painted, because it is two
-rows from the locker that is burning and it is not a promise. It is a break in the seats with a
-door at each end, and it is on the list because without it the middle of this cabin is unplayable
-rather than because it is a nice place to be. Being accounted for is not a force field either:
-what was in the air where you left somebody is charged for at touchdown, so the middle of the
-aeroplane is worth a great deal at minute two and very little at minute eleven, and the way you
-find that out is by looking at it.
+**There are two green columns and two places to put somebody down.** Both are galleys: steel,
+doors, crew, and the furthest points in the aeroplane from the seat of the fire. The overwing exit
+row in the middle is not one. It is a break in the seats with a door at each end, two rows from
+the locker that is burning, and somebody put down there has been put down in the aisle. Being
+accounted for is not a force field either: what was in the air where you left somebody is charged
+for at touchdown, and the way you find that out is by looking at it.
 
 **You cannot save everybody.** You can carry about fourteen people in fifteen minutes. There are
 sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference

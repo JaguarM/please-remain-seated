@@ -248,8 +248,8 @@
             deck: "move",
             tags: ["move"],
             label: "Go to the overwing exits",
-            detail: "Two doors and a clear floor, half the distance of either galley from most " +
-                    "of the cabin, and two rows from the locker that is burning.",
+            detail: "Two doors and a clear floor, two rows from the locker that is burning. " +
+                    "Not a place to leave anybody.",
             when: (S) => S.player.x !== cabin.OVERWING_X &&
                          !!route(S, cabin.OVERWING_X, cabin.AISLE_Y),
             cost: (S) => { const r = route(S, cabin.OVERWING_X, cabin.AISLE_Y);

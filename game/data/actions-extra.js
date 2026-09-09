@@ -424,15 +424,15 @@
 
         { id: "extra.clear_exit_row", deck: "cabin", tags: ["social"], danger: "good",
           label: "Clear the overwing exit row", cost: 26,
-          detail: "The only floor in the middle of this aeroplane worth putting anybody on, " +
-                  "and there are bags in it.",
+          detail: "The one clear column across the middle of this aeroplane, and there are " +
+                  "bags in it.",
           when: (S) => Math.abs(S.player.x - cabin.OVERWING_X) <= 1 && !S.flags.exitRowClear,
           run(S) {
               st.setFlag(S, "exitRowClear");
               delete S.cabinFlags.aisleBlocked[cabin.OVERWING_X];
               return { text: "Four bags, a coat and a pushchair out of the overwing row and over " +
-                  "the seat backs. The one place in the middle of this aeroplane worth carrying " +
-                  "somebody to is now a place you can put somebody down.", kind: "great" };
+                  "the seat backs. The middle of this aeroplane is a floor you can cross again.",
+                  kind: "great" };
           } },
 
         // --------------------------------------------------------------------- more of yourself ---

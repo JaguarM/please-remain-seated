@@ -348,7 +348,7 @@
     }
 
     function nearestSafeX(x) {
-        const options = [cabin.FWD_CROSS_X, cabin.OVERWING_X, cabin.AFT_CROSS_X];
+        const options = [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X];
         let best = options[0], bestD = 1e9;
         for (const o of options) {
             const d = Math.abs(o - x);

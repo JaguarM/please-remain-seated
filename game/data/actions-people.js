@@ -71,7 +71,6 @@
     function distanceToSafe(S) {
         return Math.min(
             Math.abs(S.player.x - cabin.FWD_CROSS_X),
-            Math.abs(S.player.x - cabin.OVERWING_X),
             Math.abs(S.player.x - cabin.AFT_CROSS_X));
     }
 

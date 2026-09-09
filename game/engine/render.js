@@ -372,16 +372,12 @@
     // ------------------------------------------------------------------------------- zones ---
 
     /**
-     * The three places worth carrying somebody to, and how true that still is.
+     * The two places worth carrying somebody to, and how true that still is.
      *
-     * The forward and aft zones are galleys: steel, doors, crew, and the furthest points in the
-     * aeroplane from the seat of the fire. The one in the middle is not a galley. It is the
-     * overwing exit row, which is two rows from the locker that is burning, and the only reason
-     * it is on this list is that without it the middle of the cabin is unplayable.
-     *
-     * So it is not painted with a promise. Every zone is tinted by what is actually in it right
-     * now - green while the air is clean, amber as the smoke arrives, red once the fire is in it
-     * - and the label changes with it. The middle one goes first. It is supposed to.
+     * Both zones are galleys: steel, doors, crew, and the furthest points in the aeroplane from
+     * the seat of the fire. Neither is painted with a promise. Every zone is tinted by what is
+     * actually in it right now - green while the air is clean, amber as the smoke arrives, red
+     * once the fire is in it - and the label changes with it.
      */
     function zoneAir(S, zx) {
         let smoke = 0, fire = 0;
@@ -395,10 +391,8 @@
 
     const ZONE_TINT = ["#5fd67a", "#e8c53a", "#d4483a"];
 
-    // The two ends of the aeroplane, and not the middle. The overwing exit row is a place you can
-    // put somebody down and it is drawn as what it is - a clear column of floor with a door at
-    // each end - rather than painted green and promised over. It reads as a break in the rows,
-    // which is all it needs to be.
+    // The two ends of the aeroplane. The overwing exit row is drawn as what it is - a clear
+    // column of floor with a door at each end - and it is not a zone, so it is not painted.
     const ZONES = [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.AFT_CROSS_X, cabin.AFT_GALLEY_X];
 
     function drawZones(ctx, S, T, t) {
@@ -563,11 +557,9 @@
         label("LAV", cabin.AFT_GALLEY_X, 1);
         label("LAV", cabin.AFT_GALLEY_X, 7);
 
-        // The two galley ends say SAFE. The overwing row does not: it is a pair of doors two rows
-        // from the locker that is burning, and the only reason it is worth carrying anybody to is
-        // that it is the only thing in the middle of the aeroplane that is worth anything at all.
-        // All three stop saying anything reassuring once the smoke arrives. The middle one goes
-        // first, and it is supposed to.
+        // The two galley ends say SAFE, and stop saying anything reassuring once the smoke
+        // arrives. The overwing row says nothing: it is a pair of doors two rows from the locker
+        // that is burning, and it is not a zone.
         for (const zx of [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X]) {
             const air = zoneAir(S, zx);
             const tier = air.bad > 0.62 ? 2 : air.bad > 0.24 ? 1 : 0;

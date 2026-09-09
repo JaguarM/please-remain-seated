@@ -147,7 +147,7 @@ const BOTS = {
         const safe = PRS.cabin.isSafeZone(S.player.x, S.player.y);
         return pickBy(list, (e) => {
             if (hands && safe && (e.id === "people.put_down" || e.id === "people.stop_drag")) return 200;
-            if (hands && (e.id === "move.fwd_galley" || e.id === "move.overwing")) return 160;
+            if (hands && e.id === "move.fwd_galley") return 160;
             // Dragging is how you move anybody heavier than your arms, which for most of the cast
             // is most of the aeroplane.
             if (!hands && (e.id === "people.carry" || e.id === "people.drag")) return 120 - e.cost * 0.3;
@@ -167,7 +167,7 @@ const BOTS = {
         return pickBy(list, (e) => {
             if (carrying && safe && (e.id === "people.put_down" ||
                                      e.id === "people.stop_drag")) return 300;
-            if (carrying && (e.id === "move.overwing" || e.id === "move.fwd_galley")) return 250;
+            if (carrying && e.id === "move.fwd_galley") return 250;
             if (e.id === "fire.photograph" && !S.flags.havePhoto) return 240;
             if (e.id === "crew.show_photo") return 230;
             if (e.id === "cabin.trigger_detector" && !S.cabinFlags.detectorSounded) return 220;
