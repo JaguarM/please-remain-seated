@@ -172,8 +172,6 @@ button.big:hover { background: #4b6191; }
 .meter-fill { height: 100%; background: var(--blue); transition: width .2s; }
 .m-good .meter-fill { background: var(--good); }
 .m-cred .meter-fill { background: var(--gold); }
-.m-fire .meter-fill { background: var(--fire); }
-.m-smoke .meter-fill { background: #7b7f88; }
 .m-panic .meter-fill { background: #b45ad0; }
 .m-lungs .meter-fill { background: #5ac8d0; }
 .m-burn .meter-fill { background: var(--bad); }
