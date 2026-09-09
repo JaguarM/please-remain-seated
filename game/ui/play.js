@@ -57,6 +57,7 @@
                 el("div", { class: "list-count", id: "listcount" }),
             ]),
             el("div", { class: "decks", id: "decks" }),
+            el("div", { class: "undo-bar", id: "undobar" }),
             el("div", { class: "actions", id: "actions" }),
         ]);
 
@@ -162,7 +163,52 @@
         paintMeters();
         paintYou();
         paintHere();
+        paintUndo();
         paintActions();
+    }
+
+    /**
+     * The undo bar. It always says what it would undo and what it would give back, or why it
+     * will not, because a rule the player cannot see is a rule they will resent.
+     */
+    function paintUndo() {
+        const box = clear($("#undobar", root));
+        const plan = PRS.undo.peek(S);
+        if (!plan.ok) {
+            box.appendChild(el("div", { class: "undo off" }, [
+                el("span", { class: "undo-mark", text: "↶" }),
+                el("i", { text: plan.why }),
+            ]));
+            return;
+        }
+        box.appendChild(el("button", {
+            class: "undo",
+            title: "Backspace",
+            onclick: doUndo,
+        }, [
+            el("span", { class: "undo-mark", text: "↶" }),
+            el("b", { text: plan.label }),
+            el("span", { class: "undo-back",
+                         text: "+" + costLabel(Math.abs(plan.seconds)) +
+                               (plan.count > 1 ? " · " + plan.count + " actions" : "") }),
+        ]));
+    }
+
+    function doUndo() {
+        const plan = PRS.undo.undo(S);
+        if (!plan) return;
+        PRS.audio.play("back");
+        walkAnim = null;
+        rebuildLog();
+        paint();
+    }
+
+    /** After a rewind the log has been truncated, so its list is rebuilt from the state. */
+    function rebuildLog() {
+        const box = root && $("#log", root);
+        if (!box) return;
+        clear(box);
+        for (const entry of S.log.slice(-220)) pushLog(entry);
     }
 
     function meter(label, value, max, cls, note) {
@@ -383,6 +429,11 @@
         const d = dirs[ev.key];
         if (d) {
             walkTo({ x: S.player.x + d[0], y: S.player.y + d[1] });
+            ev.preventDefault();
+            return;
+        }
+        if (ev.key === "Backspace" || ev.key === "z" || ev.key === "Z") {
+            doUndo();
             ev.preventDefault();
             return;
         }

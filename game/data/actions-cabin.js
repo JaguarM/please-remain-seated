@@ -91,7 +91,7 @@
 
         // The one thing left in this game that does not help. It is in a bin at the back of
         // the aeroplane and it has an ending attached to it.
-        { id: "cabin.lav_bin", deck: "cabin", tags: ["hands"],
+        { id: "cabin.lav_bin", deck: "cabin", tags: ["reveal", "hands"],
           label: "Look in the lavatory waste bin", cost: 7,
           when: (S) => atLav(S) && !S.flags.lookedInBin,
           once: true,
@@ -204,7 +204,7 @@
           } },
 
         // -------------------------------------------------------------------- bins and masks ---
-        { id: "cabin.open_bin_here", deck: "cabin", tags: ["hands"],
+        { id: "cabin.open_bin_here", deck: "cabin", tags: ["reveal", "hands"],
           label: (S) => "Open the bins above row " + cabin.rowAt(S.player.x),
           detail: "Blankets, coats, and somebody's duty free.",
           when: (S) => inRow(S) && !S.cabinFlags.binsOpen[cabin.binKey(S.player.x, "left")],
@@ -293,7 +293,7 @@
 
         // ---------------------------------------------------------------------- doors and exits ---
 
-        { id: "cabin.safety_card", deck: "cabin", tags: ["look"],
+        { id: "cabin.safety_card", deck: "cabin", tags: ["reveal", "look"],
           label: "Read the safety card. Actually read it.", cost: 16,
           once: true,
           when: (S) => inRow(S),
@@ -306,7 +306,7 @@
                   "it is true and useful and you have never read one before.", kind: "good" };
           } },
 
-        { id: "cabin.floor_lights", deck: "cabin", tags: ["hands"],
+        { id: "cabin.floor_lights", deck: "cabin", tags: ["reveal", "hands"],
           label: "Find the floor path lighting", cost: 8,
           when: (S) => S.player.y === cabin.AISLE_Y && PRS.fire.totalSmoke(S.fire) > 20,
           run(S) {
@@ -352,7 +352,7 @@
                   "else stands up at the same time.", kind: "neutral" };
           } },
 
-        { id: "cabin.count_hands", deck: "cabin", tags: ["look"], danger: "good",
+        { id: "cabin.count_hands", deck: "cabin", tags: ["reveal", "look"], danger: "good",
           label: "Count the hands that went up", cost: 12,
           when: (S) => !!S.flags.usedPA && !S.flags.countedHands,
           run(S) {

@@ -19,6 +19,11 @@
             return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
         rng.seed = seed >>> 0;
+        // Where in the sequence we are, so a snapshot can put the stream back. This is what makes
+        // undo safe: rewind and repeat the same action and you get the same luck. You can change
+        // your mind; you cannot change the dice.
+        rng.save = () => a;
+        rng.load = (v) => { a = v >>> 0; };
         rng.int = (n) => Math.floor(rng() * n);
         rng.range = (lo, hi) => lo + rng() * (hi - lo);
         rng.irange = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
@@ -31,15 +36,6 @@
                 const t = out[i]; out[i] = out[j]; out[j] = t;
             }
             return out;
-        };
-        // Pick without repeating until the bag is empty: for flavour lines, so the same joke does
-        // not land twice in a row.
-        rng.bagPicker = function (arr) {
-            let bag = [];
-            return function () {
-                if (!bag.length) bag = rng.shuffle(arr);
-                return bag.pop();
-            };
         };
         return rng;
     }

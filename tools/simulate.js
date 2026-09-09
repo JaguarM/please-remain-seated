@@ -72,6 +72,7 @@ const FILES = [
     "game/sim/pax.js",
     "game/sim/crew.js",
     "game/sim/state.js",
+    "game/sim/undo.js",
     "game/sim/actions.js",
     "game/sim/scoring.js",
     "game/data/passengers.js",

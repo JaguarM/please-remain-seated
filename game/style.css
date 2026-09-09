@@ -398,3 +398,19 @@ button.big:hover { background: #4b6191; }
 /* A full bag dims the rest rather than blocking them: clicking one swaps out the oldest. */
 .item.dim { opacity: .62; }
 .item.dim:hover { opacity: 1; }
+
+/* Changing your mind. The bar always says what it would undo and what it gives back, or why it
+   will not, because a rule the player cannot see is a rule they will resent. */
+.undo-bar { padding: 0 10px 6px; }
+.undo {
+  display: flex; align-items: baseline; gap: 8px; width: 100%;
+  text-align: left; padding: 5px 9px; font-size: 12px;
+  background: #1d2229; border: 1px solid var(--line); border-radius: 3px;
+}
+.undo:hover { background: #262d36; border-color: var(--gold); }
+.undo-mark { font-size: 14px; color: var(--gold); }
+.undo b { font-weight: 500; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.undo-back { font: 11px var(--mono); color: var(--good); white-space: nowrap; }
+.undo.off { background: transparent; border-color: transparent; cursor: default; }
+.undo.off .undo-mark { color: var(--ink-faint); }
+.undo.off i { font-style: normal; color: var(--ink-faint); font-size: 11px; }

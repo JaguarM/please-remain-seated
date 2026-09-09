@@ -157,6 +157,9 @@
     function perform(S, entry) {
         if (S.clock.landed) return null;
         const def = entry.def;
+        // Everything the world is, before anything happens, including where the dice are.
+        PRS.undo.push(S, def);
+        S.undoStack[S.undoStack.length - 1].label = entry.label;
         let cost = entry.cost;
         let text = null, kind = def.danger === "bad" ? "bad" : def.danger === "good" ? "good" : "plain";
 

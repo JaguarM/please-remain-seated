@@ -44,6 +44,13 @@ the meal service, pointing at a closed locker. Credibility rises when the eviden
 — a photograph, an open bin, a burn on your hand, the lavatory smoke detector — and every social
 action in the game is gated behind it.
 
+**You can change your mind, but you cannot change your luck.** Backspace undoes your last action
+and gives the seconds back; a run of the same action undoes as one. What it will not undo is
+anything that told you something you did not know — looking in a bin, asking somebody what they
+have got — because you cannot un-see that. And the snapshot includes the position of the random
+number stream, so repeating an action after an undo gives *exactly* the same result, down to the
+sentence. Refusals cannot be re-rolled.
+
 **You cannot ask the fire how it is doing.** There is no action that reads out its intensity, how
 many cells are left, or when the next one goes. You can see the fire, on the screen, in the row it
 is in. That is the readout, and it is the same one everybody else on the aeroplane has.
@@ -148,6 +155,7 @@ being played, a great many times, by things that are not people.
 node tools/simulate.js 400        # six bots, a few hundred flights, and the balance table
 node tools/coverage.js            # build a world for every action and perform it
 node tools/coverage.js --verbose  # ...and print what each one said
+node tools/test_undo.js           # undo is exact, and cannot buy a better roll
 
 node tools/dump_frame.js --at=480 --seed=447   # play to a moment and dump it
 python tools/render_frame.py --scale=4         # draw that moment as a PNG
@@ -174,6 +182,12 @@ seat they started in. That tension is the game: the score is souls you moved, an
 thing you can spend your whole afternoon on and be able to justify afterwards.
 
 If the fire bot ever scores well, the game has stopped being about the thing it is about.
+
+`test_undo.js` is the one that earns its keep. It plays a few hundred real turns, undoes and
+redoes each one, and compares a digest of the entire simulation — every fire field, every
+passenger, the clock, the random stream. It found two bugs on the first run: the flavour-line bags
+were closures that could not be snapshotted, and refilling one *draws from the random stream*, so
+losing them across an undo silently desynchronised every roll afterwards.
 
 `coverage.js` walks the registry instead of playing: for each of the 188 definitions it builds a
 world designed to make that one possible, stands the player in every plausible place, and performs

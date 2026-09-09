@@ -97,6 +97,13 @@
                     "to walk there; the route and what it costs in seconds appear on the " +
                     "aeroplane before you commit. Click somebody already within reach and you " +
                     "pick them up instead. Arrow keys or WASD to step one tile."),
+                para("You can change your mind.", "Backspace undoes your last action and " +
+                    "gives you the seconds back; a run of the same action undoes as one. " +
+                    "What it will not undo is anything that told you something you did not " +
+                    "know — looking in a bin, asking somebody what they have got — because " +
+                    "you cannot un-see that. And repeating an action after an undo gives " +
+                    "exactly the same result, down to the sentence: you can change your " +
+                    "mind, you cannot change your luck."),
                 para("The list is what you do where you are standing.", "Click an action, or " +
                     "press 1–9 for the first nine. Tab cycles the decks, slash focuses the " +
                     "filter box. Nothing in it is ever impossible, and nothing possible is " +
@@ -472,7 +479,9 @@
                 S.character.name + " in " + S.outfit.name.toLowerCase() + " · seed " +
                 R.seed + " · " + R.actions + " actions taken · " + R.distinctActions +
                 " of " + PRS.actions.count() + " distinct actions used · " +
-                (S.stats.itemsFound || 0) + " things found aboard" }));
+                (S.stats.itemsFound || 0) + " things found aboard · " +
+                (S.stats.undos ? "changed your mind " + S.stats.undos + " times"
+                               : "never changed your mind") }));
 
             root.appendChild(inner);
         });

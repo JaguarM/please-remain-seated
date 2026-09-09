@@ -117,7 +117,7 @@
                        "your shoulder, tape does not need to go anywhere.", kind: "great" };
           } },
 
-        { id: "fire.open_bin", deck: "fire", tags: ["fire", "hands"], danger: "bad",
+        { id: "fire.open_bin", deck: "fire", tags: ["reveal", "fire", "hands"], danger: "bad",
           label: "Open the bin and look at it", cost: 10,
           detail: "You will find out what this is. It will also get a great deal of air.",
           when: (S) => atCore(S) && !S.fire.core.exposed,

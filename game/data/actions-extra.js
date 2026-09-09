@@ -139,7 +139,7 @@
                   "somebody who knows which of the two they are in.", kind: "great" };
           } },
 
-        { id: "extra.medic_ask", deck: "people", tags: ["social"], danger: "good",
+        { id: "extra.medic_ask", deck: "people", tags: ["reveal", "social"], danger: "good",
           targets: withTrait("medical"),
           label: (S, c) => "Ask " + who(c) + " who to prioritise",
           detail: "You have been guessing. They have not.",
@@ -246,7 +246,7 @@
           } },
 
         // --------------------------------------------------------- the ones with names -------
-        { id: "extra.chip", deck: "people", tags: ["social"], danger: "good",
+        { id: "extra.chip", deck: "people", tags: ["reveal", "social"], danger: "good",
           targets: named("Chip Vanterpool"),
           label: "Ask Chip Vanterpool what is in the bag",
           detail: "It is his bag. He knows. He has known for eleven minutes.",
@@ -282,7 +282,7 @@
                   "of them was available.", kind: "good" };
           } },
 
-        { id: "extra.aiko", deck: "people", tags: ["social"],
+        { id: "extra.aiko", deck: "people", tags: ["reveal", "social"],
           targets: named("Aiko Sorensen"),
           label: "Ask Aiko Sorensen how she wants to be lifted",
           detail: "She has been lifted by strangers her whole adult life and she has a preference.",
@@ -314,7 +314,7 @@
                   "of them and one of you.", kind: "great" };
           } },
 
-        { id: "extra.wilbur", deck: "people", tags: ["social"],
+        { id: "extra.wilbur", deck: "people", tags: ["reveal", "social"],
           targets: named("Wilbur Ansty"),
           label: "Ask Wilbur Ansty what he thinks it is",
           detail: "He flew Vulcans. He has smelled this before, on an aeroplane, on purpose.",
@@ -329,7 +329,7 @@
                   "just told you the answer.", kind: "great" };
           } },
 
-        { id: "extra.marguerite", deck: "people", tags: ["social"],
+        { id: "extra.marguerite", deck: "people", tags: ["reveal", "social"],
           targets: named("Marguerite Okonjo"),
           label: "Ask Marguerite Okonjo what she has seen",
           detail: "She has been watching the cabin for eleven minutes and she has been counting.",
@@ -387,7 +387,7 @@
           } },
 
         // ------------------------------------------------------------------ more of the cabin ---
-        { id: "extra.head_count", deck: "cabin", tags: ["look"], danger: "good",
+        { id: "extra.head_count", deck: "cabin", tags: ["reveal", "look"], danger: "good",
           label: "Work out who cannot walk", cost: 20,
           detail: "Row by row. It is the list that decides everything else you do.",
           when: (S) => !S.flags.knowTheList,

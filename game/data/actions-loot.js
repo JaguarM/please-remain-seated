@@ -54,7 +54,7 @@
     A.register([
         // ---------------------------------------------------------------- finding out ---------
         {
-            id: "loot.ask_carrying", deck: "people", tags: ["social"], danger: "good",
+            id: "loot.ask_carrying", deck: "people", tags: ["reveal", "social"], danger: "good",
             targets: (S) => unrevealed(S).filter((c) => c.p.state !== "down"),
             label: (S, c) => "Ask " + c.p.name + " what they have got",
             detail: "Seven seconds. Most of the useful objects on this aeroplane are in a lap.",
@@ -69,7 +69,7 @@
         },
 
         {
-            id: "loot.scan_row", deck: "people", tags: ["look"], danger: "good",
+            id: "loot.scan_row", deck: "people", tags: ["reveal", "look"], danger: "good",
             label: "Look at what people around you are holding",
             detail: "Everybody within a couple of rows, at once, instead of one at a time.",
             when: (S) => st.withinEarshot(S, 2).some((p) => p.carries && !p.revealed),
@@ -90,7 +90,7 @@
 
         // ---------------------------------------------------------------- getting hold of it ---
         {
-            id: "loot.ask_for", deck: "people", tags: ["social"], danger: "good",
+            id: "loot.ask_for", deck: "people", tags: ["reveal", "social"], danger: "good",
             targets: (S) => revealed(S).filter((c) => c.p.state !== "down"),
             label: (S, c) => "Ask " + c.p.name + " for the " + short(c.item.name),
             detail: (S, c) => c.item.note,
@@ -112,7 +112,7 @@
         },
 
         {
-            id: "loot.take_down", deck: "people", tags: ["hands"], danger: "good",
+            id: "loot.take_down", deck: "people", tags: ["reveal", "hands"], danger: "good",
             targets: (S) => revealed(S).filter((c) => c.p.state === "down" && inReach(S, c.p)),
             label: (S, c) => "Take the " + short(c.item.name) + " from " + c.p.name,
             detail: "They are not using it and they are not going to mind.",
@@ -126,7 +126,7 @@
         },
 
         {
-            id: "loot.take_anyway", deck: "people", tags: ["hands"], danger: "bad",
+            id: "loot.take_anyway", deck: "people", tags: ["reveal", "hands"], danger: "bad",
             targets: (S) => revealed(S).filter((c) => c.p.state !== "down" && inReach(S, c.p)),
             label: (S, c) => "Take the " + short(c.item.name) + " off " + c.p.name + " anyway",
             detail: "Faster than asking. It costs you with them and with everybody watching.",
@@ -144,7 +144,7 @@
         },
 
         {
-            id: "loot.ask_anyone", deck: "people", tags: ["social"], danger: "good",
+            id: "loot.ask_anyone", deck: "people", tags: ["reveal", "social"], danger: "good",
             label: (S) => "Ask out loud whether anybody has anything useful",
             detail: "One question to four rows. It is how you find the things you did not pack.",
             when: (S) => S.credibility > 25 &&
@@ -174,7 +174,7 @@
 
         // -------------------------------------------------------------- searching the cabin ---
         {
-            id: "loot.seat_pocket", deck: "cabin", tags: ["hands"],
+            id: "loot.seat_pocket", deck: "cabin", tags: ["reveal", "hands"],
             label: (S) => "Go through the seat pockets in row " + cabin.rowAt(S.player.x),
             detail: "Six of them. A safety card, a sick bag, and sometimes something.",
             when: (S) => cabin.rowAt(S.player.x) !== null &&
@@ -194,7 +194,7 @@
         },
 
         {
-            id: "loot.under_seat", deck: "cabin", tags: ["hands"],
+            id: "loot.under_seat", deck: "cabin", tags: ["reveal", "hands"],
             label: (S) => "Look under the seats in row " + cabin.rowAt(S.player.x),
             detail: "Life vests, shoes, and whatever went down there at the start of the flight.",
             when: (S) => cabin.rowAt(S.player.x) !== null && !S.flags["under" + S.player.x],
@@ -213,7 +213,7 @@
         },
 
         {
-            id: "loot.galley_drawer", deck: "cabin", tags: ["hands"], danger: "good",
+            id: "loot.galley_drawer", deck: "cabin", tags: ["reveal", "hands"], danger: "good",
             label: "Go through the galley drawers",
             detail: "Nobody has told you that you cannot and nobody is going to.",
             when: (S) => cabin.kindAt(S.player.x, S.player.y) === "galley" &&
@@ -228,7 +228,7 @@
         },
 
         {
-            id: "loot.lav_cabinet", deck: "cabin", tags: ["hands"],
+            id: "loot.lav_cabinet", deck: "cabin", tags: ["reveal", "hands"],
             label: "Open the cabinet over the lavatory basin",
             detail: "There is one. There is always one and it is never locked.",
             when: (S) => cabin.kindAt(S.player.x, S.player.y) === "lav" && !S.flags.lavCabinet,

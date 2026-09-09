@@ -305,8 +305,9 @@
      */
     function line(S, key, options) {
         S._bags = S._bags || {};
-        if (!S._bags[key]) S._bags[key] = S.rng.bagPicker(options);
-        return S._bags[key]();
+        let bag = S._bags[key];
+        if (!bag || !bag.length) bag = S._bags[key] = S.rng.shuffle(options);
+        return bag.pop();
     }
 
     function log(S, text, kind) {
