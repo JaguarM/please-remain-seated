@@ -41,6 +41,9 @@
                     Object.keys(PRS.actions.deckCounts()).length + " decks.");
         console.log(PRS.actions.deckCounts());
 
+        // The sound setting outlives the tab. Everything else about a run does not.
+        PRS.audio.setEnabled(PRS.util.store.get("sound", true) !== false);
+
         PRS.screens.mount(host);
         PRS.screens.title();
     }

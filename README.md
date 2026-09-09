@@ -10,12 +10,14 @@ every file is a classic script, so a double-clicked `index.html` works from disk
     please-remain-seated/
       index.html          ← open this
 
-![The cabin at five minutes to touchdown](docs/cabin.png)
+![The cabin at four minutes to touchdown](docs/cabin.png)
 
-*Five minutes fifteen to touchdown. Twelve souls secured, four people helping, the fire in the
-locker above 14C has taken most of the left bank, and everybody with a green tick is somebody who
-is somewhere better than their seat. Not a screenshot — `tools/render_frame.py` draws the game's
-own simulation with the game's own sprite maps, so the picture regenerates from a seed.*
+*Four minutes two to touchdown. Eleven souls secured, four people helping, three people on the
+floor, and the overwing exit row — the green column in the middle of the picture at the start of
+a flight — has gone red, because the fire got to it. Everybody with a green tick is somebody who
+is somewhere better than their seat. Not a screenshot: `tools/render_frame.py` draws the game's
+own simulation with the game's own sprite maps, and the bots roll their own dice off the run
+seed, so `--seed=606 --at=540` gives you this picture and not one like it.*
 
 If your browser is unusually strict about `file://`, any static server will do:
 
@@ -55,6 +57,21 @@ sentence. Refusals cannot be re-rolled.
 many cells are left, or when the next one goes. You can see the fire, on the screen, in the row it
 is in. That is the readout, and it is the same one everybody else on the aeroplane has.
 
+**The cabin's panic is on sixty faces and not in a bar.** Every passenger has eyes, a brow and a
+mouth, and which of the five faces they are wearing comes from their own panic and their own
+smoke dose. You find out that row 16 has understood what is happening because row 16 stops looking
+calm, three rows at a time, ahead of the smoke. There is a meter for how much of the cabin has
+noticed; there is not one for how frightened it is, because there are sixty people on the screen
+already and they are better at saying it than a bar would be.
+
+**Two of the three green columns are galleys and one of them is not.** The forward and aft zones
+are steel, doors, crew, and the furthest points in the aeroplane from the seat of the fire. The
+one in the middle is the overwing exit row, two rows from the locker that is burning, and it is on
+the list because without it the middle of the cabin is unplayable rather than because it is a nice
+place to be. So it is not painted with a promise: every zone is tinted by what is actually in the
+air in it and charged for it at touchdown, green to amber to red, and the middle one says EXIT
+rather than SAFE. It goes first. It is supposed to.
+
 **You cannot save everybody.** You can carry about fourteen people in fifteen minutes. There are
 sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference
 between three and twenty-seven, and the route to the top of that range is not in the fire deck.
@@ -86,7 +103,13 @@ What is in it
   laps**, which means the way you get equipped is by talking to people. And one more, which is in
   a bin at the back and does nothing at all.
 - **Sixty named passengers**, each with a weight, a temperament, a seat and an opinion, and a
-  **helper system** that is the only thing in the game that scales.
+  **helper system** that is the only thing in the game that scales. All sixty have faces, and the
+  faces are the same map with five pixels moved, so the aeroplane can look calm and then stop.
+- **Thirty-five synthesised sounds** and not one audio file, because a folder you double-click
+  should not need forty `.ogg`s to make a noise. Water, foam and halon are three different hisses
+  and you learn them. Everything you do makes the right kind of noise whether or not anybody wrote
+  it a specific one: the screen watches whether the action made its own sound and supplies a
+  fallback for its deck when it did not.
 - Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
 - A **fire, smoke and heat simulation** over a 30×9 cabin grid, ventilation-limited, with a core
   that suppression cannot touch.
@@ -102,7 +125,15 @@ the aeroplane before you commit; click somebody already in reach and you pick th
 **Arrow keys** or **WASD** step one tile.
 
 The list is only what you do *where you are standing*. Click an action or press **1–9** for the
-first nine. **Tab** cycles the decks, **/** focuses the filter box.
+first nine. **Tab** cycles the decks, **/** focuses the filter box, **M** turns the sound off.
+
+**The list and the aeroplane are two halves of one sentence.** Point at a row and the person it
+would happen to is bracketed on the cabin, wherever they are, with the price on their tile — hover
+*Carry Odette Ruus forward* and Odette lights up at 23E, at the far end of a cabin you have not
+walked yet. Point at somebody on the cabin and you get their name, their weight, what state they
+are in and the five cheapest things you could do about it, and every row in the list that could
+touch them lights up. Neither direction moves the clock. A plan costs nothing until it is a
+decision, which is the one mercy in this game that is free.
 
 How it is built
 ---------------
@@ -137,8 +168,16 @@ this repository started as (see [ART.md](ART.md)). A passenger is one map and si
 the roster is data and the art cannot drift; fire is one map at four sizes, so the four read as
 the same fire growing.
 
+Faces are the same trick again. The `pax` map has eight palette keys and only three of them were
+chosen by anybody — hair, skin, shirt. The eyes, the brow, the mouth and the eyelids are worked
+out from that person's own skin, so the palest face on board and the darkest both have eyes in
+them and neither is a smudge; and `g`, the hair down the sides of the head, is either the hair
+colour or the skin colour, which is the entire difference between a crop and hair past the jaw.
+The five expressions are one body with five pixels moved. Nobody reads a mouth at three pixels to
+the sprite pixel — what they read is how much dark there is on sixty faces at once.
+
 ```bash
-python pixel-workshop/make_cabin_textures.py --preview   # 85 cabin sprites + a preview sheet
+python pixel-workshop/make_cabin_textures.py --preview   # 95 cabin sprites + a preview sheet
 python tools/bundle_nauvis_sprites.py                    # the pack's 54 item icons, as a script
 ```
 
@@ -157,24 +196,26 @@ node tools/coverage.js            # build a world for every action and perform i
 node tools/coverage.js --verbose  # ...and print what each one said
 node tools/test_undo.js           # undo is exact, and cannot buy a better roll
 
-node tools/dump_frame.js --at=480 --seed=447   # play to a moment and dump it
+node tools/dump_frame.js --at=540 --seed=606   # play to a moment and dump it
 python tools/render_frame.py --scale=4         # draw that moment as a PNG
 
 python tools/trim_actions.py --list            # every action id, by file
 python tools/trim_actions.py fire.spit         # remove one, brace-matched, comment and all
 ```
 
-`simulate.js` finds the crashes and prints the tuning table. The numbers below are what the design
-is aiming at, and they were found with it rather than guessed:
+`simulate.js` finds the crashes and prints the tuning table. The bots roll off their own seeded
+coin rather than `Math.random`, and well away from the game's own stream, so a table is
+reproducible and a dumped frame is a specific frame. The numbers below are six hundred flights,
+and they are what the design is aiming at rather than something that was guessed:
 
 | bot | what it does | souls secured of 60 | not accounted for |
 |-----|--------------|---------------------|-------------------|
-| `fire` | only fights the fire | **2.7** | 6.7 |
-| `idle` | never leaves its seat | 6.1 | 16.8 |
-| `novelty` | always takes the thing it has taken least | 10.5 | 6.3 |
-| `random` | picks uniformly from everything | 10.7 | 11.8 |
-| `carry` | carries and drags, one at a time | 21.1 | 11.3 |
-| `good` | recruits early, then carries | **26.4** (best 38) | 11.1 |
+| `fire` | only fights the fire | **2.5** | 6.1 |
+| `idle` | never leaves its seat | 4.8 | 18.8 |
+| `random` | picks uniformly from everything | 9.3 | 12.4 |
+| `novelty` | always takes the thing it has taken least | 10.7 | 6.0 |
+| `carry` | carries and drags, one at a time | 21.0 | 11.5 |
+| `good` | recruits early, then carries | **26.6** (best 36) | 9.6 |
 
 The fire bot is the interesting row. It secures almost nobody and it has the fewest casualties,
 because holding a fire down really does keep a cabin breathable — it just leaves everybody in the
@@ -189,9 +230,9 @@ passenger, the clock, the random stream. It found two bugs on the first run: the
 were closures that could not be snapshotted, and refilling one *draws from the random stream*, so
 losing them across an undo silently desynchronised every roll afterwards.
 
-`coverage.js` walks the registry instead of playing: for each of the 188 definitions it builds a
+`coverage.js` walks the registry instead of playing: for each of the 189 definitions it builds a
 world designed to make that one possible, stands the player in every plausible place, and performs
-it. It currently reports **188 of 188 reachable, none throw**. It has already found one action
+it. It currently reports **189 of 189 reachable, none throw**. It has already found one action
 that asked for an item which had never been added to `items.js`, and so could never have appeared
 in a real game at all.
 

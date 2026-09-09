@@ -142,6 +142,9 @@
             count: stack.length - i,
             label: top.label || top.id,
             seconds: Math.round(S.clock.remaining - first.snap.clock.remaining) * -1,
+            // Where you were standing before all that, so the cabin can show you the tile you
+            // would be putting yourself back on.
+            at: { x: first.snap.player.x, y: first.snap.player.y },
         };
     }
 

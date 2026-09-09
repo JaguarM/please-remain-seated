@@ -424,7 +424,8 @@
 
         { id: "extra.clear_exit_row", deck: "cabin", tags: ["social"], danger: "good",
           label: "Clear the overwing exit row", cost: 26,
-          detail: "It is the only safe zone in the middle of the aeroplane and there are bags in it.",
+          detail: "The only floor in the middle of this aeroplane worth putting anybody on, " +
+                  "and there are bags in it.",
           when: (S) => Math.abs(S.player.x - cabin.OVERWING_X) <= 1 && !S.flags.exitRowClear,
           run(S) {
               st.setFlag(S, "exitRowClear");

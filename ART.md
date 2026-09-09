@@ -80,11 +80,52 @@ rules (`ResearchScreen.java`) are worth reading, not porting.
 Added for the game
 ------------------
 
-    pixel-workshop/make_cabin_textures.py   85 more sprites in the same idiom: the cabin seen from
-                                            above, sixty passengers as one map and sixty palettes,
-                                            fire at four intensities, and forty-one loadout icons.
+    pixel-workshop/make_cabin_textures.py   95 more sprites in the same idiom: the cabin seen from
+                                            above, sixty-one people out of three bodies and five
+                                            faces, fire at four intensities, and forty-one loadout
+                                            icons.
     tools/bundle_nauvis_sprites.py          re-emits sprites.json as a classic script, because the
                                             game has to open from a double-clicked index.html and a
                                             file:// page may not fetch a sibling JSON.
 
 Both write into `game/art/`. Neither touches anything above.
+
+Faces, which are a palette problem
+----------------------------------
+
+The pack's family trick - one map, a palette per member - is what sixty-one passengers are made
+of, and the same trick is what gives them expressions and haircuts without a second drawing.
+
+The `pax` map has eight keys in it. Three are chosen: `h` hair, `s` skin, `c` shirt. The other
+five are not colours anybody picked:
+
+    e   the eyes        skin x 0.30
+    b   the brow        skin x 0.46
+    m   the mouth       skin x 0.40
+    l   the eyelids     skin x 0.72
+    g   the hair down the sides of the head
+
+`e`, `b`, `m` and `l` are computed from that person's own skin by `PRS.pax.palette`, which is why
+the palest face on board and the darkest both have eyes in them and neither is a smudge: a fixed
+brown eye would vanish on `#3f2717` and shout on `#f2d0b4`.
+
+`g` is the one worth stealing. Its pixels sit on the outside of the face, where the skin was, so
+setting `g` to the skin colour draws short hair and setting it to the hair colour draws hair past
+the jaw. Two heads, one map, and the choice is a palette entry - `black` or `black_long` in
+`passengers.js`.
+
+Expressions are five pixels moved rather than five drawings. `make_cabin_textures.py` keeps one
+body and a set of five-row patches over rows 5-9, columns 3-12, where `~` means "leave the body
+alone":
+
+    ""          "_worried"      "_afraid"       "_asleep"       "_relieved"
+    ~~~~~~~~~~  ~~bb~~bb~~      ~~bb~~bb~~      ~~~~~~~~~~      ~~~~~~~~~~
+    ~~ee~~ee~~  ~~ee~~ee~~      ~~ee~~ee~~      ~~ll~~ll~~      ~~ee~~ee~~
+    ~~~~~~~~~~  ~~~~~~~~~~      ~~~~~~~~~~      ~~~~~~~~~~      ~~~m~~m~~~
+    ~~~~mm~~~~  ~~~mmmm~~~      ~~~mmmm~~~      ~~~~ll~~~~      ~~~~mm~~~~
+    ~~~~~~~~~~  ~~~~~~~~~~      ~~~~mm~~~~      ~~~~~~~~~~      ~~~~~~~~~~
+
+The readout is not the shape of any one face - at three pixels to the sprite pixel nobody is
+reading a mouth - it is how much dark there is on sixty of them at once. A calm cabin is pale. A
+frightened one is not. `PRS.pax.face` decides which patch somebody is wearing from their panic
+and their smoke dose, and it is the only panic meter the cabin has.

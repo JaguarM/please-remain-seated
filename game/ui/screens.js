@@ -143,7 +143,7 @@
                     },
                 }, [
                     el("div", { class: "char-face" }, [
-                        PRS.atlas.icon("pax", 5, { h: ch.hair, s: ch.skin, c: ch.shirt }),
+                        PRS.atlas.icon("pax", 5, PRS.pax.palette(ch)),
                     ]),
                     el("div", { class: "char-id" }, [
                         el("b", { text: ch.name }),
@@ -240,7 +240,7 @@
             const chosen = O.byId(choice.outfitId);
             const panel = el("div", { class: "char-detail" }, [
                 el("div", { class: "you-name" }, [
-                    PRS.atlas.icon("pax", 4, { h: ch.hair, s: ch.skin, c: ch.shirt }),
+                    PRS.atlas.icon("pax", 4, PRS.pax.palette(ch)),
                     el("div", {}, [
                         el("b", { text: ch.name }),
                         el("i", { text: chosen.name }),
@@ -410,7 +410,11 @@
             const rows = R.rows.slice().sort((a, b) => a.row - b.row ||
                 (a.letter < b.letter ? -1 : 1));
             for (const p of rows) {
+                // Their own face, at the size a boarding card photograph would be. Sixty of them
+                // in a list is the point: this is the register, and it has people in it.
                 table.appendChild(el("div", { class: "man-row out-" + p.outcome }, [
+                    PRS.atlas.icon(p.outcome === "lost" ? "pax_down" : "pax", 1,
+                                   PRS.pax.palette(p, p.outcome === "lost"), "man-face"),
                     el("span", { class: "man-seat", text: p.seat }),
                     el("span", { class: "man-name", text: p.name }),
                     el("span", { class: "man-state", text:
@@ -422,6 +426,7 @@
                 ]));
             }
             table.appendChild(el("div", { class: "man-row out-" + R.you.outcome + " you" }, [
+                PRS.atlas.icon("pax", 1, PRS.pax.palette(S.character), "man-face"),
                 el("span", { class: "man-seat", text: S.player.seat }),
                 el("span", { class: "man-name", text: S.character.name + " (you)" }),
                 el("span", { class: "man-state", text: S.character.title }),

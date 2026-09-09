@@ -24,8 +24,13 @@
         let harm = p.smokeDose + p.burns * 1.5;
 
         if (p.state === "secured") {
-            harm *= 0.45;                                  // forward, low, by a door
+            harm *= 0.45;                                  // out of the seats, low, by a door
             harm -= 14;
+            // Being accounted for is not a force field. A zone is worth exactly what is in the
+            // air in it, which is why the overwing row - two rows from the fire - is worth a
+            // great deal at minute two and very little at minute eleven.
+            harm += f.smoke[i] * 0.13;
+            harm += f.intensity[i] * 0.22;
         } else {
             harm += f.smoke[i] * 0.34;                     // the last ninety seconds count double
             harm += f.intensity[i] * 0.42;

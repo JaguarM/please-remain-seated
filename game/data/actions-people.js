@@ -118,9 +118,13 @@
             run(S, c) {
                 const safe = putDown(S, c.p);
                 if (safe) {
-                    return { text: c.p.name + " is down, low, and forward, at " +
+                    const smoke = S.fire.smoke[cabin.idx(S.player.x, S.player.y)];
+                    return { text: c.p.name + " is down, low and out of the seats at " +
                         cabin.safeZoneName(S.player.x) + ". That is one soul accounted for. " +
-                        st.securedCount(S) + " of 61.", kind: "great" };
+                        st.securedCount(S) + " of 61." +
+                        (smoke > 30 ? " The air here is not what it was, and being accounted for " +
+                                      "is not the same thing as being all right." : ""),
+                        kind: "great" };
                 }
                 return { text: "You put " + c.p.name + " down in " +
                     cabin.placeName(S.player.x, S.player.y) + ", which is not a safe zone, and " +

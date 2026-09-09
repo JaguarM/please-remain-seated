@@ -134,40 +134,50 @@ def render(frame, sprites, scale):
             blit(img, sprites, "bin_open" if t[key] else "bin_closed", x * T, oy, scale,
                  alpha=0.76)
 
-    # ---- the safe zones ----------------------------------------------------------------------
+    # ---- the zones, tinted by what is actually in the air in them ------------------------------
     px = img.load()
-    for y in range(1, H - 1):
-        for x in range(W):
-            if not frame["tiles"][y][x]["safe"]:
-                continue
+    tint = [(0x5f, 0xd6, 0x7a), (0xe8, 0xc5, 0x3a), (0xd4, 0x48, 0x3a)]
+    for zone in frame.get("zones", []):
+        r, g, b = tint[zone["tier"]]
+        for y in range(1, H - 1):
             for sy in range(T):
                 for sx in range(T):
-                    tx, ty = x * T + sx, y * T + sy
-                    old = px[tx, ty]
-                    px[tx, ty] = (int(old[0] + (0x5f - old[0]) * 0.16),
-                                  int(old[1] + (0xd6 - old[1]) * 0.16),
-                                  int(old[2] + (0x7a - old[2]) * 0.16), 255)
+                    tx, ty = zone["x"] * T + sx, y * T + sy
+                    o = px[tx, ty]
+                    px[tx, ty] = (int(o[0] + (r - o[0]) * 0.16),
+                                  int(o[1] + (g - o[1]) * 0.16),
+                                  int(o[2] + (b - o[2]) * 0.16), 255)
 
     if frame.get("cart"):
         blit(img, sprites, "drink_cart", frame["cart"]["x"] * T, frame["cart"]["y"] * T, scale)
 
     # ---- people ------------------------------------------------------------------------------
+    # Every sprite name and every palette was decided by game/sim/pax.js and written into the
+    # frame, so there is nothing to get wrong here: who looks frightened is not this file's call.
+    # Several people on one tile fan out the way they do in the browser.
+    FAN = [(0, 0), (3, -2), (-3, 2), (4, 3), (-4, -2), (2, 4), (-2, -4)]
+    stacks, ticked = {}, set()
     for p in frame["pax"]:
-        pal = {"h": p["hair"], "s": p["skin"], "c": p["shirt"]}
-        blit(img, sprites, "pax_down" if p["down"] else "pax", p["x"] * T, p["y"] * T, scale, pal)
+        key = (p["x"], p["y"])
+        stacks[key] = stacks.get(key, 0) + 1
+        dx, dy = FAN[min(len(FAN) - 1, stacks[key] - 1)]
+        ox, oy = p["x"] * T + dx * scale, p["y"] * T + dy * scale
+        blit(img, sprites, p["sprite"], ox, oy, scale, p["palette"],
+             alpha=0.72 if p.get("dead") else 1.0)
         if p["masked"]:
-            blit(img, sprites, "mask_on", p["x"] * T, p["y"] * T, scale, alpha=0.95)
-        if p["secured"]:
+            blit(img, sprites, "mask_on", ox, oy, scale, alpha=0.95)
+        if p.get("dead"):
+            blit(img, sprites, "mark_lost", p["x"] * T, p["y"] * T, scale, alpha=0.5)
+        if p["secured"] and key not in ticked:
+            ticked.add(key)
             blit(img, sprites, "mark_saved", p["x"] * T, p["y"] * T, scale, alpha=0.85)
 
     for c in frame["crew"]:
-        blit(img, sprites, c["sprite"], c["x"] * T, c["y"] * T, scale,
-             {"h": c["hair"], "s": c["skin"], "c": c["shirt"]})
+        blit(img, sprites, c["sprite"], c["x"] * T, c["y"] * T, scale, c["palette"])
 
     P = frame["player"]
-    ppal = {"h": P["hair"], "s": P["skin"], "c": P["shirt"]}
     blit(img, sprites, "player_ring", P["x"] * T, P["y"] * T, scale)
-    blit(img, sprites, "pax", P["x"] * T, P["y"] * T, scale, ppal)
+    blit(img, sprites, P["sprite"], P["x"] * T, P["y"] * T, scale, P["palette"])
 
     # ---- fire, then smoke over everything, then the fire glowing back through it --------------
     for y in range(H):
@@ -193,10 +203,9 @@ def render(frame, sprites, scale):
 
     # ---- you, again, over the smoke ----------------------------------------------------------
     blit(img, sprites, "player_ring", P["x"] * T, P["y"] * T, scale)
-    blit(img, sprites, "pax", P["x"] * T, P["y"] * T, scale, ppal, alpha=0.9)
-    for p in frame["pax"]:
-        if p["secured"]:
-            blit(img, sprites, "mark_saved", p["x"] * T, p["y"] * T, scale, alpha=0.95)
+    blit(img, sprites, P["sprite"], P["x"] * T, P["y"] * T, scale, P["palette"], alpha=0.9)
+    for x, y in ticked:
+        blit(img, sprites, "mark_saved", x * T, y * T, scale, alpha=0.95)
 
     return img
 

@@ -112,6 +112,15 @@ function load() {
 
 // ------------------------------------------------------------------------------------ bots ---
 
+// The bots' own coin, kept well away from the game's. `S.rng` is the flight - every refusal,
+// every flare, every flavour line comes out of it - and a bot that drew from it would be
+// deciding what happens as well as what to do. This one is seeded from the run seed instead, so
+// a seed still reproduces a whole flight, bot included, which is what tools/dump_frame.js needs
+// in order to promise that the picture in the README regenerates.
+let coin = () => Math.random();
+
+function setCoin(rng) { coin = rng; }
+
 // Each bot scores the available actions and takes the best. `random` does not score at all, which
 // is the whole point of it.
 const BOTS = {
@@ -120,8 +129,8 @@ const BOTS = {
         // a uniform pick over everything is a bot that paces. A confused person mostly does things.
         const walks = list.filter((e) => e.id === "move.walk");
         const rest = list.filter((e) => e.id !== "move.walk");
-        const pool = rest.length && Math.random() > 0.3 ? rest : (walks.length ? walks : rest);
-        return pool[Math.floor(Math.random() * pool.length)];
+        const pool = rest.length && coin() > 0.3 ? rest : (walks.length ? walks : rest);
+        return pool[Math.floor(coin() * pool.length)];
     },
 
     fire(PRS, S, list) {
@@ -207,10 +216,10 @@ const BOTS = {
 function pickBy(list, score) {
     let best = null, bestScore = -Infinity;
     for (const e of list) {
-        const s = score(e) + Math.random() * 4;
+        const s = score(e) + coin() * 4;
         if (s > bestScore) { bestScore = s; best = e; }
     }
-    return best || list[Math.floor(Math.random() * list.length)];
+    return best || list[Math.floor(coin() * list.length)];
 }
 
 // ------------------------------------------------------------------------------------- run ---
@@ -228,6 +237,7 @@ function playOne(PRS, opts) {
     const outfit = opts.outfit || rng.pick(PRS.data.outfits.OUTFITS).id;
 
     const S = PRS.state.create({ characterId: ch.id, items: bag, outfitId: outfit, seed: seed });
+    setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = BOTS[opts.strategy || "random"];
     let steps = 0;
     const errors = [];

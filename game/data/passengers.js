@@ -34,12 +34,31 @@
         a: "#f2d0b4", b: "#e5b791", c: "#d9a279", d: "#c08a5e",
         e: "#a06b42", f: "#7d4f2e", g: "#5c3a20", h: "#3f2717",
     };
+    // Hair is a colour and a length, and the length costs nothing: `g` is one palette key on the
+    // pax map, the pixels down the sides of the face, and setting it to the hair colour instead
+    // of the skin colour is the whole difference between a crop and hair past the jaw. Anything
+    // ending `_long` is the same colour with that key flipped. Which of the sixty has which was
+    // dealt out rather than deduced - there is nothing in a name that tells you - and every one
+    // of them is one word in the roster below if you disagree with the deal.
+    const long = (colour) => ({ colour: colour, long: true });
     const HAIR = {
         black: "#1d1712", dark: "#2b2118", brown: "#4a3220", chestnut: "#6b4423",
         auburn: "#8a3b1e", ginger: "#b8541f", blond: "#d9b16a", platinum: "#e8dcc0",
         grey: "#9aa0a6", white: "#dfe3e6", dyed: "#c0397a", teal: "#2f8f8a",
         bald: "#c9a17c", cap: "#26303f",
+
+        black_long: long("#1d1712"), dark_long: long("#2b2118"), brown_long: long("#4a3220"),
+        chestnut_long: long("#6b4423"), auburn_long: long("#8a3b1e"), ginger_long: long("#b8541f"),
+        blond_long: long("#d9b16a"), platinum_long: long("#e8dcc0"), grey_long: long("#9aa0a6"),
+        white_long: long("#dfe3e6"), dyed_long: long("#c0397a"), teal_long: long("#2f8f8a"),
     };
+
+    /** A hair key resolved to the colour and the length the renderer needs. */
+    function hairOf(key) {
+        const h = HAIR[key];
+        if (!h) return { colour: key, long: false };
+        return typeof h === "string" ? { colour: h, long: false } : h;
+    }
     const SHIRT = {
         navy: "#25355c", denim: "#4a5a86", steel: "#4f5a68", olive: "#4f5a32",
         rust: "#8a4526", crimson: "#8e2b2b", plum: "#5a2f5e", teal: "#25605f",
@@ -53,7 +72,7 @@
     // have in their lap. Most of the equipment in this game is on other passengers, and the
     // only way to it is to ask.
     const ROSTER = [
-        ["Marguerite Okonjo", "1A", 64, "black", "g", "cream", ["helpful"],
+        ["Marguerite Okonjo", "1A", 64, "black_long", "g", "cream", ["helpful"],
          "“I have been watching you. You are the only one moving.”",
          "“Yes. Fine. Take me. But then you go back for the others.”"],
         ["Bernard Halliwell", "1C", 88, "grey", "a", "suit", ["sceptic", "hostile"],
@@ -63,14 +82,14 @@
         ["Astrid Vollmer", "1D", 59, "platinum", "a", "white", ["sceptic"],
          "“If there were a fire, they would have said something.”",
          "“I am not going anywhere until somebody in a uniform tells me to.”"],
-        ["Yusuf Demirtas", "2B", 81, "dark", "d", "denim", ["helpful"],
+        ["Yusuf Demirtas", "2B", 81, "dark_long", "d", "denim", ["helpful"],
          "“I smell it too. I thought it was the ovens.”",
          "“No, no - I walk. Save your arms for someone who cannot.”",
          "tape"],
         ["Rosalind Achebe", "3A", 66, "black", "f", "plum", ["medical", "helpful"],
          "“I am a paediatric nurse. Tell me what you have seen, precisely.”",
          "“Walk me through it while we go. I can take the next one myself.”"],
-        ["Denny Prosser", "3F", 94, "brown", "b", "tracksuit", ["drunk"],
+        ["Denny Prosser", "3F", 94, "brown_long", "b", "tracksuit", ["drunk"],
          "“Mate. Mate. Is it a barbecue.”",
          "“I love this. I love this so much. Where are we going.”"],
         ["Hyun-woo Park", "4C", 74, "black", "c", "grey", ["headphones"],
@@ -87,7 +106,7 @@
         ["Simone Bertrand", "5E", 57, "auburn", "a", "crimson", ["sceptic"],
          "“The crew are extremely relaxed. I am taking my cue from them.”",
          "“This is assault. This is textbook assault.”"],
-        ["Nadia Farouk", "6F", 63, "black", "e", "teal", ["medical"],
+        ["Nadia Farouk", "6F", 63, "black_long", "e", "teal", ["medical"],
          "“I'm a vet. It's not the same but it's not nothing.”",
          "“I can carry the small ones. Give me the small ones.”"],
         ["Wilbur Ansty", "7C", 86, "white", "a", "tan", ["elderly"],
@@ -96,7 +115,7 @@
         ["Priya Vashisht", "7D", 68, "black", "d", "mustard", ["helpful"],
          "“I'll take the row behind me if you take the row in front.”",
          "“Don't carry me, I'm fine, give me someone to carry.”"],
-        ["Cassius Odum", "8B", 77, "black", "g", "navy", ["sceptic", "headphones"],
+        ["Cassius Odum", "8B", 77, "black_long", "g", "navy", ["sceptic", "headphones"],
          "“I have four hours of podcast left and I intend to finish them.”",
          "“Oh you're serious. You're actually serious.”",
          "lanyard"],
@@ -104,7 +123,7 @@
          "“I've been posting about this for six minutes and nobody believes me either.”",
          "“Are you filming? Someone should be filming.”",
          "megaphone"],
-        ["Constance Mbeki", "9A", 70, "black", "f", "forest", ["helpful"],
+        ["Constance Mbeki", "9A", 70, "black_long", "f", "forest", ["helpful"],
          "“Tell me where you need me and stop asking so nicely.”",
          "“I said stop asking nicely. Move.”",
          "hivis"],
@@ -114,13 +133,13 @@
         ["Anneke Visser", "10C", 65, "blond", "a", "denim", [],
          "“I don't know what to do. Tell me what to do and I'll do it.”",
          "“Thank you. Thank you. I'm sorry I'm so heavy.”"],
-        ["Bram Visser", "10D", 24, "blond", "a", "cream", ["child"],
+        ["Bram Visser", "10D", 24, "blond_long", "a", "cream", ["child"],
          "“Is the plane going to be okay? Mum said it's fine.”",
          "“I can hold on. I'm good at holding on.”"],
         ["Fenna Visser", "10E", 7, "blond", "a", "pink", ["infant"],
          "(she is two and she is asleep and she is heavier than she looks)",
          "(she does not wake, which is the only good news on this aeroplane)"],
-        ["Osgood Trill", "11A", 83, "chestnut", "b", "rust", ["drunk", "hostile"],
+        ["Osgood Trill", "11A", 83, "chestnut_long", "b", "rust", ["drunk", "hostile"],
          "“I'll tell you what's on fire. My connecting flight. Ruined.”",
          "“We're not doing this. We're really not doing this.”"],
         ["Maribel Cruz", "11B", 60, "black", "d", "white", ["helpful", "medical"],
@@ -130,13 +149,13 @@
          "“The overhead bins are certified. I sell the certification.”",
          "“…the certification is for the panel, not the contents. Oh no.”",
          "clipboard"],
-        ["Junie Marsh", "12A", 55, "ginger", "a", "mustard", ["asleep"],
+        ["Junie Marsh", "12A", 55, "ginger_long", "a", "mustard", ["asleep"],
          "(asleep, mouth open, headphones in, one shoe off)",
          "“nnnh — are we landing — is this Faro—”"],
         ["Marisol Quintero", "12C", 64, "dark", "d", "crimson", ["nervous"],
          "“That is fire. That is fire. WHY IS NOBODY — that is FIRE.”",
          "“Thank God. Thank God. Someone else can see it.”"],
-        ["Petra Halvorsen", "12D", 72, "platinum", "a", "steel", ["sceptic"],
+        ["Petra Halvorsen", "12D", 72, "platinum_long", "a", "steel", ["sceptic"],
          "“It's the galley oven. It's always the galley oven.”",
          "“It is not the galley oven. I see that now.”"],
         ["Ade Balogun", "12E", 85, "black", "g", "denim", ["helpful"],
@@ -145,13 +164,13 @@
         ["Winnifred Sloe", "12F", 58, "white", "a", "plum", ["elderly", "sceptic"],
          "“I have flown through worse than this and eaten the meal.”",
          "“My handbag. I am not moving one inch without my handbag.”"],
-        ["Dermot Leahy", "13A", 90, "brown", "a", "olive", ["headphones", "asleep"],
+        ["Dermot Leahy", "13A", 90, "brown_long", "a", "olive", ["headphones", "asleep"],
          "(asleep against the window with a neck pillow on backwards)",
          "“WHAT. WHAT. I WAS ASLEEP.”"],
         ["Sunita Rao", "13B", 62, "black", "d", "teal", ["medical", "helpful"],
          "“I'm an anaesthetist. Airways are literally my whole job.”",
          "“Get me to anyone who has stopped coughing. Those are the urgent ones.”"],
-        ["Milo Fenwick", "13C", 31, "brown", "a", "cream", ["child"],
+        ["Milo Fenwick", "13C", 31, "brown_long", "a", "cream", ["child"],
          "“The man behind us said a bad word about the smoke.”",
          "“Am I allowed? Is it allowed to run?”",
          "pretzels"],
@@ -161,13 +180,13 @@
         ["Gideon Fenwick", "13E", 92, "brown", "a", "navy", ["hostile"],
          "“We are staying together. That is the plan. That is the only plan.”",
          "“All four of us or none of us. I mean it.”"],
-        ["Otis Fenwick", "13F", 12, "brown", "a", "mustard", ["infant"],
+        ["Otis Fenwick", "13F", 12, "brown_long", "a", "mustard", ["infant"],
          "(one, and he thinks the smoke alarm is a game)",
          "(he laughs, which is somehow the worst sound on the aeroplane)"],
         ["Vera Lundqvist", "14A", 67, "grey", "a", "cream", ["elderly"],
          "“Is it my bag? Have I done something? Is it my bag?”",
          "“It is my bag, isn't it. Oh, my dear. Oh, no.”"],
-        ["Chip Vanterpool", "14C", 80, "brown", "b", "black", ["hostile", "sceptic"],
+        ["Chip Vanterpool", "14C", 80, "brown_long", "b", "black", ["hostile", "sceptic"],
          "“That's my bag up there and there is nothing in it. Nothing.”",
          "“It was one vape. ONE. They said the battery was fine.”"],
         ["Georgina Ash", "14D", 63, "auburn", "a", "forest", ["nervous"],
@@ -176,13 +195,13 @@
         ["Bo Kristiansen", "14E", 97, "blond", "a", "steel", ["large"],
          "“I cannot get out of this seat quickly and we both know it.”",
          "“You will hurt yourself. Get someone to take the other side.”"],
-        ["Fatoumata Sy", "14F", 61, "black", "g", "mustard", ["helpful"],
+        ["Fatoumata Sy", "14F", 61, "black_long", "g", "mustard", ["helpful"],
          "“I counted. Twelve rows to the wing exit. I've been counting for an hour.”",
          "“Twelve rows. I'll take the ones who can walk. You take the ones who can't.”"],
         ["Lionel Ferreira", "15A", 84, "grey", "c", "denim", ["asleep", "elderly"],
          "(asleep, and he has taken something to be asleep)",
          "(he does not stir; his weight is entirely in your arms)"],
-        ["Duncan Threlfall", "15C", 87, "grey", "a", "suit", ["hostile"],
+        ["Duncan Threlfall", "15C", 87, "grey_long", "a", "suit", ["hostile"],
          "“Sit. Down. There are procedures and you are not one of them.”",
          "“Unhand — this is — I am a magistrate, you know.”"],
         ["Aiko Sorensen", "15D", 58, "black", "b", "white", ["immobile"],
@@ -191,7 +210,7 @@
         ["Emeka Nwosu", "15E", 82, "black", "g", "olive", ["helpful", "crew"],
          "“I'm cabin crew for a different airline. This is not their procedure.”",
          "“Give me the aft. I know the aft. Go forward.”"],
-        ["Trudy Vane", "15F", 71, "white", "a", "plum", ["sceptic", "elderly"],
+        ["Trudy Vane", "15F", 71, "white_long", "a", "plum", ["sceptic", "elderly"],
          "“In my day we simply didn't make a fuss.”",
          "“Well. This is a fuss. This is quite a considerable fuss.”"],
         ["Bettina Roth", "16C", 66, "brown", "a", "crimson", ["nervous", "hostile"],
@@ -207,13 +226,13 @@
         ["Norbert Klee", "17E", 74, "grey", "a", "grey", ["asleep", "headphones"],
          "(asleep with an eye mask on, which he paid extra for)",
          "“Is it the meal? Have I missed the meal?”"],
-        ["Sanne de Vries", "18A", 60, "blond", "a", "denim", [],
+        ["Sanne de Vries", "18A", 60, "blond_long", "a", "denim", [],
          "“I'll go if she goes. She won't go.”",
          "“She's not going. Take me. Come back for her.”"],
         ["Iris Colbeck", "18B", 68, "white", "a", "forest", ["elderly", "sceptic"],
          "“Sanne is being dramatic. Sanne has always been dramatic.”",
          "“Sanne? SANNE? Where has she taken me?”"],
-        ["Tariq Halabi", "19C", 80, "black", "e", "navy", ["helpful"],
+        ["Tariq Halabi", "19C", 80, "black_long", "e", "navy", ["helpful"],
          "“I'm strong and I'm frightened. Use the first part.”",
          "“Who's next. Don't tell me the odds, just tell me who's next.”"],
         ["Peggy Stoat", "19F", 56, "white", "a", "mustard", ["elderly", "asleep"],
@@ -222,14 +241,14 @@
         ["Yevgeni Sobol", "20D", 93, "dark", "b", "steel", ["hostile", "drunk"],
          "“You. Sit. You are the problem. You have been the problem all flight.”",
          "“No. NO. We land in fifteen minutes. FIFTEEN.”"],
-        ["Delphine Mercier", "21A", 62, "chestnut", "a", "pink", ["nervous"],
+        ["Delphine Mercier", "21A", 62, "chestnut_long", "a", "pink", ["nervous"],
          "“I can hear it. Under the noise. It has a sound.”",
          "“It does have a sound, doesn't it. You hear it too.”",
          "carrier"],
         ["Bruno", "21B", 9, "brown", "a", "tan", ["pet"],
          "(a French bulldog in a bag under the seat, breathing badly)",
          "(he does not weigh much and he will cost you thirty seconds you cannot spare)"],
-        ["Harriet Pomfret", "21F", 73, "grey", "a", "plum", ["sceptic", "hostile"],
+        ["Harriet Pomfret", "21F", 73, "grey_long", "a", "plum", ["sceptic", "hostile"],
          "“Would you please sit down. Would you please just sit down.”",
          "“I have asked you nicely eleven times. Eleven.”"],
         ["Stellan Aas", "22C", 86, "blond", "a", "olive", ["crew"],
@@ -239,7 +258,7 @@
          "“I teach year fives. I can move eleven children in ninety seconds.”",
          "“Hands on shoulders, in a line, no talking. Watch.”",
          "whistle"],
-        ["Gus Peabody", "23B", 77, "ginger", "a", "denim", ["drunk", "headphones"],
+        ["Gus Peabody", "23B", 77, "ginger_long", "a", "denim", ["drunk", "headphones"],
          "“WOOO. Hey. Hey. Is that a fire? That's a fire.”",
          "“This is the best thing that has ever happened to me.”",
          "airhorn"],
@@ -251,13 +270,13 @@
     // The crew. Not passengers: they have a procedure, and the procedure is in crew.js.
     const CREW = [
         { id: "fa1", name: "Yasmin Aboud", role: "Cabin crew, aft", sprite: "crew",
-          seat: "aft", hair: "#3a2c1e", skin: SKIN.e, shirt: "#20304e",
+          seat: "aft", hair: "#3a2c1e", longHair: true, skin: SKIN.e, shirt: "#20304e",
           line: "“Sir. Madam. Whoever you are. Please take your seat.”" },
         { id: "fa2", name: "Callum Reidy", role: "Cabin crew, forward", sprite: "crew",
           seat: "fwd", hair: "#6b4423", skin: SKIN.a, shirt: "#20304e",
           line: "“We're aware of a smell. It's being looked at. Please sit down.”" },
         { id: "purser", name: "Ingrid Halloway", role: "Purser", sprite: "purser",
-          seat: "fwd", hair: "#9aa0a6", skin: SKIN.b, shirt: "#141c30",
+          seat: "fwd", hair: "#9aa0a6", longHair: true, skin: SKIN.b, shirt: "#141c30",
           line: "“I have thirty-one years on this aircraft type. Sit down.”" },
     ];
 
@@ -291,5 +310,5 @@
     ];
 
     PRS.data = PRS.data || {};
-    PRS.data.passengers = { SKIN, HAIR, SHIRT, ROSTER, CREW, AMBIENT, LATE };
+    PRS.data.passengers = { SKIN, HAIR, SHIRT, ROSTER, CREW, AMBIENT, LATE, hairOf };
 })(window);

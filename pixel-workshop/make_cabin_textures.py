@@ -303,17 +303,32 @@ kkkkkkkkkkkkkkkk
 # Entities. Drawn over a tile, so they are mostly air.
 # ---------------------------------------------------------------------------------------------
 
-# A person from above: head, shoulders, two arms. Sixty-one people are this map and a palette.
-sprite("pax", m("""
+# People.
+#
+# Sixty-one faces out of one map. The body below has three colours in it that every passenger
+# overrides - hair, skin, shirt - and five more that are the face: the eyes, the brow, the mouth,
+# the lids, and `g`, which is the hair that comes down the sides of the head. None of those five
+# is drawn as a colour anybody chose. The renderer works them out from the skin, so the eyes of
+# the palest person on board and the eyes of the darkest are both eyes, and neither is a smudge.
+#
+# `g` is the trick worth knowing. Its pixels are on the outside of the face, where the skin used
+# to be, so setting `g` to the skin colour gives short hair and setting it to the hair colour
+# gives long hair. Two heads, one map, and the choice is a palette entry rather than a drawing.
+#
+# The expressions are the same body with five pixels moved, because a cabin that is frightened
+# has to be visible as a cabin that is frightened and there is no meter for that. The face box is
+# rows 5-9, columns 3-12, and a `~` in a patch means "leave the body alone".
+
+PAX_BODY = m("""
 ................
 ................
 .....hhhhhh.....
 ....hhhhhhhh....
 ....hssssssh....
-...shssssssshs..
-...ssssssssss...
-..cssssssssssc..
-..ccsssssssscc..
+...ghssssssshg..
+...gssssssssg...
+..cgssssssssgc..
+..ccgssssssgcc..
 .cccsssssssccccc
 .ccccccccccccccc
 ..cccccccccccc..
@@ -321,17 +336,17 @@ sprite("pax", m("""
 ....cccccccc....
 ................
 ................
-"""), {"h": "#2b2118", "s": "#d9a279", "c": "#4a5a86"})
+""")
 
 # The same person slumped, which the game needs sixty-one of as well.
-sprite("pax_down", m("""
+PAX_DOWN_BODY = m("""
 ................
 ................
 ................
 ................
 ...hhhh.........
 ..hhssshh.......
-..hssssssh......
+..hgssssgh......
 ..ssssssssccc...
 ..sssssscccccc..
 ...sscccccccccc.
@@ -341,7 +356,130 @@ sprite("pax_down", m("""
 ................
 ................
 ................
-"""), {"h": "#2b2118", "s": "#d9a279", "c": "#4a5a86"})
+""")
+
+# A smaller body for the people on board who are not adults: a narrower head on narrower
+# shoulders, in the same face box, so a child and their parent are one drawing at two sizes.
+CHILD_BODY = m("""
+................
+................
+................
+.....hhhhhh.....
+....hhhhhhhh....
+....ghssssgh....
+....gssssssg....
+...cgssssssgc...
+...ccgssssgcc...
+...cccssssccc...
+...cccccccccc...
+....cccccccc....
+.....cccccc.....
+................
+................
+................
+""")
+
+# The face. Defaults are worked out from the default skin, and every one of them is overridden
+# per person by the renderer; they exist so the sprite is honest on its own in the gallery.
+FACE_PALETTE = {"e": "#413024", "b": "#634a37", "m": "#564030", "l": "#9c7457", "g": "#d9a279"}
+
+# rows 5..9 of the body, columns 3..12. Amount of dark on a face is the whole readout: a calm
+# cabin is pale and a frightened one is not, and no number anywhere says so.
+FACES = {
+    "":          ["~~~~~~~~~~",
+                  "~~ee~~ee~~",
+                  "~~~~~~~~~~",
+                  "~~~~mm~~~~",
+                  "~~~~~~~~~~"],
+    "_relieved": ["~~~~~~~~~~",
+                  "~~ee~~ee~~",
+                  "~~~m~~m~~~",
+                  "~~~~mm~~~~",
+                  "~~~~~~~~~~"],
+    "_worried":  ["~~bb~~bb~~",
+                  "~~ee~~ee~~",
+                  "~~~~~~~~~~",
+                  "~~~mmmm~~~",
+                  "~~~~~~~~~~"],
+    "_afraid":   ["~~bb~~bb~~",
+                  "~~ee~~ee~~",
+                  "~~~~~~~~~~",
+                  "~~~mmmm~~~",
+                  "~~~~mm~~~~"],
+    "_asleep":   ["~~~~~~~~~~",
+                  "~~ll~~ll~~",
+                  "~~~~~~~~~~",
+                  "~~~~ll~~~~",
+                  "~~~~~~~~~~"],
+}
+
+# A child's head is narrower, so the same five patches lose their outer pixel and the eyes end up
+# one pixel each and further apart, which is what a child's face does anyway.
+CHILD_FACES = {
+    "":          ["~~~~~~~~~~",
+                  "~~~e~~e~~~",
+                  "~~~~~~~~~~",
+                  "~~~~mm~~~~",
+                  "~~~~~~~~~~"],
+    "_relieved": ["~~~~~~~~~~",
+                  "~~~e~~e~~~",
+                  "~~~m~~m~~~",
+                  "~~~~mm~~~~",
+                  "~~~~~~~~~~"],
+    "_worried":  ["~~~b~~b~~~",
+                  "~~~e~~e~~~",
+                  "~~~~~~~~~~",
+                  "~~~mmmm~~~",
+                  "~~~~~~~~~~"],
+    "_afraid":   ["~~~b~~b~~~",
+                  "~~~e~~e~~~",
+                  "~~~~~~~~~~",
+                  "~~~mmmm~~~",
+                  "~~~~mm~~~~"],
+    "_asleep":   ["~~~~~~~~~~",
+                  "~~~l~~l~~~",
+                  "~~~~~~~~~~",
+                  "~~~~ll~~~~",
+                  "~~~~~~~~~~"],
+}
+
+# Lying down is a profile, so it gets one eye's worth of face and no expressions: the two states
+# that use it are unconscious and being carried, and neither is doing much with a brow.
+DOWN_FACES = {
+    "_down": ["~~~~~~~~~~",      # out cold: the lid shut, the mouth slack and open
+              "~~~ll~~~~~",
+              "~~~~~mm~~~",
+              "~~~~~~~~~~",
+              "~~~~~~~~~~"],
+    "_low":  ["~~~~~~~~~~",      # awake and low: crouching, or in somebody's arms
+              "~~~ee~~~~~",
+              "~~~~~mm~~~",
+              "~~~~~~~~~~",
+              "~~~~~~~~~~"],
+}
+
+
+def face(body, patch, y0=5, x0=3):
+    """One body, one five-row patch over the face box. `~` keeps whatever the body had."""
+    rows = [list(r) for r in body]
+    for dy, line in enumerate(patch):
+        for dx, ch in enumerate(line):
+            if ch == "~":
+                continue
+            rows[y0 + dy][x0 + dx] = ch
+    return ["".join(r) for r in rows]
+
+
+PEOPLE_PALETTE = {"h": "#2b2118", "s": "#d9a279", "c": "#4a5a86", **FACE_PALETTE}
+
+for suffix, patch in FACES.items():
+    sprite("pax" + suffix, face(PAX_BODY, patch), PEOPLE_PALETTE)
+for suffix, patch in CHILD_FACES.items():
+    sprite("child" + suffix, face(CHILD_BODY, patch, y0=5, x0=3), PEOPLE_PALETTE)
+# Nobody gets a child-sized version of these two: a person on the floor is a profile with one
+# eye in it, and shrinking that produces a smudge rather than a smaller child.
+for suffix, patch in DOWN_FACES.items():
+    sprite("pax" + suffix, face(PAX_DOWN_BODY, patch, y0=5, x0=2), PEOPLE_PALETTE)
 
 # You. A ring drawn under the body so you can find yourself in the smoke.
 sprite("player_ring", m("""
@@ -365,6 +503,7 @@ r..............r
 # The crew, in the airline's jacket, and the purser with the darker one.
 variant("crew", "pax", {"c": "#20304e", "h": "#3a2c1e"})
 variant("purser", "pax", {"c": "#141c30", "h": "#5a4630"})
+
 
 # Fire, one map at four intensities. Orange outside, yellow within, white at the heart, which is
 # the furnace flame's palette from make_gui_textures.py because it is the right one.

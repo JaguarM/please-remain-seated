@@ -72,7 +72,7 @@
             flawName: "Not a doctor",
             flawText: "Nobody takes a vet seriously on an aeroplane. Every crew action costs you " +
                       "extra credibility to land.",
-            hair: "#1d1712", skin: "#c08a5e", shirt: "#3f7d8a",
+            hair: "#1d1712", longHair: true, skin: "#c08a5e", shirt: "#3f7d8a",
             open: "You have already worked out who on this aeroplane is going to die first.",
             locked: true,
             unlock: "Be on board for five passengers going quiet.",
@@ -114,7 +114,7 @@
             flawName: "Four foot eleven",
             flawText: "You cannot carry an adult on your own. Ever. Everything you achieve, you " +
                       "achieve through other people.",
-            hair: "#9aa0a6", skin: "#d9a279", shirt: "#232630",
+            hair: "#9aa0a6", longHair: true, skin: "#d9a279", shirt: "#232630",
             open: "You have buried more people than anyone else on board. It has not helped.",
         },
         {
@@ -195,7 +195,7 @@
             flawName: "Eight",
             flawText: "You cannot carry an adult. Not one. Not ever. Children, animals and things " +
                       "only, and nobody believes a word you say.",
-            hair: "#1d1712", skin: "#e5b791", shirt: "#b8617f",
+            hair: "#1d1712", longHair: true, skin: "#e5b791", shirt: "#b8617f",
             open: "The lady said she would come back and check on you. That was a long time ago.",
             locked: true,
             unlock: "Get a child forward to a safe zone.",
@@ -262,7 +262,7 @@
             flawName: "Retired",
             flawText: "You have no authority at all any more, and you are the only person on " +
                       "board who understands exactly how little time there is.",
-            hair: "#dfe3e6", skin: "#c08a5e", shirt: "#c9c0aa",
+            hair: "#dfe3e6", longHair: true, skin: "#c08a5e", shirt: "#c9c0aa",
             open: "You know where everything is. You know it will not be enough.",
             locked: true,
             unlock: "Secure twenty-two souls or more in a single run.",

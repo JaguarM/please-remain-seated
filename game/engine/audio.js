@@ -13,6 +13,11 @@
     let roarGain = null, roarSource = null;
     let enabled = true;
     let ready = false;
+    // How many cues have been asked for, ever. The play screen uses it to find out whether the
+    // action it just ran made its own noise, and only falls back to a generic one if it did not,
+    // which is how a hundred and eighty-nine actions get a sound without a hundred and
+    // eighty-nine edits.
+    let plays = 0;
 
     function ensure() {
         if (ctx) return ctx;
@@ -146,6 +151,21 @@
         good() { tone(660, 0.12, { type: "triangle", gain: 0.1 });
                  tone(880, 0.22, { type: "triangle", gain: 0.1, delay: 0.1 }); },
         tick() { tone(1500, 0.02, { type: "square", gain: 0.025 }); },
+        // Hovering something that would happen. Deliberately almost inaudible: it fires whenever
+        // the pointer crosses a row, and anything louder would be a woodpecker.
+        blip() { tone(1180, 0.018, { type: "sine", gain: 0.018 }); },
+
+        // The seven fallbacks. One per deck, plus one for talking and one for lifting, so that
+        // every action makes the right kind of noise even when nobody wrote it a specific one.
+        talk() { tone(240, 0.07, { type: "sawtooth", gain: 0.035 });
+                 tone(300, 0.06, { type: "sawtooth", gain: 0.03, delay: 0.08 });
+                 tone(210, 0.08, { type: "sawtooth", gain: 0.028, delay: 0.15 }); },
+        rummage() { noise(0.18, { freq: 2600, freqTo: 1100, gain: 0.07, q: 0.8 });
+                    noise(0.12, { freq: 1800, gain: 0.05, q: 1.2, delay: 0.14 }); },
+        latch() { tone(1400, 0.02, { type: "square", gain: 0.05 });
+                  tone(700, 0.05, { type: "square", gain: 0.045, delay: 0.045 }); },
+        effort() { noise(0.22, { freq: 420, freqTo: 180, gain: 0.075, filter: "lowpass" }); },
+        breath() { noise(0.34, { freq: 620, freqTo: 320, gain: 0.055, q: 0.5 }); },
         landing() { tone(55, 2.2, { type: "sawtooth", gain: 0.16, slideTo: 120 });
                     noise(2.4, { freq: 300, freqTo: 2000, gain: 0.14, filter: "lowpass" }); },
         touchdown() { noise(0.9, { freq: 180, freqTo: 60, gain: 0.28, filter: "lowpass" }); },
@@ -153,8 +173,13 @@
 
     function play(name) {
         const fn = sfx[name];
-        if (fn) fn();
+        if (!fn) return;
+        plays++;
+        fn();
     }
+
+    /** How many cues have been played. Only useful as a before-and-after pair. */
+    function count() { return plays; }
 
     function setEnabled(on) {
         enabled = !!on;
@@ -164,5 +189,6 @@
 
     function isEnabled() { return enabled; }
 
-    PRS.audio = { unlock, play, sfx, setEnabled, isEnabled, startRoar, stopRoar, setRoar };
+    PRS.audio = { unlock, play, count, sfx, setEnabled, isEnabled,
+                  startRoar, stopRoar, setRoar };
 })(window);

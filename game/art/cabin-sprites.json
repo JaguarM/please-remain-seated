@@ -198,6 +198,161 @@
   ],
   "source": "make_cabin_textures.py"
  },
+ "child": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....ghssssgh....",
+   "....gsessesg....",
+   "...cgssssssgc...",
+   "...ccgsmmsgcc...",
+   "...cccssssccc...",
+   "...cccccccccc...",
+   "....cccccccc....",
+   ".....cccccc.....",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "child_afraid": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....ghbssbgh....",
+   "....gsessesg....",
+   "...cgssssssgc...",
+   "...ccgmmmmgcc...",
+   "...cccsmmsccc...",
+   "...cccccccccc...",
+   "....cccccccc....",
+   ".....cccccc.....",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "child_asleep": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....ghssssgh....",
+   "....gslsslsg....",
+   "...cgssssssgc...",
+   "...ccgsllsgcc...",
+   "...cccssssccc...",
+   "...cccccccccc...",
+   "....cccccccc....",
+   ".....cccccc.....",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "child_relieved": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....ghssssgh....",
+   "....gsessesg....",
+   "...cgsmssmsgc...",
+   "...ccgsmmsgcc...",
+   "...cccssssccc...",
+   "...cccccccccc...",
+   "....cccccccc....",
+   ".....cccccc.....",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "child_worried": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....ghbssbgh....",
+   "....gsessesg....",
+   "...cgssssssgc...",
+   "...ccgmmmmgcc...",
+   "...cccssssccc...",
+   "...cccccccccc...",
+   "....cccccccc....",
+   ".....cccccc.....",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
  "cockpit_door": {
   "palette": {
    "H": "#8e97a4",
@@ -280,8 +435,13 @@
  },
  "crew": {
   "palette": {
+   "b": "#634a37",
    "c": "#20304e",
+   "e": "#413024",
+   "g": "#d9a279",
    "h": "#3a2c1e",
+   "l": "#9c7457",
+   "m": "#564030",
    "s": "#d9a279"
   },
   "rows": [
@@ -290,10 +450,10 @@
    ".....hhhhhh.....",
    "....hhhhhhhh....",
    "....hssssssh....",
-   "...shssssssshs..",
-   "...ssssssssss...",
-   "..cssssssssssc..",
-   "..ccsssssssscc..",
+   "...ghssssssshg..",
+   "...gseesseesg...",
+   "..cgssssssssgc..",
+   "..ccgssmmssgcc..",
    ".cccsssssssccccc",
    ".ccccccccccccccc",
    "..cccccccccccc..",
@@ -1453,8 +1613,13 @@
  },
  "pax": {
   "palette": {
+   "b": "#634a37",
    "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
    "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
    "s": "#d9a279"
   },
   "rows": [
@@ -1463,10 +1628,72 @@
    ".....hhhhhh.....",
    "....hhhhhhhh....",
    "....hssssssh....",
-   "...shssssssshs..",
-   "...ssssssssss...",
-   "..cssssssssssc..",
-   "..ccsssssssscc..",
+   "...ghssssssshg..",
+   "...gseesseesg...",
+   "..cgssssssssgc..",
+   "..ccgssmmssgcc..",
+   ".cccsssssssccccc",
+   ".ccccccccccccccc",
+   "..cccccccccccc..",
+   "...cccccccccc...",
+   "....cccccccc....",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "pax_afraid": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....hssssssh....",
+   "...ghbbssbbshg..",
+   "...gseesseesg...",
+   "..cgssssssssgc..",
+   "..ccgsmmmmsgcc..",
+   ".cccsssmmssccccc",
+   ".ccccccccccccccc",
+   "..cccccccccccc..",
+   "...cccccccccc...",
+   "....cccccccc....",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "pax_asleep": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....hssssssh....",
+   "...ghssssssshg..",
+   "...gsllssllsg...",
+   "..cgssssssssgc..",
+   "..ccgssllssgcc..",
    ".cccsssssssccccc",
    ".ccccccccccccccc",
    "..cccccccccccc..",
@@ -1479,8 +1706,13 @@
  },
  "pax_down": {
   "palette": {
+   "b": "#634a37",
    "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
    "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
    "s": "#d9a279"
   },
   "rows": [
@@ -1490,14 +1722,107 @@
    "................",
    "...hhhh.........",
    "..hhssshh.......",
-   "..hssssssh......",
-   "..ssssssssccc...",
+   "..hgsllsgh......",
+   "..sssssmmsccc...",
    "..sssssscccccc..",
    "...sscccccccccc.",
    "....cccccccccccc",
    ".....cccccccccc.",
    "......cccccccc..",
    "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "pax_low": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   "................",
+   "...hhhh.........",
+   "..hhssshh.......",
+   "..hgseesgh......",
+   "..sssssmmsccc...",
+   "..sssssscccccc..",
+   "...sscccccccccc.",
+   "....cccccccccccc",
+   ".....cccccccccc.",
+   "......cccccccc..",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "pax_relieved": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....hssssssh....",
+   "...ghssssssshg..",
+   "...gseesseesg...",
+   "..cgssmssmssgc..",
+   "..ccgssmmssgcc..",
+   ".cccsssssssccccc",
+   ".ccccccccccccccc",
+   "..cccccccccccc..",
+   "...cccccccccc...",
+   "....cccccccc....",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "pax_worried": {
+  "palette": {
+   "b": "#634a37",
+   "c": "#4a5a86",
+   "e": "#413024",
+   "g": "#d9a279",
+   "h": "#2b2118",
+   "l": "#9c7457",
+   "m": "#564030",
+   "s": "#d9a279"
+  },
+  "rows": [
+   "................",
+   "................",
+   ".....hhhhhh.....",
+   "....hhhhhhhh....",
+   "....hssssssh....",
+   "...ghbbssbbshg..",
+   "...gseesseesg...",
+   "..cgssssssssgc..",
+   "..ccgsmmmmsgcc..",
+   ".cccsssssssccccc",
+   ".ccccccccccccccc",
+   "..cccccccccccc..",
+   "...cccccccccc...",
+   "....cccccccc....",
    "................",
    "................"
   ],
@@ -1662,8 +1987,13 @@
  },
  "purser": {
   "palette": {
+   "b": "#634a37",
    "c": "#141c30",
+   "e": "#413024",
+   "g": "#d9a279",
    "h": "#5a4630",
+   "l": "#9c7457",
+   "m": "#564030",
    "s": "#d9a279"
   },
   "rows": [
@@ -1672,10 +2002,10 @@
    ".....hhhhhh.....",
    "....hhhhhhhh....",
    "....hssssssh....",
-   "...shssssssshs..",
-   "...ssssssssss...",
-   "..cssssssssssc..",
-   "..ccsssssssscc..",
+   "...ghssssssshg..",
+   "...gseesseesg...",
+   "..cgssssssssgc..",
+   "..ccgssmmssgcc..",
    ".cccsssssssccccc",
    ".ccccccccccccccc",
    "..cccccccccccc..",

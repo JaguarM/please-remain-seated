@@ -122,6 +122,7 @@
             const x = cabin.xOfRow(rowNum);
             const y = cabin.yOfLetter(letter);
             const asleep = traits.indexOf("asleep") >= 0;
+            const hair = data.hairOf(hairKey);
             return {
                 id: "p" + n,
                 n: n,
@@ -133,7 +134,8 @@
                 x: x, y: y,
                 kg: kg,
                 traits: traits,
-                hair: data.HAIR[hairKey] || hairKey,
+                hair: hair.colour,
+                longHair: !!hair.long,
                 skin: data.SKIN[skinKey] || skinKey,
                 shirt: data.SHIRT[shirtKey] || shirtKey,
                 says: says,

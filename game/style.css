@@ -302,7 +302,8 @@ button.big:hover { background: #4b6191; }
 .leg i { width: 9px; height: 9px; border-radius: 2px; display: block; }
 
 .manifest { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.man-row { display: grid; grid-template-columns: 54px 1fr 1fr 130px; gap: 8px; padding: 5px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
+.man-row { display: grid; grid-template-columns: 18px 54px 1fr 1fr 130px; gap: 8px; align-items: center; padding: 4px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
+.man-face { width: 16px; height: 16px; }
 .man-row:nth-child(even) { background: #1b1e25; }
 .man-row.you { background: #232a35; font-weight: 600; }
 .man-seat { font: 11px var(--mono); color: var(--ink-faint); }
@@ -414,3 +415,74 @@ button.big:hover { background: #4b6191; }
 .undo.off { background: transparent; border-color: transparent; cursor: default; }
 .undo.off .undo-mark { color: var(--ink-faint); }
 .undo.off i { font-style: normal; color: var(--ink-faint); font-size: 11px; }
+
+/* ------------------------------------------------------- saying what just happened, and what
+   would happen next.
+
+   The cabin does most of this on its canvas - the price floating off the tile, the brackets round
+   whoever a row would touch. What is left here is the half that lives in the DOM: the clock
+   admitting what it just paid, a meter going briefly bright when its number moves, a log line
+   arriving rather than appearing, and the panel that tells you who that is. */
+
+.clock-plan { height: 15px; }
+.spent {
+  display: inline-block; font: 700 13px var(--mono); color: var(--fire);
+  animation: spent .95s ease-out forwards;
+}
+@keyframes spent {
+  0%   { opacity: 0; transform: translateY(-6px); }
+  18%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(7px); }
+}
+
+.meter.up   .meter-fill { animation: meterlit .7s ease-out; }
+.meter.down .meter-fill { animation: meterlit .7s ease-out; }
+.meter.up   .meter-label b { animation: labellit .7s ease-out; }
+.meter.down .meter-label b { animation: labellit .7s ease-out; }
+@keyframes meterlit { 0% { filter: brightness(2.6); } 100% { filter: none; } }
+@keyframes labellit { 0% { color: #fff; } 100% { color: var(--ink-dim); } }
+
+.log-line.fresh { animation: freshline .5s ease-out; }
+@keyframes freshline {
+  0%   { opacity: 0; transform: translateX(-6px); background: #232a35; }
+  100% { opacity: 1; transform: none; background: transparent; }
+}
+
+/* A row of the list, lit because the person it would happen to is under the pointer over on the
+   aeroplane. The list and the picture are two halves of one sentence. */
+.act.lit { background: #262d38; border-color: var(--line); border-left-color: var(--gold); }
+.chip.lit { border-color: var(--gold); background: #2b2f38; }
+.chip { cursor: default; }
+.chip img { image-rendering: pixelated; }
+
+/* Who that is. Sixty people at thirty-six pixels each is a crowd. */
+.canvas-wrap { position: relative; }
+.tip {
+  position: absolute; left: 0; top: 0; z-index: 5; pointer-events: none;
+  min-width: 190px; max-width: 320px; opacity: 0; transition: opacity .08s;
+  background: rgba(22,25,31,0.97); border: 1px solid var(--line); border-radius: 4px;
+  padding: 7px 9px; font-size: 12px; box-shadow: 0 6px 22px rgba(0,0,0,.5);
+}
+.tip.on { opacity: 1; }
+.tip-place { color: var(--ink); font-weight: 500; }
+.tip-air { color: var(--fire); font-size: 11px; margin-top: 2px; }
+.tip-who { display: grid; grid-template-columns: 32px 1fr; gap: 7px; margin-top: 6px;
+           padding-top: 6px; border-top: 1px solid #262b34; }
+.tip-who b { display: block; font-size: 12.5px; }
+.tip-who i { display: block; font-style: normal; font-size: 11px; color: var(--ink-dim); }
+.tip-who u { display: block; text-decoration: none; font-size: 10px; color: var(--blue);
+             letter-spacing: .04em; margin-top: 2px; }
+.tip-who em { display: block; font-style: normal; font-size: 10px; color: var(--good); }
+.tip-acts { margin-top: 6px; padding-top: 5px; border-top: 1px solid #262b34; }
+.tip-acts > div { display: flex; justify-content: space-between; gap: 10px; font-size: 11px;
+                  color: var(--ink-dim); padding: 1px 0; }
+.tip-acts b { font: 10px var(--mono); color: var(--ink-faint); }
+.tip-more { font-size: 10px; color: var(--ink-faint); margin-top: 4px; }
+
+/* Every action makes a noise, so there is a way to stop it, and it remembers. */
+.sound {
+  margin-top: 4px; padding: 2px 6px; background: transparent; border-color: var(--line);
+  font: 9px var(--mono); letter-spacing: .1em; color: var(--ink-faint);
+}
+.sound:hover { color: var(--ink-dim); }
+.sound.off { color: #7a4a44; border-color: #4a3230; }

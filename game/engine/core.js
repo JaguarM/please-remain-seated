@@ -69,6 +69,14 @@
         return Math.floor(s / 60) + "m " + String(s % 60).padStart(2, "0") + "s";
     }
 
+    /** A hex colour, multiplied. Under 1 darkens; over 1 lightens, up to white. */
+    function shade(hex, f) {
+        const n = parseInt(hex.slice(1), 16);
+        const ch = (v) => Math.max(0, Math.min(255, Math.round(v * f)));
+        const r = ch((n >> 16) & 255), g = ch((n >> 8) & 255), b = ch(n & 255);
+        return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
+    }
+
     function plural(n, one, many) {
         return n + " " + (n === 1 ? one : (many || one + "s"));
     }
@@ -135,7 +143,7 @@
     };
 
     PRS.util = {
-        makeRng, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel, plural,
+        makeRng, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel, plural, shade,
         listSentence, el, $, $$, clear, store,
     };
 })(window);

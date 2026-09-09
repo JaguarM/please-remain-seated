@@ -52,6 +52,60 @@
         }
     }
 
+    // -------------------------------------------------------------------- what they look like ---
+    //
+    // Not drawing - the drawing is in render.js - but the two questions the drawing asks, kept
+    // here because they are questions about a person rather than about a canvas. `tools/dump_frame.js`
+    // asks them too, and writes the answers into the frame, so the browser and the PNG renderer
+    // cannot end up with different opinions about who is frightened.
+
+    /**
+     * Which face somebody is wearing. There is no panic meter for the cabin, on purpose: this is
+     * it. A calm aeroplane is pale and a frightened one is not, and the change runs across sixty
+     * people at once, three rows at a time, ahead of the smoke.
+     */
+    function face(p) {
+        if (isPet(p)) return "pet_carrier";
+        if (p.state === "dead" || p.state === "down") return "pax_down";
+        if (p.state === "carried") return "pax_low";
+        const base = isChild(p) ? "child" : "pax";
+        if (p.state === "asleep") return base + "_asleep";
+        const fear = p.panic + p.smokeDose * 0.55;
+        if (fear > 62) return base + "_afraid";
+        if (fear > 27) return base + "_worried";
+        if (p.state === "secured" || p.helper) return base + "_relieved";
+        return base;
+    }
+
+    /**
+     * The eight colours somebody is drawn with, from the three that are theirs.
+     *
+     * Hair, skin and shirt are chosen; the other five are worked out. `g` is the hair down the
+     * sides of the head, which is the hair colour on somebody with long hair and the skin colour
+     * on somebody without, and the eyes and the mouth are the skin with the light taken out of
+     * them, so that the palest face on board and the darkest both have eyes in them and neither
+     * is a smudge.
+     */
+    const palettes = new Map();
+    function palette(who, ashen) {
+        const key = who.hair + who.skin + who.shirt + (who.longHair ? "|L" : "") + (ashen ? "|A" : "");
+        let pal = palettes.get(key);
+        if (pal) return pal;
+        const shade = PRS.util.shade;
+        pal = {
+            h: who.hair, s: who.skin, c: who.shirt,
+            g: who.longHair ? who.hair : who.skin,
+            e: shade(who.skin, 0.30),      // eyes
+            b: shade(who.skin, 0.46),      // brow
+            m: shade(who.skin, 0.40),      // mouth
+            l: shade(who.skin, 0.72),      // eyelids, which are skin with the light off
+        };
+        // The colour somebody goes when the report stops using their name.
+        if (ashen) for (const k in pal) pal[k] = shade(pal[k], 0.62);
+        palettes.set(key, pal);
+        return pal;
+    }
+
     /** The one number the triage perk shows and everybody else has to guess at. */
     function condition(p) {
         if (p.state === "dead") return { label: "gone", tier: 5 };
@@ -410,6 +464,7 @@
     PRS.pax = {
         DOWN_AT, CRITICAL_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
         carryOverhead, canCarry, refusalFor, advance, recruit, resistance, persuasion, convince,
+        face, palette,
         speak, nearestSafeX,
     };
 })(window);
