@@ -93,7 +93,7 @@
 
     A.register([
         {
-            id: "fire.douse", deck: "fire", tags: ["fire", "hands"], danger: "good",
+            id: "fire.douse", item: (S) => { const b = best(S, LIQUIDS); return b ? (b.id === "bag" ? "binbag" : b.id) : null; }, deck: "fire", tags: ["fire", "hands"], danger: "good",
             when: (S) => !!hot(S) && !!best(S, LIQUIDS),
             label: (S) => "Pour " + best(S, LIQUIDS).name + " on it",
             detail: (S) => {
@@ -108,7 +108,7 @@
         },
 
         {
-            id: "fire.smother", deck: "fire", tags: ["fire", "hands"], danger: "good",
+            id: "fire.smother", item: (S) => { const c = best(S, CLOTHS); return c ? (c.id === "wetblanket" ? "blanket" : c.id) : null; }, deck: "fire", tags: ["fire", "hands"], danger: "good",
             when: (S) => !!hot(S) && !!best(S, CLOTHS),
             label: (S) => "Smother it with " + best(S, CLOTHS).name,
             detail: (S) => best(S, CLOTHS).id === "jacket"

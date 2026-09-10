@@ -18,7 +18,7 @@
     A.register([
         // -------------------------------------------------------------------------- the bag ---
 
-        { id: "items.give", deck: "items", tags: ["hands"],
+        { id: "items.give", item: (S, c) => c.s.id, deck: "items", tags: ["hands"],
           targets(S) {
             const out = [];
             for (const p of st.reachable(S)) {
@@ -49,9 +49,20 @@
           } },
 
         // ------------------------------------------------------------------ making things wet ---
+        { id: "items.soak_pillow", item: "pillow", deck: "items", tags: ["hands"], danger: "good",
+          label: "Soak the neck pillow", cost: 10,
+          detail: "Memory foam holds a surprising amount of water and makes a real filter.",
+          when: (S) => atLav(S) && have(S, "pillow") && !slot(S, "pillow").wet,
+          run(S) {
+              slot(S, "pillow").wet = true;
+              S.player.wearing.pillow = true;
+              return { text: "Sixty pounds of memory foam neck pillow, held under a tap until it " +
+                  "stops taking any more, then over your face. You look like a person in the " +
+                  "worst photograph ever taken and you are breathing filtered air.", kind: "good" };
+          } },
 
         // -------------------------------------------------------------------- making a noise ---
-        { id: "items.airhorn", deck: "items", tags: ["loud"], danger: "bad",
+        { id: "items.airhorn", item: "airhorn", deck: "items", tags: ["loud"], danger: "bad",
           label: "Sound the air horn", cost: 5,
           detail: "One hundred and twenty decibels. Everybody wakes up. Everybody.",
           when: (S) => have(S, "airhorn") && slot(S, "airhorn").uses > 0,
@@ -74,7 +85,7 @@
                   "one.", kind: "neutral" };
           } },
 
-        { id: "items.whistle", deck: "items", tags: ["loud"], danger: "good",
+        { id: "items.whistle", item: "whistle", deck: "items", tags: ["loud"], danger: "good",
           label: "Blow the whistle", cost: 4,
           detail: "It cuts through smoke and noise and it does not start a stampede.",
           when: (S) => have(S, "whistle"),
@@ -90,7 +101,7 @@
 
         // ------------------------------------------------------------------------- the iguana ---
 
-        { id: "items.carrier_child", deck: "items", tags: ["carry"], danger: "good",
+        { id: "items.carrier_child", item: "carrier", deck: "items", tags: ["carry"], danger: "good",
           targets: (S) => st.reachable(S).filter((p) => PRS.pax.isChild(p) || PRS.pax.isPet(p))
                                           .map((p) => ({ key: p.id, p: p })),
           when: (S) => have(S, "carrier") && S.player.carrying.length < S.derived.maxCarry,
@@ -109,7 +120,7 @@
           } },
 
         // -------------------------------------------------------------------------- the tool ---
-        { id: "items.pry_panel", deck: "items", tags: ["fiddly"], danger: "good",
+        { id: "items.pry_panel", item: "multitool", deck: "items", tags: ["fiddly"], danger: "good",
           label: "Get the sidewall panel off with the multi-tool", cost: 26,
           when: (S) => have(S, "multitool") && cabin.rowAt(S.player.x) !== null &&
                        S.fire.intensity[cabin.idx(S.player.x, S.player.y)] > 4 &&
@@ -123,7 +134,7 @@
                   "sideways, along the insulation, at about a row a minute.", kind: "great" };
           } },
 
-        { id: "items.cut_seat", deck: "items", tags: ["fiddly"],
+        { id: "items.cut_seat", item: (S) => { const s = st.inventoryHas(S, "cut"); return s ? s.id : null; }, deck: "items", tags: ["fiddly"],
           label: "Cut the seat cover open", cost: 16,
           detail: "To get at the foam and pull the burning part out of the middle of it.",
           when: (S) => !!st.inventoryHas(S, "cut") &&
@@ -138,7 +149,7 @@
                   kind: "good" };
           } },
 
-        { id: "items.strap_drag", deck: "items", tags: ["carry"], danger: "good",
+        { id: "items.strap_drag", item: "strap", deck: "items", tags: ["carry"], danger: "good",
           targets: (S) => st.reachable(S).filter((p) => p.state === "down" ||
                                                         p.traits.indexOf("immobile") >= 0)
                                           .map((p) => ({ key: p.id, p: p })),
@@ -158,7 +169,7 @@
                   "half that.", kind: "great" };
           } },
 
-        { id: "items.tape_door", deck: "items", tags: ["fiddly"],
+        { id: "items.tape_door", item: "tape", deck: "items", tags: ["fiddly"],
           label: "Tape the lavatory door shut", cost: 16,
           when: (S) => have(S, "tape") && !!S.flags.lavClosed && !S.flags.lavTaped,
           run(S) {
@@ -170,7 +181,7 @@
                   "worth about ninety seconds to everybody in the last six rows.", kind: "good" };
           } },
 
-        { id: "items.tape_seat", deck: "items", tags: ["fiddly"],
+        { id: "items.tape_seat", item: "tape", deck: "items", tags: ["fiddly"],
           label: "Tape a route marker on the seat backs", cost: 18,
           detail: "A strip of tape every row so somebody in smoke can follow it forward.",
           when: (S) => have(S, "tape") && !S.flags.tapeTrail,

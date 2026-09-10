@@ -354,7 +354,7 @@
         },
 
         {
-            id: "people.show_photo", deck: "people", tags: ["social"], danger: "good",
+            id: "people.show_photo", item: "phone", deck: "people", tags: ["social"], danger: "good",
             targets: reachAwake,
             when: (S) => !!S.flags.havePhoto,
             label: (S, c) => "Show " + who(c) + " the photograph",
@@ -532,7 +532,7 @@
         },
 
         {
-            id: "people.tape_to_seat", deck: "people", tags: ["social", "fiddly"], danger: "bad",
+            id: "people.tape_to_seat", item: "tape", deck: "people", tags: ["social", "fiddly"], danger: "bad",
             targets: (S) => reachAwake(S).filter((c) => c.p.state === "aisle"),
             when: (S) => !!st.slotOf(S, "tape") && st.slotOf(S, "tape").uses > 0,
             label: (S, c) => "Tape " + who(c) + " into a seat",
@@ -561,7 +561,7 @@
         },
 
         {
-            id: "people.cut_belt", deck: "people", tags: ["hands"],
+            id: "people.cut_belt", item: (S) => { const s = st.inventoryHas(S, "cut"); return s ? s.id : null; }, deck: "people", tags: ["hands"],
             targets: (S) => reach(S).filter((c) => c.p.belted),
             when: (S) => !!st.inventoryHas(S, "cut"),
             label: (S, c) => "Cut " + who(c) + "'s seatbelt",
@@ -607,7 +607,7 @@
         },
 
         {
-            id: "people.burn_gel", deck: "people", tags: ["hands"], danger: "good",
+            id: "people.burn_gel", item: "first_aid", deck: "people", tags: ["hands"], danger: "good",
             targets: (S) => reach(S).filter((c) => c.p.burns > 8),
             when: (S) => { const s = st.slotOf(S, "first_aid"); return s && s.uses > 0; },
             label: (S, c) => "Put burn gel on " + who(c),
@@ -623,7 +623,7 @@
         },
 
         {
-            id: "people.inhaler", deck: "people", tags: ["hands"], danger: "good",
+            id: "people.inhaler", item: "inhaler", deck: "people", tags: ["hands"], danger: "good",
             targets: (S) => reach(S).filter((c) => c.p.smokeDose > 20),
             when: (S) => { const s = st.slotOf(S, "inhaler"); return s && s.uses > 0; },
             label: (S, c) => "Give " + who(c) + " the inhaler",
@@ -652,7 +652,7 @@
         },
 
         {
-            id: "people.wet_cloth", deck: "people", tags: ["hands"], danger: "good",
+            id: "people.wet_cloth", item: (S) => { const s = st.inventoryHas(S, "cloth"); return s ? s.id : null; }, deck: "people", tags: ["hands"], danger: "good",
             targets: (S) => reach(S).filter((c) => !c.p.masked),
             when: (S) => !!st.inventoryHas(S, "cloth"),
             label: (S, c) => "Tie something wet over " + who(c) + "'s face",
@@ -716,7 +716,7 @@
 
         // -------------------------------------------------------------------------- giving ---
         {
-            id: "people.give_water", deck: "people", tags: ["hands"],
+            id: "people.give_water", item: "water_big", deck: "people", tags: ["hands"],
             targets: reachAwake,
             when: (S) => { const s = st.slotOf(S, "water_big"); return s && s.uses > 0; },
             label: (S, c) => "Give " + who(c) + " some water",
@@ -732,7 +732,7 @@
         },
 
         {
-            id: "people.give_gin", deck: "people", tags: ["hands"],
+            id: "people.give_gin", item: "gin", deck: "people", tags: ["hands"],
             targets: reachAwake,
             when: (S) => { const s = st.slotOf(S, "gin"); return s && s.uses > 0; },
             label: (S, c) => "Give " + who(c) + " a miniature",
@@ -749,7 +749,7 @@
         },
 
         {
-            id: "people.give_pretzels", deck: "people", tags: ["hands"],
+            id: "people.give_pretzels", item: "pretzels", deck: "people", tags: ["hands"],
             targets: (S) => reachAwake(S).filter((c) => P.isChild(c.p)),
             when: (S) => { const s = st.slotOf(S, "pretzels"); return s && s.uses > 0; },
             label: (S, c) => "Give " + who(c) + " the pretzels",
@@ -765,7 +765,7 @@
         },
 
         {
-            id: "people.give_torch", deck: "people", tags: ["hands"],
+            id: "people.give_torch", item: "torch", deck: "people", tags: ["hands"],
             targets: reachAwake,
             when: (S) => !!st.slotOf(S, "torch"),
             label: (S, c) => "Give " + who(c) + " the torch",

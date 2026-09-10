@@ -103,7 +103,7 @@
               return { text: c.p.name + " agrees enthusiastically and does not move.", kind: "bad" };
           } },
 
-        { id: "extra.drunk_sober", deck: "people", tags: ["hands"],
+        { id: "extra.drunk_sober", item: "water_big", deck: "people", tags: ["hands"],
           targets: withTrait("drunk"),
           when: (S) => have(S, "water_big") && slot(S, "water_big").uses > 0,
           label: (S, c) => "Get water into " + who(c),
@@ -344,7 +344,7 @@
           } },
 
         // -------------------------------------------------------------------- more of the fire ---
-        { id: "extra.cool_bin", deck: "fire", tags: ["fire", "hands"], danger: "good",
+        { id: "extra.cool_bin", item: "water_big", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Keep pouring water on the same spot", cost: 30,
           detail: "Not to put it out. To keep the case below the temperature the next cell needs.",
           when: (S) => Math.abs(S.player.x - S.fire.core.x) <= 1 &&

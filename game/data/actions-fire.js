@@ -104,7 +104,7 @@
                        Math.round(c * 100) + " per cent.", kind: "good" };
           } },
 
-        { id: "fire.tape_bin", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
+        { id: "fire.tape_bin", item: "tape", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
           label: "Tape the bin shut", cost: 22,
           detail: "Six strips across the latch. It is not going to open again.",
           when: (S) => atCore(S) && haveCharged(S, "tape"),
@@ -207,7 +207,7 @@
           } },
 
         // ----------------------------------------------------------------- proper equipment ---
-        { id: "fire.halon", deck: "fire", tags: ["fire", "hands"], danger: "good",
+        { id: "fire.halon", item: "halon_bottle", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Discharge the halon bottle into it", cost: 14,
           detail: "The real thing. It works. It works on the flame, which is not the fire.",
           when: (S) => nearFire(S) && haveCharged(S, "halon_bottle"),
@@ -215,7 +215,7 @@
                 text: "You pull the pin and put the whole bottle into the locker. Everything " +
                       "orange in a three metre radius stops being orange at once." }) },
 
-        { id: "fire.halon_bursts", deck: "fire", tags: ["fire", "hands"], danger: "good",
+        { id: "fire.halon_bursts", item: "halon_bottle", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Halon, in short bursts", cost: 20,
           detail: "Make the bottle last. A trained person does it this way.",
           when: (S) => nearFire(S) && haveCharged(S, "halon_bottle") &&
@@ -231,13 +231,13 @@
                        "and the same result as the whole bottle.", kind: "good" };
           } },
 
-        { id: "fire.water_ext", deck: "fire", tags: ["fire", "hands"], danger: "good",
+        { id: "fire.water_ext", item: "water_ext", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Water extinguisher from the galley", cost: 15,
           when: (S) => nearFire(S) && haveCharged(S, "water_ext"),
           run: (S) => pour(S, "water_ext", "water", { amount: 2.0, spread: 0.6, sound: "spray",
                 text: "Nine litres under pressure, straight in." }) },
 
-        { id: "fire.crash_axe", deck: "fire", tags: ["fire", "hands"], danger: "good",
+        { id: "fire.crash_axe", item: "crash_axe", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Open the panel with the crash axe", cost: 24,
           detail: "There is fire behind the sidewall and you cannot reach it through the sidewall.",
           when: (S) => nearFire(S) && !!slot(S, "crash_axe"),
@@ -252,7 +252,7 @@
           } },
 
         // ---------------------------------------------------------- firebreaks and prevention ---
-        { id: "fire.firebreak", deck: "fire", tags: ["fire", "hands"], danger: "good",
+        { id: "fire.firebreak", item: "water_big", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Wet the row the fire is going to reach next", cost: 16,
           detail: "Not the fire. The seats beside it. This is the second best action in the deck.",
           when: (S) => haveCharged(S, "water_big") && nearFire(S),
@@ -277,7 +277,7 @@
                        "thing to do.", kind: "good" };
           } },
 
-        { id: "fire.wet_carpet", deck: "fire", tags: ["fire"], danger: "good",
+        { id: "fire.wet_carpet", item: (S) => S.flags.bagFull ? "binbag" : "water_big", deck: "fire", tags: ["fire"], danger: "good",
           label: "Soak the carpet across the aisle", cost: 12,
           detail: "A firebreak across the whole cabin, at the one tile everything has to cross.",
           when: (S) => S.player.y === cabin.AISLE_Y &&
@@ -342,7 +342,7 @@
 
         // --------------------------------------------------------------------- looking at it ---
 
-        { id: "fire.photograph", deck: "fire", tags: ["fire", "look"], danger: "good",
+        { id: "fire.photograph", item: "phone", deck: "fire", tags: ["fire", "look"], danger: "good",
           label: "Photograph the fire", cost: 6,
           detail: "Evidence. This is worth more than a bottle of water and it costs six seconds.",
           when: (S) => nearFire(S) && !!slot(S, "phone"),
@@ -403,7 +403,7 @@
     ]);
 
     A.register([
-        { id: "fire.umbrella", deck: "fire", tags: ["fire", "reach"],
+        { id: "fire.umbrella", item: "umbrella", deck: "fire", tags: ["fire", "reach"],
           label: "Reach the bin latch with the umbrella", cost: 9,
           detail: "From the aisle, without standing under a locker that is on fire.",
           when: (S) => !!slot(S, "umbrella") && Math.abs(S.player.x - S.fire.core.x) <= 2,
@@ -445,7 +445,7 @@
                        "the fire calms down about as much as a fire ever does.", kind: "neutral" };
           } },
 
-        { id: "fire.seal_vent", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
+        { id: "fire.seal_vent", item: "tape", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
           label: "Tape over the air vents in this row", cost: 20,
           when: (S) => haveCharged(S, "tape") && cabin.rowAt(S.player.x) !== null,
           run(S) {

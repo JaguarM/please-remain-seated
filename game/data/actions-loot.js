@@ -1,7 +1,7 @@
 // Deck: where the equipment actually is.
 //
 // The bag holds three things. Everything else in items.js is somewhere in this aeroplane: eight
-// things in the galleys, the seat pockets and the footwells, and twenty-three in other people's
+// things in the galleys, the seat pockets and the footwells, and thirteen in other people's
 // laps.
 //
 // That is a deliberate swap. It used to be that a player made forty-three decisions on a screen

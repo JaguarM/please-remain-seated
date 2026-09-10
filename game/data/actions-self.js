@@ -18,7 +18,7 @@
 
     A.register([
         // ------------------------------------------------------------------------ breathing ---
-        { id: "self.hood", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.hood", item: "hood", deck: "self", tags: ["self"], danger: "good",
           label: "Put on the smoke hood", cost: 26,
           detail: "Fifteen minutes of air. It is the whole flight and it is twenty-six seconds.",
           when: (S) => have(S, "hood") && !st.wearing(S, "hood"),
@@ -30,7 +30,7 @@
                   "Nobody else on this aeroplane can do that.", kind: "great" };
           } },
 
-        { id: "self.hood_off", deck: "self", tags: ["self"], danger: "bad",
+        { id: "self.hood_off", item: "hood", deck: "self", tags: ["self"], danger: "bad",
           label: "Take the smoke hood off", cost: 8,
           detail: "So that people can hear what you are saying to them.",
           when: (S) => st.wearing(S, "hood"),
@@ -40,7 +40,7 @@
                   "trade and it is a trade.", kind: "bad" };
           } },
 
-        { id: "self.wet_shirt", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.wet_shirt", item: (S) => { const s = st.inventoryHas(S, "cloth"); return s ? s.id : null; }, deck: "self", tags: ["self"], danger: "good",
           label: "Tie something wet over your face", cost: 12,
           when: (S) => (!!st.inventoryHas(S, "cloth")) && !st.wearing(S, "wet_towel") &&
                        !st.wearing(S, "hood"),
@@ -63,7 +63,7 @@
                   "seconds is a very long time when you have been running.";
           } },
 
-        { id: "self.inhaler", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.inhaler", item: "inhaler", deck: "self", tags: ["self"], danger: "good",
           label: "Use the inhaler yourself", cost: 8,
           when: (S) => have(S, "inhaler") && slot(S, "inhaler").uses > 0 && S.player.smokeDose > 15,
           run(S) {
@@ -72,7 +72,7 @@
               return { text: "Two puffs. The bottom of your lungs comes back online.", kind: "good" };
           } },
 
-        { id: "self.goggles", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.goggles", item: "goggles", deck: "self", tags: ["self"], danger: "good",
           label: "Put the swimming goggles on", cost: 7,
           when: (S) => have(S, "goggles") && !st.wearing(S, "goggles"),
           run(S) {
@@ -83,7 +83,7 @@
           } },
 
         // ---------------------------------------------------------------------------- wearing ---
-        { id: "self.hivis", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.hivis", item: "hivis", deck: "self", tags: ["self"], danger: "good",
           label: "Put the hi-vis vest on", cost: 9,
           when: (S) => have(S, "hivis") && !st.wearing(S, "hivis"),
           run(S) {
@@ -93,7 +93,7 @@
                   "everybody in four rows looks at you has changed completely.", kind: "good" };
           } },
 
-        { id: "self.lanyard", deck: "self", tags: ["self"],
+        { id: "self.lanyard", item: "lanyard", deck: "self", tags: ["self"],
           label: "Put the lanyard on", cost: 5,
           when: (S) => have(S, "lanyard") && !st.wearing(S, "lanyard"),
           run(S) {
@@ -102,7 +102,7 @@
                   "going to read it and everybody is going to see it.";
           } },
 
-        { id: "self.gloves", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.gloves", item: "gloves", deck: "self", tags: ["self"], danger: "good",
           label: "Put the welding gloves on", cost: 8,
           when: (S) => have(S, "gloves") && !st.wearing(S, "gloves"),
           run(S) {
@@ -148,7 +148,7 @@
                   kind: "bad" };
           } },
 
-        { id: "self.burn_gel_self", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.burn_gel_self", item: "first_aid", deck: "self", tags: ["self"], danger: "good",
           label: "Put burn gel on your own hands", cost: 18,
           when: (S) => S.player.burns > 15 && have(S, "first_aid") && slot(S, "first_aid").uses > 0,
           run(S) {
@@ -159,7 +159,7 @@
           } },
 
         // ---------------------------------------------------------------------- the phone ------
-        { id: "self.film", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.film", item: "phone", deck: "self", tags: ["self"], danger: "good",
           label: "Film what is happening", cost: 8,
           when: (S) => have(S, "phone"),
           run(S) {
@@ -177,7 +177,7 @@
                   "important and it is not going to be comfortable.";
           } },
 
-        { id: "self.torch_on", deck: "self", tags: ["self"], danger: "good",
+        { id: "self.torch_on", item: "torch", deck: "self", tags: ["self"], danger: "good",
           label: "Turn the torch on", cost: 4,
           when: (S) => have(S, "torch") && !S.flags.torchOn,
           run(S) {

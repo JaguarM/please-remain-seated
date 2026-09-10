@@ -115,7 +115,6 @@ extra.check_watch
 items.inventory
 items.read_note
 items.drop
-items.soak_pillow
 items.soak_sock
 items.tape_hood
 items.release_iguana

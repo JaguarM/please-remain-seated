@@ -97,7 +97,7 @@ What is in it
   lift an adult. An air marshal with a firearm and no useful application for it.
 - **Six outfits**, which do nothing at all except move your five numbers, and **three item slots**
   — the airline's cabin baggage allowance, still being enforced while its aeroplane is on fire.
-- **Twenty-eight items**, of which ten are ever in your bag. The rest are already aboard: four in
+- **Thirty-one items**, of which ten are ever in your bag. The rest are already aboard: seven in
   the galley drawers, the seat pockets and the footwells, and **thirteen in other passengers'
   laps**, which means the way you get equipped is by talking to people. And one more, which is in
   a bin at the back and does nothing at all.
@@ -119,20 +119,32 @@ What is in it
 Controls
 --------
 
-**Click anywhere in the cabin to walk there.** The route and its cost in seconds are drawn on
-the aeroplane before you commit; click somebody already in reach and you pick them up instead.
-**Arrow keys** or **WASD** step one tile.
+**The aeroplane is the menu.** Click a person, the fire, a door, a galley or the lavatory and a
+card opens on it with the handful of things you could do about it, each priced in seconds. Out of
+reach is not a dead click: the card says how long the walk is and what you could do once you got
+there, and one click on any of those does both. Click the floor to just walk; **arrow keys** or
+**WASD** step one tile. When one tile has several things on it — Chip Vanterpool and the fire in
+the locker above him — the card gets a tab for each.
 
-The list is only what you do *where you are standing*. Click an action or press **1–9** for the
-first nine. **Tab** cycles the decks, **/** focuses the filter box, **M** turns the sound off.
+**Your bag is buttons.** The things on you are at the top right. Click the bottle and the card
+says what it can do from where you are standing, who you could give it to, and where it would be
+worth carrying — the lavatory tap when it is empty, the fire when it is not.
 
-**The list and the aeroplane are two halves of one sentence.** Point at a row and the person it
-would happen to is bracketed on the cabin, wherever they are, with the price on their tile — hover
-*Carry Odette Ruus forward* and Odette lights up at 23E, at the far end of a cabin you have not
-walked yet. Point at somebody on the cabin and you get their name, their weight, what state they
-are in and the five cheapest things you could do about it, and every row in the list that could
-touch them lights up. Neither direction moves the clock. A plan costs nothing until it is a
-decision, which is the one mercy in this game that is free.
+**Three things are always suggested**, under the bag, with the reason for each. They are what is
+in front of you, not the answer; a player who follows them every turn will do fine and no better.
+**1–9** picks a row of whatever is open. **Backspace** undoes. **M** turns the sound off. **?**
+brings the four-line briefing back.
+
+**The list is still there, folded.** Everything possible from where you stand, grouped by deck and
+sorted by cost, under a toggle at the bottom of the right-hand column; **Tab** opens it and cycles
+the decks, **/** focuses its filter. Nothing in it is ever impossible, and nothing possible is ever
+missing from it.
+
+**Pointing costs nothing.** Hover a row and the person it would happen to is bracketed on the
+cabin, wherever they are, with the price on their tile. Hover somebody on the cabin and you get
+their name, their weight, what state they are in, the cheapest things you could do about them,
+and what a click would open. Neither direction moves the clock. A plan costs nothing until it is
+a decision, which is the one mercy in this game that is free.
 
 How it is built
 ---------------

@@ -53,7 +53,7 @@
         const bad = [];
         if (!spriteCount) bad.push("No sprites loaded. game/art/*.js did not run.");
         for (const key of ["util", "atlas", "audio", "cabin", "fire", "state", "pax", "crew",
-                           "actions", "scoring", "render", "play", "screens", "medals",
+                           "actions", "scoring", "render", "hotspots", "play", "screens", "medals",
                            "endings", "events"]) {
             if (!PRS[key]) bad.push("Missing module: PRS." + key);
         }
@@ -67,6 +67,17 @@
                 if (!def.id) bad.push("An action has no id.");
                 if (typeof def.run !== "function") bad.push("Action " + def.id + " has no run().");
                 if (def.label === undefined) bad.push("Action " + def.id + " has no label.");
+            }
+        }
+        // Every action that names a thing in your bag must name a real one, or the bottle's card
+        // will quietly not know about it. Three of them are the crew's kit, which items.js does
+        // not list because you cannot pack it.
+        if (PRS.actions && PRS.data && PRS.data.items) {
+            const kit = { halon_bottle: true, water_ext: true, crash_axe: true };
+            for (const def of PRS.actions.all()) {
+                if (typeof def.item === "string" && !kit[def.item] && !PRS.data.items.byId(def.item)) {
+                    bad.push("Action " + def.id + " uses an item that does not exist: " + def.item + ".");
+                }
             }
         }
         // The data modules the run cannot be built without.

@@ -361,6 +361,11 @@
         }
 
         drawPlan(ctx, S, opts, T, scale, t);
+        // The thing the card is open on. Steady and white, so it reads as "selected" rather than
+        // as one more thing the pointer is proposing.
+        if (opts.selected && cabin.inBounds(opts.selected.x, opts.selected.y)) {
+            bracket(ctx, opts.selected.x, opts.selected.y, T, scale, "#ffffff", 0.9);
+        }
         drawHover(ctx, S, opts, T, scale);
         drawLabels(ctx, S, T, scale, opts);
         drawFx(ctx, T, scale, t);

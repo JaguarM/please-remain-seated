@@ -24,7 +24,7 @@
 
     A.register([
         // ------------------------------------------------------------------- the lavatory ------
-        { id: "cabin.fill_bottle", deck: "cabin", tags: ["hands"], danger: "good",
+        { id: "cabin.fill_bottle", item: "water_big", deck: "cabin", tags: ["hands"], danger: "good",
           label: "Fill the bottle at the tap", cost: 9,
           detail: "The tap runs for four seconds a press. You will press it three times.",
           when: (S) => atLav(S) && !!slot(S, "water_big") && slot(S, "water_big").uses < 3,
@@ -36,7 +36,7 @@
                   "second one.", kind: "good" };
           } },
 
-        { id: "cabin.wet_blanket", deck: "cabin", tags: ["hands"], danger: "good",
+        { id: "cabin.wet_blanket", item: "blanket", deck: "cabin", tags: ["hands"], danger: "good",
           label: "Soak the blanket in the sink", cost: 14,
           detail: "A wet blanket is a completely different object to a dry one.",
           when: (S) => atLav(S) && !!slot(S, "blanket") && !slot(S, "blanket").wet,
@@ -46,7 +46,7 @@
                   "out four times heavier and worth about six times as much.", kind: "good" };
           } },
 
-        { id: "cabin.wet_towel", deck: "cabin", tags: ["hands"],
+        { id: "cabin.wet_towel", item: "wet_towel", deck: "cabin", tags: ["hands"],
           label: "Wet the towel again", cost: 8,
           when: (S) => atLav(S) && !!slot(S, "wet_towel") && slot(S, "wet_towel").uses < 4,
           run(S) {
@@ -54,7 +54,7 @@
               return "The towel goes back to being a wet towel, which is its whole job.";
           } },
 
-        { id: "cabin.fill_bag", deck: "cabin", tags: ["hands"], danger: "good",
+        { id: "cabin.fill_bag", item: "binbag", deck: "cabin", tags: ["hands"], danger: "good",
           label: "Fill a bin liner with water", cost: 20,
           detail: "Nine litres. Four times the bottle. It is awkward and it is worth it.",
           when: (S) => atLav(S) && !!slot(S, "binbag") && !S.flags.bagFull,
@@ -259,7 +259,7 @@
                   "a third of a wet one, and a third is not nothing.";
           } },
 
-        { id: "cabin.masks_manual", deck: "cabin", tags: ["hands", "fiddly"], danger: "good",
+        { id: "cabin.masks_manual", item: (S) => { const s = st.inventoryHas(S, "tool") || st.inventoryHas(S, "cut"); return s ? s.id : null; }, deck: "cabin", tags: ["hands", "fiddly"], danger: "good",
           label: "Force the oxygen mask panel open", cost: 18,
           detail: "There is a manual release. It is a hole and a pin and it is on the safety card.",
           when: (S) => inRow(S) && !S.cabinFlags.masksDropped &&
@@ -365,7 +365,7 @@
                   "seconds.", kind: "great" };
           } },
 
-        { id: "cabin.megaphone", deck: "cabin", tags: ["social"], danger: "neutral",
+        { id: "cabin.megaphone", item: "megaphone", deck: "cabin", tags: ["social"], danger: "neutral",
           label: "Address the cabin through the megaphone", cost: 16,
           when: (S) => !!slot(S, "megaphone"),
           run(S) {

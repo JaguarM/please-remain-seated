@@ -92,7 +92,7 @@
               return { text: t.c.name + ": " + C.response(S, t.c), kind: "bad" };
           } },
 
-        { id: "crew.show_photo", deck: "crew", tags: ["social"], danger: "good",
+        { id: "crew.show_photo", item: "phone", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S) => !!S.flags.havePhoto,
           label: (S, t) => "Show " + t.c.name + " the photograph",

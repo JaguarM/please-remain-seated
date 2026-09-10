@@ -93,10 +93,16 @@
                     "the lavatory cabinet, and — twenty-three of them — in other passengers' " +
                     "laps. Asking somebody what they have got costs seven seconds and is the " +
                     "same conversation that turns them into a helper."),
-                para("Walking is on the map, not in the list.", "Click anywhere in the cabin " +
-                    "to walk there; the route and what it costs in seconds appear on the " +
-                    "aeroplane before you commit. Click somebody already within reach and you " +
-                    "pick them up instead. Arrow keys or WASD to step one tile."),
+                para("The aeroplane is the menu.", "Click a person, the fire, a door, a galley " +
+                    "or the lavatory and a card opens with the handful of things you could do " +
+                    "about it, each with its price in seconds. Out of reach is not a dead " +
+                    "click: the card says how long the walk is and what you could do once you " +
+                    "got there, and one click does both. Click the floor to just walk; arrow " +
+                    "keys or WASD step one tile."),
+                para("Your bag is buttons.", "The things on you are at the top right. Click " +
+                    "the bottle and the card says what it can do from where you are standing, " +
+                    "who you could give it to, and where it would be worth carrying - the " +
+                    "lavatory tap, or the fire."),
                 para("You can change your mind.", "Backspace undoes your last action and " +
                     "gives you the seconds back; a run of the same action undoes as one. " +
                     "What it will not undo is anything that told you something you did not " +
@@ -104,10 +110,11 @@
                     "you cannot un-see that. And repeating an action after an undo gives " +
                     "exactly the same result, down to the sentence: you can change your " +
                     "mind, you cannot change your luck."),
-                para("The list is what you do where you are standing.", "Click an action, or " +
-                    "press 1–9 for the first nine. Tab cycles the decks, slash focuses the " +
-                    "filter box. Nothing in it is ever impossible, and nothing possible is " +
-                    "ever missing from it."),
+                para("Three things are always suggested.", "Under the bag, with the reason for " +
+                    "each. They are what is in front of you, not the answer - the game does " +
+                    "not have one. Press 1–9 for the rows of whatever is open. The full list " +
+                    "of everything possible from where you stand is folded up underneath, for " +
+                    "anybody who wants to read all of it; Tab opens it."),
                 el("div", { class: "title-buttons" }, [
                     el("button", { class: "big", text: "All right", onclick: characters }),
                     el("button", { text: "Back", onclick: title }),

@@ -92,6 +92,25 @@
           blurb: "The permitted length. Barely.",
           note: "Cuts a belt. Slowly. Better than fingers." },
 
+        // ------------------------------------------------- things nobody packed but somebody left ---
+        // Not on the bag screen. These are what the seat pockets and the footwells have in them,
+        // and they exist so that going through a seat pocket is a real decision about nine
+        // seconds rather than a search that can only ever find scissors.
+        { id: "wipes", name: "Packet of wet wipes", kg: 0.2, sprite: "nauvis:plastic_bar",
+          uses: 6, agent: "wetcloth", tags: ["cloth", "mask", "douse"],
+          blurb: "Aloe. Forty of them. Individually useless, collectively not.",
+          note: "Six small wet things. Each one buys one person one breath." },
+
+        { id: "sock", name: "A spare sock", kg: 0.05, sprite: "cabin:sock",
+          uses: 1, tags: ["cloth", "mask", "absurd", "wettable"],
+          blurb: "One. Not a pair. You have thought about why and stopped.",
+          note: "Wet, over a face, a sock is exactly as good as a flannel and never feels it." },
+
+        { id: "pillow", name: "Memory foam neck pillow", kg: 0.3, sprite: "cabin:neck_pillow",
+          uses: null, tags: ["cushion", "cover", "wettable"],
+          blurb: "Grey, slightly damp, the shape of a horseshoe and of regret.",
+          note: "Wet, held over a mouth, it is a filter. Dry, it is fuel." },
+
         // ----------------------------------------------- things that help in a stupider way ---
         { id: "hivis", name: "Hi-vis vest", kg: 0.2, sprite: "nauvis:light_armor",
           uses: null, tags: ["authority", "wear"],
@@ -202,8 +221,9 @@
         "torch", "hood", "goggles", "first_aid", "strap",
     ];
 
-    // What is stowed somewhere in the aeroplane, for whoever goes and looks.
-    const CABIN_POOL = ["binbag", "thermos", "scissors", "energy"];
+    // What is stowed somewhere in the aeroplane, for whoever goes and looks: the galley drawers,
+    // the seat pockets and the footwells. state.buildStash decides which is where.
+    const CABIN_POOL = ["binbag", "thermos", "scissors", "energy", "wipes", "sock", "pillow"];
 
     // Found, not packed, and it is the only thing left in the game that does nothing.
     const HIDDEN = ["vape"];

@@ -2,12 +2,14 @@
 //
 // An action is data:
 //
-//   { id, deck, label, detail, cost, when, run, tags, danger, once, targets }
+//   { id, deck, label, detail, cost, when, run, tags, danger, once, targets, item }
 //
 // `when(S, ctx)` decides whether it appears, `cost(S, ctx)` is in seconds, and `run(S, ctx)`
 // returns the line the log prints. `targets(S)` is what makes the number large: an action with
 // targets appears once per target, so one definition of "carry them forward" is sixty-one
-// actions in practice and the player never sees an option that is not real.
+// actions in practice and the player never sees an option that is not real. `item` names the
+// thing in your bag the action uses (an id, or a function of the state), which is how clicking
+// the bottle finds everything the bottle can do.
 //
 // `spend()` at the bottom is the whole game. Nothing else in the codebase moves the clock.
 (function (global) {
@@ -117,6 +119,8 @@
             cost: costOf(S, def, ctx),
             danger: resolve(def.danger, S, ctx),
             tags: def.tags,
+            // The thing in your bag this uses, if any, so the bag can find it.
+            item: resolve(def.item, S, ctx) || null,
         };
     }
 

@@ -1,22 +1,23 @@
-// The screen you spend fifteen minutes on: the cabin, the clock, the log, and the list.
+// The screen you spend fifteen minutes on: the cabin, the clock, the log, your bag, and a card
+// for whatever you last pointed at.
 //
-// The list is the game, so it gets the rules. Everything currently possible is in it, grouped by
-// deck, sorted by cost, with the price in seconds on the right of every row, because the whole
-// design depends on the player feeling the price of a conversation next to the price of a carry.
-// Nothing is hidden and nothing is greyed out: if an action is impossible it is not in the list,
-// and if it is in the list it will happen.
+// There used to be a list here of everything you could do, forty rows long, and the list was the
+// game. It is not any more. The aeroplane is the game: you click the person, the fire, the door
+// or the bottle, and a card opens on it with the handful of things you could do about it, priced
+// in seconds. Out of reach is not a dead click either - the card says how far the walk is and
+// what you could do once you got there, and one click on any of those does both.
 //
-// The list and the aeroplane are two halves of one sentence, and this file is the hinge. Point at
-// a row and the person it would happen to lights up on the cabin, wherever they are, with the
-// price on the tile. Point at somebody on the cabin and every row that could touch them lights up
-// in the list. Neither direction moves the clock: a plan costs nothing until it is a decision.
+// Three things are suggested at all times, with the reason, because "what should I do" is the
+// question a first flight asks and the cabin was not answering it. The old list still exists,
+// folded up under the suggestions, for anybody who wants to read all of it.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
-    const { el, $, $$, clear, mmss, costLabel, clamp01 } = PRS.util;
+    const { el, $, $$, clear, mmss, costLabel, clamp01, store } = PRS.util;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
+    const H = PRS.hotspots;
 
     let S = null;
     let root = null;
@@ -25,14 +26,33 @@
     let raf = 0;
     let filter = "";
     let openDeck = null;
-    let lastEntries = [];
+    let listOpen = false;         // the full list, folded by default
+    let lastEntries = [];         // everything possible right now, as the list sees it
+    let lastAll = [];             // ...and including the walks, which the cabin handles
     let walkAnim = null;          // cosmetic: the marker walking the route it just walked
     let plan = null;              // what the row under the pointer would do, drawn on the cabin
     let planKey = null;
-    let litPax = null;            // the person under the pointer, lit in the list
+    let litPax = null;            // the person under the pointer, lit in every row about them
     let clockShown = 0;           // the number on the clock, which chases the real one
     let clockMinute = null;       // and the minute it was last showing, for the tick
     let lastMeters = {};
+    let selected = null;          // the thing the card is open on
+    let cardMore = false;         // whether the card's "more" is unfolded
+    let cardAnchor = null;        // where the card last hung from, in client coordinates
+    let tipKey = null;
+
+    // What a thing in your bag is called under a forty-eight pixel icon.
+    const SHORT = {
+        water_big: "water", wet_towel: "towel", blanket: "blanket", gloves: "gloves",
+        hood: "hood", goggles: "goggles", multitool: "multi-tool", tape: "tape",
+        binbag: "bin liners", first_aid: "first aid", inhaler: "inhaler", torch: "torch",
+        strap: "strap", scissors: "scissors", hivis: "hi-vis", clipboard: "clipboard",
+        lanyard: "lanyard", megaphone: "megaphone", airhorn: "air horn", whistle: "whistle",
+        phone: "phone", pretzels: "pretzels", carrier: "carrier", umbrella: "umbrella",
+        gin: "miniatures", thermos: "thermos", energy: "energy drink", vape: "vape",
+        halon_bottle: "halon", water_ext: "extinguisher", crash_axe: "axe",
+        wipes: "wet wipes", sock: "sock", pillow: "pillow",
+    };
 
     function build(container, state) {
         S = state;
@@ -41,6 +61,9 @@
         clockShown = S.clock.remaining;
         clockMinute = null;
         lastMeters = {};
+        selected = null; cardMore = false; cardAnchor = null;
+        filter = ""; openDeck = null;
+        listOpen = store.get("listOpen", false) === true;
         PRS.render.fx.clear();
 
         const bar = el("div", { class: "hud" }, [
@@ -48,8 +71,12 @@
                 el("div", { class: "clock-label", text: "TO TOUCHDOWN" }),
                 el("div", { class: "clock", id: "clock", text: mmss(S.clock.remaining) }),
                 el("div", { class: "clock-plan", id: "clockplan" }),
-                el("button", { class: "sound", id: "sound", title: "Sound (M)",
-                               onclick: toggleSound }),
+                el("div", { class: "hud-buttons" }, [
+                    el("button", { class: "sound", id: "sound", title: "Sound (M)",
+                                   onclick: toggleSound }),
+                    el("button", { class: "sound", title: "How to play (?)", text: "HOW TO PLAY",
+                                   onclick: showHelp }),
+                ]),
             ]),
             el("div", { class: "hud-meters", id: "meters" }),
             el("div", { class: "hud-you", id: "youbox" }),
@@ -63,25 +90,31 @@
             el("div", { class: "here", id: "here" }),
         ]);
         // The log is a sibling of the two columns rather than a child of the left one, so that a
-        // narrow window can order it after the action list instead of burying the list under it.
+        // narrow window can order it after the suggestions instead of burying them under it.
         const logwrap = el("div", { class: "logwrap" }, [
             el("div", { class: "log", id: "log" }),
         ]);
 
         const right = el("div", { class: "col-right" }, [
-            el("div", { class: "list-head" }, [
-                el("input", { id: "filter", class: "filter", type: "text",
-                              placeholder: "filter actions…", autocomplete: "off",
-                              oninput: (e) => { filter = e.target.value.toLowerCase(); paint(); } }),
-                el("div", { class: "list-count", id: "listcount" }),
-            ]),
-            el("div", { class: "decks", id: "decks" }),
+            el("div", { class: "now", id: "now" }),
             el("div", { class: "undo-bar", id: "undobar" }),
-            el("div", { class: "actions", id: "actions" }),
+            el("button", { class: "listtoggle", id: "listtoggle", title: "Tab",
+                           onclick: toggleList }),
+            el("div", { class: "listbody", id: "listbody" }, [
+                el("div", { class: "list-head" }, [
+                    el("input", { id: "filter", class: "filter", type: "text",
+                                  placeholder: "filter actions…", autocomplete: "off",
+                                  oninput: (e) => { filter = e.target.value.toLowerCase(); paintList(); } }),
+                    el("div", { class: "list-count", id: "listcount" }),
+                ]),
+                el("div", { class: "decks", id: "decks" }),
+                el("div", { class: "actions", id: "actions" }),
+            ]),
         ]);
 
         root.appendChild(bar);
         root.appendChild(el("div", { class: "board" }, [left, right, logwrap]));
+        root.appendChild(el("div", { class: "card", id: "card" }));
 
         ctx = canvas.getContext("2d");
         scale = PRS.render.fit(canvas);
@@ -92,14 +125,11 @@
         });
         canvas.addEventListener("click", function (e) {
             const t = PRS.render.tileAt(canvas, scale, e.clientX, e.clientY);
-            if (!t) return;
-            clickTile(t);
+            if (t) clickTile(t);
         });
-        window.addEventListener("resize", function () {
-            if (!canvas.isConnected) return;
-            scale = PRS.render.fit(canvas);
-        });
+        window.addEventListener("resize", onResize);
         document.addEventListener("keydown", onKey);
+        document.addEventListener("mousedown", onPress);
 
         S.onLog = pushLog;
         for (const entry of S.log) pushLog(entry);
@@ -111,10 +141,13 @@
                   "aeroplane who has noticed.", "open");
         st.log(S, "The clock only moves when you do. Every action costs seconds. " +
                   "You cannot put this fire out.", "rule");
+        st.log(S, "Click a person, the fire, a door, or a thing in your bag to see what you " +
+                  "can do with it. Click the floor to walk.", "rule");
 
         paintSound();
         paint();
         loop();
+        if (!store.get("seenHelp", false)) showHelp();
     }
 
     /**
@@ -124,7 +157,7 @@
     function toggleSound() {
         PRS.audio.unlock();
         PRS.audio.setEnabled(!PRS.audio.isEnabled());
-        PRS.util.store.set("sound", PRS.audio.isEnabled());
+        store.set("sound", PRS.audio.isEnabled());
         if (PRS.audio.isEnabled()) { PRS.audio.startRoar(); PRS.audio.play("select"); }
         paintSound();
     }
@@ -140,7 +173,15 @@
     function destroy() {
         cancelAnimationFrame(raf);
         document.removeEventListener("keydown", onKey);
+        document.removeEventListener("mousedown", onPress);
+        window.removeEventListener("resize", onResize);
         if (S) S.onLog = null;
+    }
+
+    function onResize() {
+        if (!canvas || !canvas.isConnected) return;
+        scale = PRS.render.fit(canvas);
+        placeCard();
     }
 
     // -------------------------------------------------------------------------------- loop ---
@@ -154,6 +195,7 @@
             scale: scale, time: now, hover: hover,
             hoverRoute: plan ? null : hoverRoute(),
             plan: plan,
+            selected: selected && selected.kind !== "item" ? { x: selected.x, y: selected.y } : null,
             playerAt: walkPos(now),
         });
     }
@@ -173,8 +215,6 @@
         }
         const was = clockMinute;
         clockMinute = Math.floor(clockShown / 60);
-        // One tick per minute gone. Fifteen of them in a flight, and the last few are the only
-        // sound in this game that is not something you or the aeroplane did.
         if (was !== null && clockMinute < was) PRS.audio.play("tick");
         const node = root && $("#clock", root);
         if (node) node.textContent = mmss(clockShown);
@@ -206,7 +246,7 @@
 
     /** Walk to a tile. This is what the cabin is for. */
     function walkTo(t) {
-        const hit = A.available(S, true).filter(
+        const hit = lastAll.filter(
             (e) => e.id === "move.walk" && e.ctx.x === t.x && e.ctx.y === t.y)[0];
         if (!hit) return false;
         const from = [S.player.x, S.player.y];
@@ -223,9 +263,6 @@
      * Where an action would land. Every deck builds its targets the same way - `p` is a person,
      * `c` is a member of crew, `h` and `t` are a helper and who you would point them at, `x`/`y`
      * is a tile and `r` is a route - so one reader covers all hundred and eighty-nine of them.
-     *
-     * An action with no target at all happens where you are standing, except for the fire deck,
-     * which happens at the fire, and the fire is wherever it has got to.
      */
     function planFor(e) {
         const c = e.ctx;
@@ -246,7 +283,6 @@
         }
         if (!out.focus && e.tags.indexOf("fire") >= 0) out.focus = nearestFire();
         if (!out.focus) out.focus = { x: S.player.x, y: S.player.y };
-        // Anything that ends with somebody in your arms wants the place you would be taking them.
         if (e.tags.indexOf("carry") >= 0) {
             const zx = PRS.pax.nearestSafeX(S.player.x);
             if (zx !== S.player.x) out.tiles.push([zx, cabin.AISLE_Y]);
@@ -269,13 +305,22 @@
         return best;
     }
 
-    function setPlan(entry) {
+    function setPlan(entry, path) {
         const key = entry ? entry.key : null;
         if (key === planKey) return;
         planKey = key;
         plan = entry ? planFor(entry) : null;
+        if (plan && path) plan.path = path;
         if (entry) PRS.audio.play("blip");
     }
+
+    function setWalkPlan(w) {
+        if (planKey === "walk") return;
+        planKey = "walk";
+        plan = { danger: "neutral", cost: w.cost, tiles: [], focus: { x: w.x, y: w.y }, path: w.path };
+    }
+
+    function clearPlan() { planKey = null; plan = null; }
 
     // -------------------------------------------------------------------------------- paint ---
 
@@ -284,11 +329,15 @@
         tipKey = null;      // the panel prints the air on a tile, and the air has just moved
         $("#clock", root).className = "clock" +
             (S.clock.remaining < 120 ? " urgent" : S.clock.remaining < 300 ? " warn" : "");
+        lastEntries = A.available(S);
+        lastAll = A.available(S, true);
         paintMeters();
         paintYou();
         paintHere();
+        paintNow();
         paintUndo();
-        paintActions();
+        paintList();
+        paintCard();
     }
 
     /**
@@ -309,8 +358,6 @@
             class: "undo",
             title: "Backspace",
             onclick: doUndo,
-            // Hovering it shows the tile you would be standing on again, which is usually the
-            // whole reason somebody is reaching for it.
             onmouseenter: function () {
                 planKey = "undo";
                 plan = { danger: "good", tiles: [], focus: back.at,
@@ -325,8 +372,6 @@
                                (back.count > 1 ? " · " + back.count + " actions" : "") }),
         ]));
     }
-
-    function clearPlan() { planKey = null; plan = null; }
 
     function doUndo() {
         const done = PRS.undo.undo(S);
@@ -352,8 +397,6 @@
 
     function meter(label, value, max, cls, note) {
         const pct = Math.round(clamp01(value / max) * 100);
-        // A number that has just moved says so for a moment. Four of these change constantly and
-        // none of them is worth watching; the point is to catch the one that changed.
         const was = lastMeters[label];
         lastMeters[label] = value;
         const moved = was === undefined || Math.abs(was - value) < 0.5 ? ""
@@ -387,10 +430,18 @@
         ]));
     }
 
+    /**
+     * You, and what is on you. The bag is here because this is where people looked for it and
+     * clicked on it back when clicking on it did nothing. Now the bottle is a button, and the
+     * card that opens says what it can do from here and where it would be worth carrying.
+     */
     function paintYou() {
         const box = clear($("#youbox", root));
         const P = S.player;
-        box.appendChild(el("div", { class: "you-name" }, [
+        box.appendChild(el("button", {
+            class: "you-name opens", title: "What you can do here, and to yourself",
+            onclick: (ev) => openThing(H.youThing(S), ev.currentTarget.getBoundingClientRect()),
+        }, [
             PRS.atlas.icon("pax", 2, PRS.render.paletteOf(S.character)),
             el("div", {}, [
                 el("b", { text: S.character.name }),
@@ -404,32 +455,58 @@
         box.appendChild(meter("BURNS", P.burns, 100, "m-burn",
                               P.burns > 40 ? "severe" : P.burns > 15 ? "bad"
                               : P.burns > 3 ? "sore" : "none"));
-        const carrying = P.carrying.map((id) => st.paxById(S, id)).filter(Boolean);
-        if (carrying.length) {
-            box.appendChild(el("div", { class: "carrying" }, [
-                el("span", { class: "tag", text: "CARRYING" }),
-                el("b", { text: carrying.map((p) => p.name).join(", ") }),
+        // Whoever is in your arms, as a button, because putting them down is on their card.
+        const held = P.carrying.map((id) => [id, "CARRYING"])
+            .concat(P.dragging ? [[P.dragging, "DRAGGING"]] : []);
+        for (const [id, tag] of held) {
+            const p = st.paxById(S, id);
+            if (!p) continue;
+            box.appendChild(el("button", {
+                class: "carrying opens", title: "What you can do with " + p.name,
+                onclick: (ev) => openThing(H.personThing(p), ev.currentTarget.getBoundingClientRect()),
+            }, [
+                el("span", { class: "tag", text: tag }),
+                el("b", { text: p.name }),
             ]));
         }
-        if (P.dragging) {
-            const p = st.paxById(S, P.dragging);
-            box.appendChild(el("div", { class: "carrying" }, [
-                el("span", { class: "tag", text: "DRAGGING" }),
-                el("b", { text: p ? p.name : "?" }),
+        box.appendChild(paintBag());
+    }
+
+    function paintBag() {
+        const wrap = el("div", { class: "bagbar" });
+        wrap.appendChild(el("div", { class: "bag-head" }, [
+            el("b", { text: "YOUR BAG" }),
+            el("i", { text: "click a thing to use it" }),
+        ]));
+        const row = el("div", { class: "bag-items" });
+        // An empty bottle stays, because it refills; an empty air horn does not.
+        const shown = S.inventory.filter((s) => !s.spent || s.item.refill);
+        if (!shown.length) {
+            row.appendChild(el("div", { class: "bag-empty", text:
+                "Nothing on you. Everything else is in the aeroplane, and in other people's laps." }));
+        }
+        for (const s of shown) {
+            const item = s.item;
+            const empty = s.spent || (s.uses !== null && s.uses <= 0);
+            const worn = st.wearing(S, s.id);
+            const on = selected && selected.kind === "item" && selected.id === s.id;
+            const status = empty ? "empty" : s.wet ? "wet" : worn ? "on"
+                         : s.uses === null ? "" : s.uses + " left";
+            row.appendChild(el("button", {
+                class: "bag-item opens" + (empty ? " empty" : "") + (on ? " on" : "") +
+                       (s.wet ? " wet" : "") + (worn ? " worn" : ""),
+                title: item.name + (status ? " — " + status : ""),
+                dataset: { item: s.id },
+                onclick: (ev) => openThing(H.itemThing(S, s.id),
+                                           ev.currentTarget.getBoundingClientRect()),
+            }, [
+                PRS.atlas.icon(H.itemSprite(s), 3),
+                el("b", { text: SHORT[s.id] || PRS.loot.short(item.name) }),
+                el("i", { text: status }),
             ]));
         }
-        const kit = S.inventory.filter((s) => !s.spent);
-        if (kit.length) {
-            const row = el("div", { class: "kit" });
-            for (const s of kit) {
-                const name = s.item.sprite.split(":")[1];
-                const node = PRS.atlas.icon(name, 2, null, "kit-item");
-                node.title = s.item.name + (s.uses === null ? "" : " — " + s.uses + " left") +
-                             (s.wet ? " — wet" : "");
-                row.appendChild(node);
-            }
-            box.appendChild(row);
-        }
+        wrap.appendChild(row);
+        return wrap;
     }
 
     function paintHere() {
@@ -441,22 +518,31 @@
         if (inten > 0.5) bits.push("fire: " + PRS.fire.describe(S.fire, P.x, P.y));
         if (smoke > 6) bits.push("smoke: " + PRS.fire.describeSmoke(smoke));
         const here = st.reachable(S);
-        box.appendChild(el("div", { class: "here-place", text: bits.join(" · ") }));
+        box.appendChild(el("div", { class: "here-place" }, [
+            el("span", { text: "You are at " + bits.join(" · ") }),
+            el("button", { class: "here-btn opens", text: "Look around",
+                           title: "What you can do here, and to yourself",
+                           onclick: (ev) => openThing(H.youThing(S),
+                                                      ev.currentTarget.getBoundingClientRect()) }),
+        ]));
         if (here.length) {
-            const row = el("div", { class: "here-people" });
+            const row = el("div", { class: "here-people" }, [
+                el("span", { class: "here-tag", text: "IN REACH" }),
+            ]);
             for (const p of here) row.appendChild(paxChip(p));
             box.appendChild(row);
         }
     }
 
-    /** One person, small, with their face on it. Used under the cabin and inside the tooltip. */
+    /** One person, small, with their face on it. A button: it opens their card. */
     function paxChip(p) {
         const cond = PRS.pax.condition(p);
-        return el("span", {
-            class: "chip chip-t" + cond.tier + (litPax === p.id ? " lit" : ""),
+        return el("button", {
+            class: "chip opens chip-t" + cond.tier + (litPax === p.id ? " lit" : ""),
             title: p.name + " · " + p.seat + " · " + p.kg + "kg · " +
                    PRS.pax.displayState(p) + " · " + cond.label,
             dataset: { pax: p.id },
+            onclick: (ev) => openThing(H.personThing(p), ev.currentTarget.getBoundingClientRect()),
             onmouseenter: () => { litPax = p.id; relight(); },
             onmouseleave: () => { litPax = null; relight(); },
         }, [
@@ -466,30 +552,53 @@
         ]);
     }
 
-    // ------------------------------------------------------------------------- the tooltip ---
+    // ------------------------------------------------------------------------- what now ---
 
     /**
-     * Who that is. Sixty people at thirty-six pixels each is a crowd, and until now the only way
-     * to find out that the small one in 13F is a one-year-old was to stand next to him.
+     * Three things worth doing, with the reason, and the price. Not the answer - the game does
+     * not have one - but never nothing, because a screen full of options and no idea is the
+     * thing this screen used to be.
      */
+    function paintNow() {
+        const box = clear($("#now", root));
+        const hidden = store.get("hints", true) === false;
+        box.appendChild(el("div", { class: "now-head" }, [
+            el("b", { text: "WHAT NOW" }),
+            el("button", { class: "now-toggle", text: hidden ? "show" : "hide",
+                           onclick: () => { store.set("hints", hidden); paintNow(); } }),
+        ]));
+        if (hidden) return;
+        const picks = H.suggest(S, lastEntries, lastAll);
+        if (!picks.length) {
+            box.appendChild(el("div", { class: "empty", text: S.clock.landed
+                ? "It has landed."
+                : "Nothing obvious from here. Click somebody, the fire, or a door." }));
+            return;
+        }
+        picks.forEach((s, n) => box.appendChild(actionRow(s.entry, n, { why: s.why })));
+        box.appendChild(el("div", { class: "now-foot", text:
+            "Or click anything on the aeroplane, or in your bag." }));
+    }
+
+    // ------------------------------------------------------------------------- the tooltip ---
+
     function onCabinMove(e) {
         hover = PRS.render.tileAt(canvas, scale, e.clientX, e.clientY);
         const was = litPax;
         const people = hover ? st.paxAt(S, hover.x, hover.y) : [];
         litPax = people.length ? people[0].id : null;
         if (litPax !== was) relight();
-        showTip(e, hover, people);
+        const things = hover ? H.thingsAt(S, hover.x, hover.y) : [];
+        canvas.style.cursor = things.length ? "pointer" : "default";
+        showTip(e, hover, people, things);
     }
 
-    let tipKey = null;
-
-    function showTip(e, tile, people) {
+    function showTip(e, tile, people, things) {
         const tip = root && $("#tip", root);
         if (!tip || !tile) { tipKey = null; return hideTip(); }
         const wrap = $("#canvaswrap", root).getBoundingClientRect();
-        // A mousemove is sixty events a second and the panel only changes when the tile does.
         const key = tile.x + "," + tile.y + ":" + people.map((p) => p.id + p.state).join();
-        if (key !== tipKey) { tipKey = key; buildTip(tip, tile, people); }
+        if (key !== tipKey) { tipKey = key; buildTip(tip, tile, people, things); }
 
         const w = tip.offsetWidth, h = tip.offsetHeight;
         let x = e.clientX - wrap.left + 16;
@@ -501,11 +610,13 @@
         tip.classList.add("on");
     }
 
-    function buildTip(tip, tile, people) {
+    function buildTip(tip, tile, people, things) {
         clear(tip);
         const i = cabin.idx(tile.x, tile.y);
         const inten = S.fire.intensity[i], smoke = S.fire.smoke[i];
-        tip.appendChild(el("div", { class: "tip-place", text: cabin.placeName(tile.x, tile.y) }));
+        const fixture = things.filter((t) => t.kind === "place")[0];
+        tip.appendChild(el("div", { class: "tip-place", text:
+            fixture && fixture.sub === "bins" ? fixture.name : cabin.placeName(tile.x, tile.y) }));
         if (inten > 0.5 || smoke > 6) {
             const bits = [];
             if (inten > 0.5) bits.push(PRS.fire.describe(S.fire, tile.x, tile.y));
@@ -526,26 +637,40 @@
             ]));
         }
         // What you could do about it, from where you are standing, with the price of each.
-        const mine = (lastEntries.length ? lastEntries : A.available(S))
+        const mine = lastEntries
             .filter((x) => x.ctx && ((x.ctx.p && people.some((p) => p.id === x.ctx.p.id)) ||
                                      (x.ctx.c && x.ctx.c.x === tile.x && x.ctx.c.y === tile.y)));
         if (mine.length) {
             const box = el("div", { class: "tip-acts" });
-            for (const x of mine.slice(0, 5)) {
+            for (const x of mine.slice(0, 4)) {
                 box.appendChild(el("div", {}, [
                     el("span", { text: x.label }),
                     el("b", { text: costLabel(x.cost) }),
                 ]));
             }
-            if (mine.length > 5) {
+            if (mine.length > 4) {
                 box.appendChild(el("div", { class: "tip-more",
-                                            text: "…and " + (mine.length - 5) + " more" }));
+                                            text: "…and " + (mine.length - 4) + " more" }));
             }
             tip.appendChild(box);
-        } else if (people.length) {
-            tip.appendChild(el("div", { class: "tip-more",
-                                        text: "Out of reach. Click to walk over." }));
         }
+        const hint = tipHint(people, things, mine);
+        if (hint) tip.appendChild(el("div", { class: "tip-hint", text: hint }));
+    }
+
+    /** What a click here would do. The answer is always "something", which is the point. */
+    function tipHint(people, things, mine) {
+        if (S.clock.landed) return null;
+        if (people.length) {
+            return mine.length ? "Click for everything you can do with " + people[0].name.split(" ")[0]
+                               : "Click to walk over and see what you could do";
+        }
+        const kinds = things.map((t) => t.kind);
+        if (kinds.indexOf("fire") >= 0) return "Click the fire for what you can do about it";
+        if (kinds.indexOf("crew") >= 0) return "Click to talk to them";
+        if (kinds.indexOf("you") >= 0) return "Click yourself for what you can do here";
+        if (kinds.indexOf("place") >= 0) return "Click to see what is here";
+        return null;
     }
 
     function hideTip() {
@@ -553,15 +678,220 @@
         if (tip) tip.classList.remove("on");
     }
 
+    // --------------------------------------------------------------------------- the card ---
+
+    function openThing(thing, anchorRect) {
+        selected = thing;
+        cardMore = false;
+        cardAnchor = anchorRect || null;
+        PRS.audio.unlock();
+        PRS.audio.play("blip");
+        paintCard();
+    }
+
+    function closeCard() {
+        selected = null;
+        cardMore = false;
+        const card = root && $("#card", root);
+        if (card) { card.classList.remove("on"); clear(card); }
+        for (const b of $$(".bag-item.on", root)) b.classList.remove("on");
+    }
+
+    function paintCard() {
+        const card = $("#card", root);
+        if (!selected) { card.classList.remove("on"); clear(card); return; }
+        const R = H.resolve(S, selected, lastEntries);
+        if (!R) { closeCard(); return; }
+        clear(card);
+        card.appendChild(cardHead(R));
+        if (selected.siblings && selected.siblings.length > 1) card.appendChild(cardTabs());
+
+        const body = el("div", { class: "card-body" });
+        let n = 0;
+        if (R.empty) body.appendChild(el("div", { class: "card-empty", text: R.empty }));
+        for (const sec of R.sections) {
+            if (sec.more && !cardMore) {
+                body.appendChild(el("button", { class: "card-more",
+                    text: "▸ " + sec.rows.length + " more…",
+                    onclick: () => { cardMore = true; paintCard(); } }));
+                continue;
+            }
+            if (sec.title) body.appendChild(el("div", { class: "card-sec" }, [el("b", { text: sec.title })]));
+            if (sec.walk) body.appendChild(walkRow(sec.walk, n++));
+            for (const e of sec.rows) {
+                body.appendChild(actionRow(e, n++, sec.then
+                    ? { then: true, path: sec.walk.path, onclick: (x) => walkThen(sec.walk, x.key) }
+                    : {}));
+            }
+            if (sec.hidden) {
+                body.appendChild(el("div", { class: "card-empty", text:
+                    "…and " + sec.hidden + " more once you are there." }));
+            }
+        }
+        if (!R.near && !R.walk && !R.empty) {
+            body.appendChild(el("div", { class: "card-empty", text: "Out of reach." }));
+        }
+        card.appendChild(body);
+        card.classList.add("on");
+        for (const b of $$(".bag-item", root)) {
+            b.classList.toggle("on", selected.kind === "item" && b.dataset.item === selected.id);
+        }
+        placeCard();
+    }
+
+    function cardHead(R) {
+        const h = R.header;
+        return el("div", { class: "card-head" }, [
+            h.icon ? PRS.atlas.icon(h.icon, h.iconScale || 2, h.palette || null, "card-icon")
+                   : el("span", { class: "card-icon" }),
+            el("div", {}, [
+                el("b", { text: h.title }),
+                h.sub ? el("i", { text: h.sub }) : null,
+                h.traits ? el("u", { text: h.traits }) : null,
+                h.flag ? el("em", { text: h.flag }) : null,
+            ]),
+            el("button", { class: "card-close", text: "×", title: "Close (Esc)",
+                           onclick: closeCard }),
+        ]);
+    }
+
+    /** Several things on one tile - Chip Vanterpool and the fire above him - as tabs. */
+    function cardTabs() {
+        const things = selected.siblings;
+        const row = el("div", { class: "card-tabs" });
+        for (const t of things) {
+            row.appendChild(el("button", {
+                class: "chip opens" + (t.key === selected.key ? " lit" : ""),
+                onclick: () => { selected = t; selected.siblings = things; cardMore = false; paintCard(); },
+            }, [tabIcon(t), el("b", { text: t.short })]));
+        }
+        return row;
+    }
+
+    function tabIcon(t) {
+        if (t.kind === "person") {
+            const p = st.paxById(S, t.id);
+            return p ? PRS.atlas.icon(PRS.render.faceOf(p), 1, PRS.render.paletteOf(p)) : null;
+        }
+        if (t.kind === "crew") {
+            const c = PRS.crew.byId(S, t.id);
+            return c ? PRS.atlas.icon(c.sprite || "crew", 1, PRS.render.paletteOf(c)) : null;
+        }
+        if (t.kind === "fire") return PRS.atlas.icon("fire_2", 1);
+        if (t.kind === "you") return PRS.atlas.icon("pax", 1, PRS.render.paletteOf(S.character));
+        if (t.kind === "place") return PRS.atlas.icon(t.icon, 1);
+        return null;
+    }
+
+    /** The first row of a card about something out of reach: the walk, priced. */
+    function walkRow(w, n) {
+        return el("button", {
+            class: "act act-walk",
+            onclick: () => walkThen(w, null),
+            onmouseenter: () => setWalkPlan(w),
+            onmouseleave: () => { if (planKey === "walk") clearPlan(); },
+            onfocus: () => setWalkPlan(w),
+            onblur: () => { if (planKey === "walk") clearPlan(); },
+        }, [
+            el("span", { class: "act-key", text: n < 9 ? String(n + 1) : "" }),
+            el("span", { class: "act-icon act-icon-walk", text: "→" }),
+            el("span", { class: "act-body" }, [
+                el("b", { text: w.label }),
+                el("i", { text: w.detail }),
+            ]),
+            el("span", { class: "act-cost", text: costLabel(w.cost) }),
+        ]);
+    }
+
+    /**
+     * Walk there, and then do the thing, as two actions - both undoable, the second one only if
+     * it is still possible when you arrive, because the world moves while you walk.
+     */
+    function walkThen(w, key) {
+        const keep = selected;
+        if (!walkTo({ x: w.x, y: w.y })) return;
+        if (S.clock.landed) return;
+        selected = keep;
+        if (!key) { paintCard(); return; }
+        const hit = A.available(S).filter((e) => e.key === key)[0];
+        if (hit) run(hit);
+        else paintCard();
+    }
+
+    /** Hang the card off the thing it is about, on whichever side there is room. */
+    function placeCard() {
+        const card = root && $("#card", root);
+        if (!card || !selected || !card.classList.contains("on")) return;
+        let a = null, below = false;
+        if (selected.kind === "item") {
+            const b = $(".bag-item[data-item=\"" + selected.id + "\"]", root);
+            a = b ? b.getBoundingClientRect() : cardAnchor;
+            below = true;
+        } else if (cardAnchor && cardAnchor.fromChip) {
+            a = cardAnchor;
+        } else {
+            a = tileRect(selected.x, selected.y);
+        }
+        if (!a) a = cardAnchor;
+        if (!a) return;
+        cardAnchor = a;
+        const rr = root.getBoundingClientRect();
+        const w = card.offsetWidth, h = card.offsetHeight;
+        let x, y;
+        if (below) {
+            x = a.left - rr.left;
+            y = a.bottom - rr.top + 8;
+            if (y + h > rr.height - 8) y = a.top - rr.top - h - 8;
+        } else {
+            x = a.right - rr.left + 10;
+            y = a.top - rr.top - 8;
+            if (x + w > rr.width - 8) x = a.left - rr.left - w - 10;
+        }
+        if (x + w > rr.width - 8) x = rr.width - 8 - w;
+        if (x < 8) x = 8;
+        if (y + h > rr.height - 8) y = rr.height - 8 - h;
+        if (y < 8) y = 8;
+        card.style.left = (x + root.scrollLeft) + "px";
+        card.style.top = (y + root.scrollTop) + "px";
+    }
+
+    function tileRect(x, y) {
+        const r = canvas.getBoundingClientRect();
+        const tw = r.width / cabin.W, th = r.height / cabin.H;
+        return { left: r.left + x * tw, right: r.left + (x + 1) * tw,
+                 top: r.top + y * th, bottom: r.top + (y + 1) * th, width: tw, height: th };
+    }
+
+    /** A click anywhere that is not the card, and not something that opens one, closes it. */
+    function onPress(ev) {
+        if (!selected) return;
+        const t = ev.target;
+        if (!(t instanceof Element)) return;
+        if (t.closest("#card") || t.closest(".opens") || t.closest("#cabin")) return;
+        closeCard();
+    }
+
     // ------------------------------------------------------------------------------ the list ---
 
-    function paintActions() {
-        const entries = A.available(S);
-        lastEntries = entries;
+    function toggleList() {
+        listOpen = !listOpen;
+        store.set("listOpen", listOpen);
+        paintList();
+        if (listOpen) $("#filter", root).focus();
+    }
+
+    /** The old list, folded. Everything, grouped by deck, sorted by cost, for whoever wants it. */
+    function paintList() {
+        const entries = lastEntries;
+        $("#listtoggle", root).textContent = (listOpen ? "▾" : "▸") +
+            "  EVERYTHING YOU COULD DO FROM HERE · " + entries.length;
+        const body = $("#listbody", root);
+        body.classList.toggle("closed", !listOpen);
+        if (!listOpen) return;
+
         const decks = clear($("#decks", root));
         const counts = {};
         for (const e of entries) counts[e.deck] = (counts[e.deck] || 0) + 1;
-
         decks.appendChild(deckTab("ALL", null, entries.length));
         for (const key of Object.keys(A.DECKS).sort((a, b) => A.DECKS[a].order - A.DECKS[b].order)) {
             if (!counts[key]) continue;
@@ -574,12 +904,11 @@
             return (e.label + " " + (e.detail || "") + " " + e.deck).toLowerCase()
                    .indexOf(filter) >= 0;
         });
-
-        $("#listcount", root).textContent = shown.length + " of " + entries.length + " available";
+        $("#listcount", root).textContent = shown.length + " of " + entries.length;
 
         const box = clear($("#actions", root));
         let deck = null;
-        shown.forEach(function (e, n) {
+        shown.forEach(function (e) {
             if (e.deck !== deck) {
                 deck = e.deck;
                 box.appendChild(el("div", { class: "deck-head" }, [
@@ -587,7 +916,7 @@
                     el("i", { text: A.DECKS[deck].hint }),
                 ]));
             }
-            box.appendChild(actionRow(e, n));
+            box.appendChild(actionRow(e));
         });
         if (!shown.length) {
             box.appendChild(el("div", { class: "empty", text:
@@ -596,15 +925,15 @@
     }
 
     /**
-     * The other half of pointing at somebody: every row in the list that could touch them.
-     * A class on rows that already exist, because rebuilding a hundred and eighty of them on a
-     * mousemove would make the aeroplane stutter every time the pointer crossed a seat.
+     * The other half of pointing at somebody: every row anywhere that could touch them. A class
+     * on rows that already exist, because rebuilding them on a mousemove would make the
+     * aeroplane stutter every time the pointer crossed a seat.
      */
     function relight() {
         for (const row of $$(".act", root)) {
             row.classList.toggle("lit", !!litPax && row.dataset.pax === litPax);
         }
-        for (const chip of $$(".chip", root)) {
+        for (const chip of $$(".here-people .chip", root)) {
             chip.classList.toggle("lit", !!litPax && chip.dataset.pax === litPax);
         }
     }
@@ -612,27 +941,45 @@
     function deckTab(name, key, n) {
         return el("button", {
             class: "deck-tab" + (openDeck === key ? " on" : ""),
-            onclick: () => { openDeck = key; paintActions(); },
+            onclick: () => { openDeck = key; paintList(); },
         }, [el("span", { text: name }), el("b", { text: String(n) })]);
     }
 
-    function actionRow(e, n) {
+    /** The icon on a row: the thing from your bag it uses, or the face it is about. */
+    function rowIcon(e) {
+        if (e.item) {
+            const s = st.slotOf(S, e.item);
+            const it = s ? s.item : PRS.data.items.byId(e.item);
+            if (it) return PRS.atlas.icon(String(it.sprite).split(":")[1], 1, null, "act-icon");
+        }
+        if (e.ctx && e.ctx.t) return PRS.atlas.icon(PRS.render.faceOf(e.ctx.t), 1, PRS.render.paletteOf(e.ctx.t), "act-icon");
+        if (e.ctx && e.ctx.p) return PRS.atlas.icon(PRS.render.faceOf(e.ctx.p), 1, PRS.render.paletteOf(e.ctx.p), "act-icon");
+        if (e.ctx && e.ctx.c) return PRS.atlas.icon(e.ctx.c.sprite || "crew", 1, PRS.render.paletteOf(e.ctx.c), "act-icon");
+        if (e.deck === "fire") return PRS.atlas.icon("fire_2", 1, null, "act-icon");
+        if (e.deck === "move") return el("span", { class: "act-icon act-icon-walk", text: "→" });
+        return el("span", { class: "act-icon" });
+    }
+
+    function actionRow(e, n, opts) {
+        opts = opts || {};
         const over = e.cost > S.clock.remaining;
-        // Lit, because the person it would happen to is under the pointer over on the aeroplane.
         const lit = litPax && e.ctx && e.ctx.p && e.ctx.p.id === litPax;
         return el("button", {
-            class: "act act-" + e.danger + (over ? " over" : "") + (lit ? " lit" : ""),
-            onclick: () => run(e),
-            onmouseenter: () => setPlan(e),
+            class: "act act-" + e.danger + (over ? " over" : "") + (lit ? " lit" : "") +
+                   (opts.then ? " then" : ""),
+            onclick: () => (opts.onclick ? opts.onclick(e) : run(e)),
+            onmouseenter: () => setPlan(e, opts.path),
             onmouseleave: () => { if (planKey === e.key) clearPlan(); },
-            onfocus: () => setPlan(e),
+            onfocus: () => setPlan(e, opts.path),
             onblur: () => { if (planKey === e.key) clearPlan(); },
             dataset: { key: e.key, pax: (e.ctx && e.ctx.p && e.ctx.p.id) || "" },
         }, [
-            el("span", { class: "act-key", text: n < 9 ? String(n + 1) : "" }),
+            el("span", { class: "act-key", text: n !== undefined && n < 9 ? String(n + 1) : "" }),
+            rowIcon(e),
             el("span", { class: "act-body" }, [
                 el("b", { text: e.label }),
-                e.detail ? el("i", { text: e.detail }) : null,
+                opts.why ? el("i", { class: "why", text: opts.why })
+                         : (e.detail ? el("i", { text: e.detail }) : null),
             ]),
             el("span", { class: "act-cost", text: over ? "over" : costLabel(e.cost) }),
         ]);
@@ -641,8 +988,7 @@
     // -------------------------------------------------------------------------------- doing ---
 
     // One fallback cue per deck, so that every action in the game makes a noise of the right
-    // kind. An action that plays its own sound keeps it; this is only for the ones that do not,
-    // and there are a hundred and fifty of those.
+    // kind. An action that plays its own sound keeps it; this is only for the ones that do not.
     const DECK_CUE = { move: "step", fire: "effort", people: "grab", crew: "talk",
                        cabin: "latch", self: "breath", items: "rummage" };
 
@@ -676,7 +1022,6 @@
 
         const res = A.perform(S, entry);
 
-        // Whatever the action did not say for itself.
         if (PRS.audio.count() === before.sounds) PRS.audio.play(cueFor(entry));
 
         const cost = res ? res.cost : 0;
@@ -703,7 +1048,6 @@
             fx.shake(2);
         }
         if (S.player.smokeDose > before.dose + 4) fx.flash("#6b6055", 0.16);
-        // The fire getting away from you is the one thing on this aeroplane that shoves back.
         const grew = PRS.fire.worst(S.fire) - before.fire;
         if (grew > 6) { fx.shake(3); fx.flash("#ff7a10", 0.14); }
         if (S.credibility > before.cred + 4) {
@@ -711,6 +1055,7 @@
         }
 
         if (S.clock.landed) {
+            closeCard();
             paint();
             setTimeout(() => PRS.screens.report(S), 900);
             return;
@@ -729,18 +1074,21 @@
     }
 
     /**
-     * Clicking the cabin. If somebody on that tile is already in reach, pick them up; otherwise
-     * walk there. Twenty-three per cent of every action list used to be the words "go to"; it is
-     * a picture of an aeroplane and you should be able to point at it.
+     * Clicking the cabin. A person, a member of crew, the fire, yourself or a fixture opens a
+     * card; the floor is a walk. When one tile has several of those on it - a passenger with
+     * the fire in the locker above them - the card gets a tab for each.
      */
     function clickTile(t) {
-        const entries = lastEntries.length ? lastEntries : A.available(S);
-        for (const p of st.paxAt(S, t.x, t.y)) {
-            const carry = entries.filter((e) => e.id === "people.carry" && e.ctx &&
-                                                e.ctx.p && e.ctx.p.id === p.id)[0];
-            if (carry) return run(carry);
+        if (S.clock.landed) return;
+        const things = H.thingsAt(S, t.x, t.y);
+        if (!things.length) {
+            closeCard();
+            walkTo(t);
+            return;
         }
-        walkTo(t);
+        const thing = things[0];
+        thing.siblings = things;
+        openThing(thing, tileRect(t.x, t.y));
     }
 
     // -------------------------------------------------------------------------------- keys ---
@@ -749,11 +1097,13 @@
         if (!root || !root.isConnected) return;
         const tag = (ev.target.tagName || "").toLowerCase();
         if (tag === "input" || tag === "textarea") {
-            if (ev.key === "Escape") { ev.target.blur(); ev.target.value = ""; filter = ""; paint(); }
+            if (ev.key === "Escape") { ev.target.blur(); ev.target.value = ""; filter = ""; paintList(); }
             return;
         }
-        const rows = $$(".act", root);
         if (ev.key >= "1" && ev.key <= "9") {
+            // The card if one is open, otherwise the suggestions, otherwise the list.
+            let rows = selected ? $$("#card .act", root) : $$("#now .act", root);
+            if (!rows.length) rows = $$("#actions .act", root);
             const i = Number(ev.key) - 1;
             if (rows[i]) { rows[i].click(); ev.preventDefault(); }
             return;
@@ -762,8 +1112,14 @@
                        a: [-1, 0], d: [1, 0], w: [0, -1], s: [0, 1] };
         const d = dirs[ev.key];
         if (d) {
+            closeCard();
             walkTo({ x: S.player.x + d[0], y: S.player.y + d[1] });
             ev.preventDefault();
+            return;
+        }
+        if (ev.key === "Escape") {
+            if ($(".help-veil", root)) hideHelp();
+            else closeCard();
             return;
         }
         if (ev.key === "Backspace" || ev.key === "z" || ev.key === "Z") {
@@ -772,14 +1128,60 @@
             return;
         }
         if (ev.key === "m" || ev.key === "M") { toggleSound(); return; }
-        if (ev.key === "/") { $("#filter", root).focus(); ev.preventDefault(); }
+        if (ev.key === "?") { showHelp(); return; }
+        if (ev.key === "/") { if (!listOpen) toggleList(); $("#filter", root).focus(); ev.preventDefault(); }
         if (ev.key === "Tab") {
-            const keys = [null].concat(Object.keys(A.DECKS));
-            const i = keys.indexOf(openDeck);
-            openDeck = keys[(i + 1) % keys.length];
-            paintActions();
+            if (!listOpen) { toggleList(); }
+            else {
+                const keys = [null].concat(Object.keys(A.DECKS));
+                const i = keys.indexOf(openDeck);
+                openDeck = keys[(i + 1) % keys.length];
+                paintList();
+            }
             ev.preventDefault();
         }
+    }
+
+    // ------------------------------------------------------------------------------ the help ---
+
+    /** Four sentences, once, with pictures. Reachable again from the button by the clock. */
+    function showHelp() {
+        if ($(".help-veil", root)) return;
+        const veil = el("div", { class: "help-veil",
+                                 onclick: (ev) => { if (ev.target === veil) hideHelp(); } }, [
+            el("div", { class: "help" }, [
+                el("h3", { text: "How to play" }),
+                helpLine(PRS.atlas.icon("pax_worried", 2, PRS.render.paletteOf(S.pax[20] || S.character)),
+                    "Click a person",
+                    "to talk to them, treat them, or pick them up and carry them to a green end " +
+                    "of the aeroplane. Nobody counts until they are there."),
+                helpLine(PRS.atlas.icon("fire_2", 2), "Click the fire",
+                    "to fight it. Nothing puts it out. Everything buys time."),
+                helpLine(PRS.atlas.icon("water_bottle", 2), "Click a thing in your bag",
+                    "to use it, give it to somebody, or find out where it would be useful."),
+                helpLine(PRS.atlas.icon("lav_door", 2), "Click a door, a galley or the lavatory",
+                    "to walk there and see what is in it. Click the floor to just walk."),
+                helpLine(el("span", { class: "help-clock", text: "0:09" }), "Time only moves when you act.",
+                    "Every click costs the seconds it says. Backspace takes the last one back."),
+                el("div", { class: "title-buttons" }, [
+                    el("button", { class: "big", text: "Got it", onclick: hideHelp }),
+                ]),
+            ]),
+        ]);
+        root.appendChild(veil);
+    }
+
+    function helpLine(icon, head, body) {
+        return el("div", { class: "help-line" }, [
+            el("div", { class: "help-icon" }, [icon]),
+            el("div", {}, [el("b", { text: head }), el("span", { text: body })]),
+        ]);
+    }
+
+    function hideHelp() {
+        const veil = root && $(".help-veil", root);
+        if (veil) veil.remove();
+        store.set("seenHelp", true);
     }
 
     // -------------------------------------------------------------------------------- the log ---
@@ -796,5 +1198,5 @@
         box.scrollTop = box.scrollHeight;
     }
 
-    PRS.play = { build, destroy, paint };
+    PRS.play = { build, destroy, paint, openThing, closeCard };
 })(window);
