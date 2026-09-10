@@ -35,6 +35,7 @@
         p.belted = false;
         p.x = S.player.x; p.y = S.player.y;
         S.player.carrying.push(p.id);
+        S.player.crouching = false;
         st.reindex(S);
         PRS.audio.play("grab");
     }
@@ -136,6 +137,7 @@
             cost: (S, c) => 8 + c.p.kg * 0.06,
             run(S, c) {
                 S.player.dragging = c.p.id;
+                S.player.crouching = false;
                 c.p.state = "carried";
                 c.p.carriedBy = "player";
                 st.reindex(S);
@@ -170,7 +172,7 @@
         {
             id: "people.recruit", deck: "people", tags: ["social"], danger: "good",
             targets: (S) => reachAwake(S).filter((c) => !c.p.helper),
-            when: (S, c) => P.worthAsking(S, c.p, 6),
+            when: (S, c) => P.helperCap(S) > 0 && P.worthAsking(S, c.p, 6),
             label: (S, c) => "Ask " + who(c) + " to help you",
             detail: (S, c) => {
                 const r = P.resistance(S, c.p);
@@ -238,10 +240,12 @@
                                              : "They are not going to believe you.",
             cost: 14,
             run(S, c) {
+                const was = c.p.trust;
                 const roll = say(S, c.p, "there is a fire", { awareness: 22 });
-                S.credibility = Math.min(100, S.credibility + (roll.ok ? 3 : 1));
                 if (roll.ok) {
                     c.p.trust = Math.min(100, c.p.trust + 18);
+                    // Turning somebody is worth something to the room. Telling a believer is not.
+                    if (was <= 30) S.credibility = Math.min(100, S.credibility + 3);
                     return { text: c.p.name + " looks up at the locker, then at you, then at the " +
                         "locker. “...Right. Right.”", kind: "good" };
                 }
@@ -257,9 +261,10 @@
             detail: "Telling people is slow. Showing them is not.",
             cost: 9,
             run(S, c) {
-                const roll = say(S, c.p, "look", { bonus: 30, awareness: 30 });
+                const was = c.p.trust;
+                say(S, c.p, "look", { bonus: 30, awareness: 30 });
                 c.p.trust = Math.min(100, c.p.trust + 30);
-                S.credibility = Math.min(100, S.credibility + 4);
+                if (was <= 30) S.credibility = Math.min(100, S.credibility + 4);
                 return { text: c.p.name + " looks at your phone for two full seconds and then " +
                     "unbuckles their seatbelt without being asked.", kind: "good" };
             },

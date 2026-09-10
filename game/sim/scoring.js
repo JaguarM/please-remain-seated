@@ -134,23 +134,23 @@
     }
 
     const GRADES = [
-        { key: "A", min: 26, name: "Exceptional",
+        { key: "A", min: 30, name: "Exceptional",
           text: "This is not what a passenger can do. This is what a passenger can do." },
-        { key: "B", min: 19, name: "Remarkable",
+        { key: "B", min: 22, name: "Remarkable",
           text: "Twenty souls forward is an extraordinary outcome for one person with a bottle." },
-        { key: "C", min: 12, name: "Considerable",
+        { key: "C", min: 15, name: "Considerable",
           text: "A dozen people were somewhere better than their seats. That is the job." },
-        { key: "D", min: 6, name: "Some",
+        { key: "D", min: 8, name: "Some",
           text: "Some. Which is a strange word to have to use." },
-        { key: "E", min: 1, name: "A few",
+        { key: "E", min: 3, name: "A few",
           text: "A few, in fifteen minutes, against sixty. It was always going to be like this." },
         { key: "F", min: 0, name: "Almost none",
           text: "You were the only person on this aeroplane who understood, and it was not enough." },
     ];
 
+    /** The grade is the number on the HUD, and nothing hidden: souls secured. */
     function gradeOf(result) {
-        const score = result.secured + result.byHelpers * 0.35 - result.lost * 0.9;
-        for (const g of GRADES) if (score >= g.min) return g;
+        for (const g of GRADES) if (result.secured >= g.min) return g;
         return GRADES[GRADES.length - 1];
     }
 

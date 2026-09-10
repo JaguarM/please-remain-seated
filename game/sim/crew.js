@@ -26,7 +26,7 @@
         { id: 3, name: "Fighting",
           desc: "Halon on the visible flame, which is not where the fire is." },
         { id: 4, name: "Declared",
-          desc: "The flight deck knows. There is an emergency and it has a number." },
+          desc: "The flight deck knows. The descent steepens: a runway sooner, ninety seconds fewer." },
         { id: 5, name: "Secure cabin",
           desc: "Everybody sits down for landing. Including the ones you were carrying." },
     ];

@@ -260,7 +260,7 @@
         { id: "fire.photograph", item: "phone", deck: "fire", tags: ["fire", "look"], danger: "good",
           label: "Photograph the fire", cost: 6,
           detail: "Evidence. This is worth more than a bottle of water and it costs six seconds.",
-          when: (S) => nearFire(S) && !!slot(S, "phone"),
+          when: (S) => nearFire(S) && !!slot(S, "phone") && !S.flags.havePhoto,
           run(S) {
               st.setFlag(S, "havePhoto");
               S.credibility = Math.min(100, S.credibility + 12);
@@ -283,7 +283,6 @@
                   p.awareness = Math.min(100, p.awareness + 18);
                   n++;
               }
-              S.credibility = Math.min(100, S.credibility + 4);
               return "You point at it. You do not explain. " + n + " people look where you are " +
                      "pointing, which is more than have looked all flight.";
           } },

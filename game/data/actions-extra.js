@@ -53,7 +53,7 @@
 
         { id: "extra.hostile_job", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("hostile"),
-          when: (S, c) => P.worthAsking(S, c.p, 22),
+          when: (S, c) => P.helperCap(S) > 0 && P.worthAsking(S, c.p, 22),
           label: (S, c) => "Give " + who(c) + " a job",
           detail: "The obstructive ones obstruct because nobody has given them anything to do.",
           cost: 20,
@@ -73,7 +73,7 @@
         // ------------------------------------------------------------------ the off-duty crew ---
         { id: "extra.offduty", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("crew"),
-          when: (S, c) => P.worthAsking(S, c.p, 34),
+          when: (S, c) => P.helperCap(S) > 0 && P.worthAsking(S, c.p, 34),
           label: (S, c) => "Tell " + who(c) + " to act like crew",
           detail: "They know the aeroplane, the drill and the kit. They are in seat 15E.",
           cost: 20,
@@ -106,6 +106,7 @@
               c.p.carriedBy = "player";
               c.p.belted = false;
               S.player.carrying.push(c.p.id);
+              S.player.crouching = false;
               st.reindex(S);
               return { text: "One under each arm. " + c.p.name + " weighs " + c.p.kg + " kilos " +
                   "and does not struggle, which is somehow worse than struggling.", kind: "good" };
@@ -166,17 +167,20 @@
 
         { id: "extra.crew_water", deck: "crew", tags: ["social"], danger: "good",
           targets: (S) => PRS.crew.adjacentCrew(S).map((c) => ({ key: c.id, c: c })),
-          when: (S) => !!S.flags.wilburSaid || S.fire.core.exposed,
-          label: (S, t) => "Tell " + t.c.name + " to use water, not the halon",
-          detail: "Halon does the flame. Water does the cell. Only one of those comes back.",
+          when: (S) => (!!S.flags.wilburSaid || S.fire.core.exposed) && !S.flags.crewUseWater,
+          label: (S, t) => "Tell " + t.c.name + " it is a lithium battery: water, not halon",
+          detail: "There is a specific drill for this and it is not the drill they are doing. " +
+                  "You only know it because you looked, or because Wilbur told you.",
           cost: 20,
           run(S, t) {
               st.setFlag(S, "crewUseWater");
-              S.credibility = Math.min(100, S.credibility + 16);
+              S.credibility = Math.min(100, S.credibility + 20);
               S.fire.core.rate *= 0.72;
-              return { text: "“Water. Keep putting water on it and don't stop.” " + t.c.name +
-                  " hesitates for exactly as long as it takes to remember that this is in the " +
-                  "manual and that they read it in February.", kind: "great" };
+              PRS.crew.setPhase(S, Math.max(S.crewPhase, 3));
+              return { text: "“Lithium?” Everything in " + t.c.name + "'s training reorders " +
+                  "itself in about a second and a half. “Water. Not the BCF. Water, and keep " +
+                  "putting water on it.” Which is right, and which the next cell is going to " +
+                  "notice.", kind: "great" };
           } },
 
 

@@ -124,8 +124,9 @@
             deck: "move",
             tags: ["move", "self"],
             label: (S) => S.player.crouching ? "Stand back up" : "Get down and crawl",
-            detail: "The smoke is at the ceiling. The air is at the floor. It is not a close call.",
-            when: (S) => true,
+            detail: "The smoke is at the ceiling and the air is at the floor. Down there you " +
+                    "breathe less than half of it, and every step takes half again as long.",
+            when: (S) => !S.player.carrying.length && !S.player.dragging,
             cost: 5,
             run(S) {
                 S.player.crouching = !S.player.crouching;

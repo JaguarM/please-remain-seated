@@ -269,8 +269,13 @@
                 t.x = zoneX; t.y = cabin.AISLE_Y;
                 p.x = zoneX; p.y = cabin.AISLE_Y;
                 S.stats.helperSaves = (S.stats.helperSaves || 0) + 1;
+                // A recruited doctor, nurse or vet has a look at the airway on the way, which is
+                // the difference between "treated" and "serious" on the manifest.
+                const medic = p.traits.indexOf("medical") >= 0;
+                if (medic) t.smokeDose = Math.max(0, t.smokeDose - 20);
                 PRS.state.log(S, p.name + " gets " + t.name + " to " +
-                    cabin.safeZoneName(zoneX) + ". You did not have to be there.", "good");
+                    cabin.safeZoneName(zoneX) + (medic ? ", breathing better than they were."
+                                                       : ". You did not have to be there."), "good");
                 PRS.audio.play("secure");
             }
             p.helperTarget = null;
@@ -352,6 +357,7 @@
         return n;
     }
 
+    /** How many more people this cabin has in it who will ever get out of their seat. */
     function helperCap(S) {
         return 7 - activeHelpers(S);
     }
@@ -367,6 +373,8 @@
         p.trust = Math.min(100, p.trust + 40);
         p.belted = false;
         S.stats.helpersRecruited++;
+        // Somebody getting up to help is the cabin seeing that something is worth helping with.
+        S.credibility = Math.min(100, S.credibility + 3);
         PRS.state.log(S, p.name + " is helping. " + (reason || ""), "great");
         PRS.audio.play("good");
         return true;
@@ -436,7 +444,7 @@
 
     PRS.pax = {
         DOWN_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
-        carryOverhead, canCarry, advance, recruit, resistance, persuasion, convince,
+        carryOverhead, canCarry, advance, recruit, helperCap, resistance, persuasion, convince,
         odds, worthAsking,
         face, palette,
         speak, nearestSafeX,

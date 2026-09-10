@@ -77,7 +77,7 @@ function build(opts) {
         // live in. Everything above is undone.
         S.inventory = S.inventory.filter((s) => ["halon_bottle", "water_ext"].indexOf(s.id) < 0);
     }
-    Object.assign(S.flags, opts.bare ? { havePhoto: true } : {
+    Object.assign(S.flags, opts.bare ? {} : {
         havePhoto: true, bagFull: true, wilburSaid: true, chipConfessed: true, usedPA: true,
         holdingCase: !!opts.holdingCase, caseInLav: !!opts.caseInLav,
     });

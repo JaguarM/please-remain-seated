@@ -49,7 +49,7 @@
         // ------------------------------------------------------------------- the call button ---
 
         { id: "crew.call_button_hold", deck: "crew", tags: ["social"], danger: "neutral",
-          label: "Hold the call button down", cost: 14,
+          label: "Hold the call button down", cost: 14, once: true,
           detail: "Fourteen seconds of continuous chime. Somebody will come.",
           when: (S) => S.crewPhase < 2,
           run(S) {
@@ -65,7 +65,7 @@
         // ----------------------------------------------------------------------- talking to ---
         { id: "crew.tell", deck: "crew", tags: ["social"],
           targets: near,
-          when: (S, t) => worth(S, t.c, 30),
+          when: (S, t) => S.crewPhase < 2 && worth(S, t.c, 30),
           label: (S, t) => "Tell " + t.c.name + " about the bin",
           detail: (S, t) => t.c.role + " · " + (t.c.refusals ? "has said no " +
                             t.c.refusals + " times" : "has not refused you yet"),
@@ -83,11 +83,12 @@
 
         { id: "crew.show_photo", item: "phone", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S) => !!S.flags.havePhoto,
+          when: (S, t) => !!S.flags.havePhoto && !t.c.shownPhoto,
           label: (S, t) => "Show " + t.c.name + " the photograph",
           detail: "Evidence beats an account of evidence every time.",
           cost: 10,
           run(S, t) {
+              t.c.shownPhoto = true;
               cred(S, 26);
               C.setPhase(S, Math.max(S.crewPhase, 2));
               return { text: t.c.name + " looks at your phone. The whole conversation you were " +
@@ -96,10 +97,11 @@
 
         { id: "crew.show_burn", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S) => S.player.burns > 12,
+          when: (S, t) => S.player.burns > 12 && !t.c.shownBurn,
           label: (S, t) => "Show " + t.c.name + " your hand",
           cost: 8,
           run(S, t) {
+              t.c.shownBurn = true;
               cred(S, 22);
               C.setPhase(S, Math.max(S.crewPhase, 2));
               return { text: "You hold your hand out. There is no version of that hand that came " +
@@ -108,6 +110,7 @@
 
         { id: "crew.lead", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
+          when: (S, t) => !t.c.hasSeenIt,
           label: (S, t) => "Take " + t.c.name + " to the bin",
           detail: "Do not describe it. Walk them to it.",
           cost: 42,
@@ -194,12 +197,13 @@
 
         { id: "crew.ask_pa", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S, t) => worth(S, t.c, 50),
+          when: (S, t) => !S.flags.crewPA && worth(S, t.c, 50),
           label: (S, t) => "Ask " + t.c.name + " to make an announcement",
           detail: "One sentence to sixty people beats sixty conversations.",
           cost: 22,
           run(S, t) {
               if (ask(S, t.c, 50)) {
+                  st.setFlag(S, "crewPA");
                   S.cabinAwareness = Math.min(100, S.cabinAwareness + 30);
                   S.cabinPanic = Math.min(100, S.cabinPanic + 12);
                   cred(S, 16);
@@ -218,7 +222,8 @@
           targets: near,
           when: (S, t) => S.crewPhase < 4 && worth(S, t.c, 56),
           label: (S, t) => "Tell " + t.c.name + " to call the flight deck",
-          detail: "The two people who can put this aeroplane on the ground do not know yet.",
+          detail: "The two people who can put this aeroplane on the ground do not know yet. " +
+                  "Told, they get it down sooner, and sooner is ninety seconds you do not get.",
           cost: 26,
           run(S, t) {
               if (ask(S, t.c, 56)) {
