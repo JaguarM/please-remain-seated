@@ -36,6 +36,13 @@
                p.traits.indexOf("immobile") < 0;
     }
 
+    /** Anybody who could be asked to carry other people: an adult, upright, not already doing it. */
+    function canHelp(p) {
+        return canStandUp(p) && !isChild(p) && !p.helper &&
+               p.state !== "down" && p.state !== "dead" && p.state !== "secured" &&
+               p.state !== "carried";
+    }
+
     function displayState(p) {
         switch (p.state) {
             case "asleep": return "asleep";
@@ -342,8 +349,7 @@
         // while nobody believes anything is happening.
         const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
         if (!S.rng.chance(rate)) return;
-        const near = S.pax.filter((q) => !q.helper && q.state !== "down" && q.state !== "dead" &&
-            q.state !== "secured" && Math.abs(q.x - p.x) <= 3 &&
+        const near = S.pax.filter((q) => canHelp(q) && Math.abs(q.x - p.x) <= 3 &&
             q.traits.indexOf("hostile") < 0);
         if (!near.length) return;
         const q = S.rng.pick(near);
@@ -443,7 +449,7 @@
     }
 
     PRS.pax = {
-        DOWN_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
+        DOWN_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying, displayState, condition,
         carryOverhead, canCarry, advance, recruit, helperCap, resistance, persuasion, convince,
         odds, worthAsking,
         face, palette,

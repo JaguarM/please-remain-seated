@@ -17,11 +17,11 @@
     const slot = (S, id) => st.slotOf(S, id);
     const have = (S, id) => { const s = slot(S, id); return s && !s.spent; };
 
-    /** Reachable passengers with a given trait. The workhorse of this file. */
+    /** Reachable passengers with a given trait who are not already working. */
     function withTrait(trait) {
         return (S) => st.reachable(S)
             .filter((p) => p.traits.indexOf(trait) >= 0 && p.state !== "secured" &&
-                           p.state !== "dead")
+                           p.state !== "dead" && !p.helper)
             .map((p) => ({ key: p.id, p: p }));
     }
     function named(name) {

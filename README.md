@@ -120,9 +120,9 @@ design aims at. Souls secured of 60, three hundred flights each:
 |---|---|---|---|
 | fire | only fights the fire | 1 | 1 |
 | idle | never leaves the seat | 4 | 4 |
-| random | anything | 7 | 7 |
+| random | anything | 9 | 6 |
 | carry | carries and drags, one trip at a time | 20 | 22 |
-| good | recruits early, then carries | 40 | 33 |
+| good | recruits early, then carries | 38 | 32 |
 
 The fire bot has the fewest casualties of the five and secures almost nobody, because holding a
 fire down keeps a cabin breathable and moves no one. If it ever scores well, the game has stopped

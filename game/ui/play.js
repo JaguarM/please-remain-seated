@@ -396,7 +396,11 @@
         PRS.audio.play("back");
         walkAnim = null;
         clearPlan();
+        // The clock jumps back rather than chasing, and the ticker will not redraw a number it
+        // thinks it has already shown, so it is written here.
         clockShown = S.clock.remaining;
+        const clockNode = root && $("#clock", root);
+        if (clockNode) clockNode.textContent = mmss(clockShown);
         PRS.render.fx.say(S.player.x, S.player.y, "+" + costLabel(Math.abs(done.seconds)),
                           "#5fd67a");
         PRS.render.fx.pulse(S.player.x, S.player.y, "#5fd67a");

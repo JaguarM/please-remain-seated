@@ -80,7 +80,7 @@
         {
             id: "people.carry", deck: "people", tags: ["carry", "hands"], danger: "good",
             targets: (S) => reach(S).filter((c) => c.p.state !== "carried" &&
-                                                   c.p.state !== "secured"),
+                                                   c.p.state !== "secured" && !c.p.helper),
             when: (S, c) => P.canCarry(S, c.p),
             label: (S, c) => "Pick up " + who(c),
             detail: (S, c) => c.p.seat + " · " + c.p.kg + "kg · " + P.displayState(c.p) +
@@ -130,7 +130,7 @@
                                                    c.p.traits.indexOf("immobile") >= 0 ||
                                                    !P.canCarry(S, c.p)),
             when: (S, c) => !S.player.dragging && S.player.carrying.length === 0 &&
-                            c.p.state !== "secured" && c.p.state !== "dead",
+                            c.p.state !== "secured" && c.p.state !== "dead" && !c.p.helper,
             label: (S, c) => "Drag " + who(c) + " along the floor",
             detail: (S, c) => c.p.kg + "kg. Slower than carrying, and it works on people you " +
                               "cannot lift.",
@@ -171,7 +171,7 @@
         // ---------------------------------------------------------------------- recruitment ---
         {
             id: "people.recruit", deck: "people", tags: ["social"], danger: "good",
-            targets: (S) => reachAwake(S).filter((c) => !c.p.helper),
+            targets: (S) => reachAwake(S).filter((c) => P.canHelp(c.p)),
             when: (S, c) => P.helperCap(S) > 0 && P.worthAsking(S, c.p, 6),
             label: (S, c) => "Ask " + who(c) + " to help you",
             detail: (S, c) => {
@@ -199,7 +199,8 @@
                 }
                 P.recruit(S, p, "They are going to work the cabin until this ends.");
                 return { text: p.name + " unbuckles, stands up, and asks who is next. " +
-                    st.helperCount(S) + " people are now doing this instead of one.", kind: "great" };
+                    PRS.util.plural(st.helperCount(S), "person is", "people are") +
+                    " now working the cabin as well as you.", kind: "great" };
             },
         },
 
@@ -233,7 +234,7 @@
         // ------------------------------------------------------------------------- talking ---
         {
             id: "people.tell", deck: "people", tags: ["social"],
-            targets: reachAwake,
+            targets: (S) => reachAwake(S).filter((c) => !c.p.helper),
             when: (S, c) => P.worthAsking(S, c.p, 0),
             label: (S, c) => "Tell " + who(c) + " there is a fire",
             detail: (S, c) => c.p.trust > 30 ? "They are listening to you now."
@@ -255,7 +256,7 @@
 
         {
             id: "people.show_photo", item: "phone", deck: "people", tags: ["social"], danger: "good",
-            targets: reachAwake,
+            targets: (S) => reachAwake(S).filter((c) => !c.p.helper),
             when: (S) => !!S.flags.havePhoto,
             label: (S, c) => "Show " + who(c) + " the photograph",
             detail: "Telling people is slow. Showing them is not.",
@@ -384,7 +385,8 @@
 
         {
             id: "people.floor", deck: "people", tags: ["hands"], danger: "good",
-            targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried"),
+            targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried" &&
+                                                   !c.p.helper && !c.p.braced),
             label: (S, c) => "Get " + who(c) + " down onto the floor",
             detail: "The smoke is at the ceiling. A person on the floor is in different air.",
             cost: 12,
@@ -419,7 +421,7 @@
         {
             id: "people.follow", deck: "people", tags: ["social"], danger: "good",
             targets: (S) => reachAwake(S).filter((c) => !P.needsCarrying(c.p) &&
-                                                        c.p.state !== "secured"),
+                                                        c.p.state !== "secured" && !c.p.helper),
             when: (S, c) => P.worthAsking(S, c.p, 8),
             label: (S, c) => "Tell " + who(c) + " to walk forward on their own",
             detail: "The cheapest save there is, and it only works on the ones who can walk.",
