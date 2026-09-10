@@ -117,7 +117,7 @@
               t.c.x = S.fire.core.x; t.c.y = cabin.AISLE_Y;
               t.c.hasSeenIt = true;
               cred(S, 34);
-              C.setPhase(S, Math.max(S.crewPhase, 2), "Cabin crew taken to the locker by a passenger.");
+              C.setPhase(S, Math.max(S.crewPhase, 2));
               return { text: "You walk " + t.c.name + " eleven rows and point at the seam of the " +
                   "locker above " + cabin.ORIGIN.row + cabin.ORIGIN.letter + ". They put the back " +
                   "of their hand on it for about a quarter of a second. Everything is different " +
@@ -222,7 +222,7 @@
           cost: 26,
           run(S, t) {
               if (ask(S, t.c, 56)) {
-                  C.setPhase(S, 4, "Flight deck notified at the request of a passenger.");
+                  C.setPhase(S, 4);
                   return { text: t.c.name + " picks up the handset. Whatever they say takes nine " +
                       "seconds and the nose is down before they have hung it up.", kind: "great" };
               }

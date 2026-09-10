@@ -1,24 +1,18 @@
 // The things you can be found to have done, checked after every action and printed at the
 // bottom of the incident report under the heading OTHER OBSERVATIONS.
 //
-// They are not achievements in the sense of being good, and ten of them are the only way to
-// unlock the ten characters you do not start with.
+// They are not achievements in the sense of being good. They are the only place the game says
+// out loud what it thinks of a strategy, so each one is a sentence about the arithmetic.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
     const st = PRS.state;
-
-    const has = (S, id) => (S.counts[id] || 0);
-    const used = (S, id, n) => has(S, id) >= (n || 1);
 
     const MEDALS = [
         // ------------------------------------------------------------------------ the fire ---
         { id: "first_water", name: "Nine seconds of relief",
           text: "Poured something on the fire. It went out. It came back.",
           when: (S) => S.stats.agentsUsed >= 1 },
-        { id: "ten_agents", name: "Everything in the bag",
-          text: "Put ten separate things on a fire that was never going to go out.",
-          when: (S) => S.stats.agentsUsed >= 10 },
         { id: "thirty_agents", name: "Not the point",
           text: "Thirty applications of suppressant. Thirty. The report has counted them.",
           when: (S) => S.stats.agentsUsed >= 30 },
@@ -28,39 +22,17 @@
         { id: "sink", name: "The correct answer",
           text: "Got the case into a sink full of water. Nobody has ever thought of this in time.",
           when: (S) => S.fire.core.inSink },
-        { id: "seen_it", name: "Looked at it",
-          text: "Actually opened the bin and looked at the thing that is doing all this. " +
-                "Deidre Volk is now available.",
-          when: (S) => S.fire.core.exposed,
-          unlocks: "seen_it" },
-        { id: "vent_survivor", name: "Six cells",
-          text: "Was standing in the cabin for six separate thermal runaway events.",
-          when: (S) => S.fire.core.vented >= 6 },
 
         // ------------------------------------------------------------------------- carrying ---
         { id: "first_carry", name: "One",
           text: "Carried one person to safety, which is one more than anybody else did.",
           when: (S) => S.stats.carriesCompleted >= 1 },
-        { id: "five_carry", name: "Five",
-          text: "Five. On your own. In a corridor full of people telling you to stop.",
-          when: (S) => S.stats.carriesCompleted >= 5 },
         { id: "twelve_carry", name: "Twelve",
           text: "Twelve carries. That is the physical limit and you found it.",
           when: (S) => S.stats.carriesCompleted >= 12 },
-        { id: "child_first", name: "Children first",
-          text: "The first person you carried was a child.",
-          when: (S) => S.flags.firstCarryChild },
-        { id: "heavy", name: "A hundred and one kilos",
-          text: "Carried Solly Grubb. Both of you will remember it.",
-          when: (S) => { const p = S.pax.filter((q) => q.name === "Solly Grubb")[0];
-                         return p && p.state === "secured" && !p.carriedBy; } },
         { id: "immobile", name: "The ones who could not walk",
           text: "Both wheelchair users were secured. Neither could have done anything alone.",
           when: (S) => S.pax.filter((p) => p.traits.indexOf("immobile") >= 0)
-                             .every((p) => p.state === "secured") },
-        { id: "family", name: "All four Fenwicks",
-          text: "The family that would not be separated were not separated.",
-          when: (S) => S.pax.filter((p) => p.name.indexOf("Fenwick") >= 0)
                              .every((p) => p.state === "secured") },
         { id: "dog", name: "Bruno",
           text: "The dog got out. This was not free and you knew that.",
@@ -81,9 +53,6 @@
           text: "Other people carried more passengers than you did.",
           when: (S) => (S.stats.helperSaves || 0) > S.stats.carriesCompleted &&
                         S.stats.carriesCompleted > 0 },
-        { id: "converted_sceptic", name: "Turned one round",
-          text: "Recruited somebody who had told you to sit down.",
-          when: (S) => S.pax.some((p) => p.helper && p.traits.indexOf("sceptic") >= 0) },
         { id: "converted_hostile", name: "Turned the worst one round",
           text: "Recruited a passenger who was actively obstructing you.",
           when: (S) => S.pax.some((p) => p.helper && p.traits.indexOf("hostile") >= 0) },
@@ -91,16 +60,12 @@
         // ----------------------------------------------------------------------------- crew ---
         { id: "believed", name: "Believed, and quickly",
           text: "Got cabin crew credibility above eighty inside six minutes, which nobody " +
-                "manages by talking. " +
-                "Terrence Ubel is now available.",
-          when: (S) => S.credibility >= 80 && S.clock.elapsed < 360,
-          unlocks: "believed" },
-        { id: "phase3_fast", name: "Four minutes early",
-          text: "Had the crew fighting the fire before the eight minute mark.",
-          when: (S) => S.crewPhase >= 3 && S.crewPhaseAt < 420 },
-        { id: "took_halon", name: "Requisitioned",
-          text: "Ended up holding a halon bottle you were not supposed to have.",
-          when: (S) => S.inventory.some((s) => s.id === "halon_bottle") },
+                "manages by talking.",
+          when: (S) => S.credibility >= 80 && S.clock.elapsed < 360 },
+        { id: "declared", name: "Declared early",
+          text: "Had the flight deck declare an emergency inside five minutes, which is " +
+                "six minutes before it would have happened on its own.",
+          when: (S) => S.crewPhase >= 4 && S.clock.elapsed < 300 },
         { id: "argued_long", name: "Three minutes of arguing",
           text: "Spent a hundred and eighty seconds of a fifteen minute flight in conversation.",
           when: (S) => S.stats.timeArguing >= 180 },
@@ -109,45 +74,6 @@
         { id: "burned", name: "Burned",
           text: "Took a burn. It made people believe you, which is the worst part.",
           when: (S) => S.player.burns > 20 },
-        { id: "hood_on", name: "Prepared",
-          text: "Put on a smoke hood you bought after watching a documentary.",
-          when: (S) => st.wearing(S, "hood") },
-        { id: "panicking", name: "Ninety",
-          text: "Panic reached ninety and your hands still worked. " +
-                "Mo Achterberg is now available.",
-          when: (S) => S.player.panic >= 90,
-          unlocks: "panicking" },
-        { id: "calm", name: "Never above thirty",
-          text: "Went through the whole thing without your panic reaching thirty.",
-          when: (S) => S.clock.landed && S.stats.maxPanic !== undefined && S.stats.maxPanic < 30 },
-        { id: "filmed_it", name: "Content",
-          text: "Filmed the fire. The footage is very good. That is the problem.",
-          when: (S) => S.stats.filmed >= 3 },
-
-        // ------------------------------------------------ the ones that open a character ------
-        { id: "five_down", name: "Sixteen went quiet",
-          text: "Sixteen people on this aeroplane stopped coughing and stopped moving, and " +
-                "you were still upright at the end of it. " +
-                "Dr Priya Ansel is now available.",
-          when: (S) => st.downCount(S) >= 16, unlocks: "five_down" },
-        { id: "carried_heavy", name: "Ninety kilos",
-          text: "Got somebody who weighs more than ninety kilos moving, by lifting them or " +
-                "by dragging them because you could not. Gordy Mach is now available.",
-          when: (S) => !!S.flags.carriedHeavy, unlocks: "carried_heavy" },
-        { id: "declared", name: "Declared early",
-          text: "Had the flight deck declare an emergency inside five minutes, which is " +
-                "six minutes before it would have happened on its own. " +
-                "Captain Nell Rusk is now available.",
-          when: (S) => S.crewPhase >= 4 && S.clock.elapsed < 300, unlocks: "declared" },
-        { id: "child_secured", name: "A child, forward",
-          text: "Got one of the children to a safe zone. " +
-                "Yuki Tanaka-Brandt is now available.",
-          when: (S) => S.pax.some((p) => PRS.pax.isChild(p) && p.state === "secured"),
-          unlocks: "child_secured" },
-        { id: "jammed", name: "Asked to sit down, repeatedly",
-          text: "Three separate passengers told you, personally, to sit down. The cabin " +
-                "turned on you before the fire did. Dale Kowalczyk is now available.",
-          when: (S) => (S.stats.sitDowns || 0) >= 3, unlocks: "jammed" },
 
         // ------------------------------------------------------------------------ the score ---
         { id: "ten_souls", name: "Ten souls",
@@ -157,22 +83,17 @@
           text: "Eighteen. This is a very good run and you should know that.",
           when: (S) => st.securedCount(S) >= 18 },
         { id: "twentytwo_souls", name: "Twenty-two souls",
-          text: "Twenty-two. Almost nobody gets here. Beverley Crane is now available.",
-          when: (S) => st.securedCount(S) >= 22, unlocks: "beverley" },
+          text: "Twenty-two. Almost nobody gets here.",
+          when: (S) => st.securedCount(S) >= 22 },
         { id: "three_souls", name: "Three souls",
-          text: "Three. It was always going to be like this for somebody. " +
-                "Nils Ottersen is now available.",
-          when: (S) => S.clock.landed && st.securedCount(S) <= 3, unlocks: "nils" },
-        { id: "everyone", name: "All sixty-one",
-          text: "Every soul on board. This is not possible. The report would like a word.",
-          when: (S) => st.securedCount(S) >= 61 },
+          text: "Three. It was always going to be like this for somebody.",
+          when: (S) => S.clock.landed && st.securedCount(S) <= 3 },
     ];
 
     const BY_ID = {};
     for (const m of MEDALS) BY_ID[m.id] = m;
 
     function check(S) {
-        S.stats.maxPanic = Math.max(S.stats.maxPanic || 0, S.player.panic);
         for (const m of MEDALS) {
             if (S.medals[m.id]) continue;
             let ok = false;
@@ -180,26 +101,12 @@
             if (!ok) continue;
             S.medals[m.id] = S.clock.elapsed;
             PRS.state.log(S, "◆ " + m.name + " — " + m.text, "medal");
-            if (m.unlocks) unlock(m.unlocks);
         }
-    }
-
-    function unlock(id) {
-        const owned = PRS.util.store.get("unlocked", {});
-        if (owned[id]) return false;
-        owned[id] = true;
-        PRS.util.store.set("unlocked", owned);
-        return true;
-    }
-
-    function unlocked(id) {
-        const owned = PRS.util.store.get("unlocked", {});
-        return !!owned[id];
     }
 
     function earned(S) {
         return MEDALS.filter((m) => S.medals[m.id]);
     }
 
-    PRS.medals = { MEDALS, BY_ID, check, unlock, unlocked, earned };
+    PRS.medals = { MEDALS, BY_ID, check, earned };
 })(window);

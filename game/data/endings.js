@@ -1,15 +1,14 @@
-// Nine ways for fifteen minutes to end.
+// Six ways for fifteen minutes to end.
 //
 // None of them is "you put the fire out", because the fire does not go out, and none of them is a
 // clean win, because there is no arrangement of sixty seats and nine hundred seconds that gets
 // everybody off. The best ending in the file is called The Ones Who Walked Off and it is about
-// eleven people. That is the game being honest with you rather than being cruel to you.
+// the people you recruited. That is the game being honest with you rather than being cruel.
 //
 // They are checked in order and the first one that fits wins, so the strange ones sit at the top.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
-    const st = PRS.state;
 
     const ENDINGS = [
         {
@@ -30,7 +29,6 @@
                     "field for that.";
             },
         },
-
         {
             id: "sink",
             title: "THE ONE THING THAT WORKED",
@@ -65,22 +63,6 @@
                     "In eleven of the statements taken afterward, the passenger being interviewed " +
                     "describes themselves as the person who helped, and not one of them mentions " +
                     "you. This is the correct outcome and you would not change it.";
-            },
-        },
-        {
-            id: "believed_late",
-            title: "SIX MINUTES",
-            when: (S, R) => S.credibility >= 75 && S.crewPhaseAt > 480,
-            text(S, R) {
-                return "They believed you at " + PRS.util.mmss(S.crewPhaseAt) + ".\n\n" +
-                    "Everything after that went well. The crew were fast, the halon was where it " +
-                    "needed to be, the flight deck declared, and the aeroplane was on the ground " +
-                    "inside four minutes of the call. The procedure, once it started, was " +
-                    "excellent.\n\n" + "It started six minutes late, and the six minutes are the " +
-                    "whole report. " + R.secured + " secured, " + R.tally.treated + " to hospital, " +
-                    R.lost + " not accounted for.\n\n" +
-                    "The recommendation, when it comes, will be one sentence long and it will be " +
-                    "about believing passengers.";
             },
         },
         {

@@ -40,7 +40,7 @@ function digest(S) {
         Object.keys(S.player.wearing).sort().join("|"),
         S.inventory.map((s) => s.id + ":" + s.uses + ":" + s.spent + ":" + s.wet).join("|"),
         S.fire.core.heat.toFixed(4), S.fire.core.cells, S.fire.core.contained.toFixed(4),
-        S.fire.core.x, S.fire.core.y, S.fire.core.exposed, S.fire.core.inSink, S.fire.packsHigh,
+        S.fire.core.x, S.fire.core.y, S.fire.core.exposed, S.fire.core.inSink,
         S.actions.length,
         JSON.stringify(S.counts), JSON.stringify(S.flags), JSON.stringify(S.cabinFlags),
         JSON.stringify(S.stash), JSON.stringify(S.medals),

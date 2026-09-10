@@ -70,7 +70,6 @@
           when: (S) => atLav(S) && !S.cabinFlags.detectorSounded,
           run(S) {
               PRS.events.force(S, "detector");
-              PRS.state.note(S, "Lavatory smoke detector activated deliberately by a passenger.");
               return { text: "You hold the wet towel over the detector, wring the smoke out of it, " +
                   "and wave. It takes eleven seconds and it puts a light on the flight deck panel " +
                   "that two pilots are contractually unable to ignore.", kind: "great" };

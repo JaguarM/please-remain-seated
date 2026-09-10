@@ -128,8 +128,6 @@
               if (!st.wearing(S, "gloves")) S.player.burns += 12;
               F.apply(S.fire, S.fire.core.x, S.fire.core.y, "air", 1, 0);
               PRS.audio.play("flare");
-              PRS.state.note(S, "Overhead locker opened by a passenger; source identified as a " +
-                                "vape device in a hard case.");
               return { text: "The locker comes open and a wall of heat comes out with it. Inside, " +
                        "a hard-shell case is burning from the inside out and there is a small " +
                        "cylindrical thing in the middle of it going off like a firework every few " +
@@ -178,7 +176,6 @@
               S.fire.core.y = 7;
               S.fire.core.contained = Math.max(S.fire.core.contained, 0.6);
               PRS.audio.play("pour");
-              PRS.state.note(S, "Source device immersed in water in the aft lavatory basin.");
               return { text: "You jam the case into the basin and hold the tap open with your " +
                        "elbow. It does not go out — a cell in runaway makes its own oxygen and " +
                        "there are " + S.fire.core.cells + " of them left — but every one of them " +

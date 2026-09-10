@@ -83,8 +83,7 @@
                                      kind: "bad" };
               P.recruit(S, c.p, "They know where everything is stowed, which you do not.");
               S.credibility = Math.min(100, S.credibility + 20);
-              PRS.crew.setPhase(S, Math.max(S.crewPhase, 2),
-                  "An off-duty crew member from another operator assisted.");
+              PRS.crew.setPhase(S, Math.max(S.crewPhase, 2));
               return { text: c.p.name + " stands up and stops being a passenger. Inside twenty " +
                   "seconds they have the aft galley open, a bottle in their hand and two rows " +
                   "moving. This is what the training is for and it does not care whose aeroplane " +
@@ -125,9 +124,6 @@
               S.credibility = Math.min(100, S.credibility + 34);
               c.p.trust = 40;
               c.p.traits = c.p.traits.filter((t) => t !== "hostile" && t !== "sceptic");
-              PRS.state.note(S, "The owner of the bag stated that it contained a personal " +
-                  "vaporiser with a damaged cell, and that he had been aware of a smell for " +
-                  "some minutes before the crew were informed.");
               return { text: "“It's a vape.”\n\nHe says it to the tray table. “It's a vape, it " +
                   "got wet in Málaga, it's been getting hot in my pocket all week and I put it " +
                   "in the case so I'd stop thinking about it.”\n\nYou now know exactly what this " +

@@ -77,7 +77,6 @@
             counts: {},            // action id -> how many times
             medals: {},
             flags: {},             // one-shot story flags
-            notes: [],             // report-worthy moments
             stats: {
                 stepsTaken: 0, carriesCompleted: 0, metresCarried: 0,
                 agentsUsed: 0, timeArguing: 0, timeCarrying: 0,
@@ -304,14 +303,10 @@
         return entry;
     }
 
-    function note(S, text) {
-        S.notes.push({ t: S.clock.elapsed, clock: PRS.util.mmss(S.clock.remaining), text: text });
-    }
-
     PRS.state = {
         FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
         inventoryHas, inventoryAll, slotOf, useCharge, give, buildStash,
         has, setFlag, wearing,
-        securedCount, downCount, helperCount, log, note, line,
+        securedCount, downCount, helperCount, log, line,
     };
 })(window);

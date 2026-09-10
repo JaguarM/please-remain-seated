@@ -114,7 +114,6 @@
             actions: S.actions.length,
             distinctActions: Object.keys(S.counts).length,
             medals: PRS.medals.earned(S),
-            notes: S.notes,
             seed: S.seed,
             character: S.character,
             grade: null,
@@ -129,14 +128,6 @@
         PRS.state.log(S, "SOULS ON BOARD 61. ACCOUNTED FOR " + survivors + ". " +
             (tally.lost ? "NOT ACCOUNTED FOR " + tally.lost + "." : "ALL ACCOUNTED FOR."),
             tally.lost ? "bad" : "great");
-
-        const history = PRS.util.store.get("history", []);
-        history.unshift({
-            at: Date.now(), seed: S.seed, character: S.character.id,
-            secured: secured, lost: tally.lost, grade: result.grade.key,
-            ending: result.ending.id,
-        });
-        PRS.util.store.set("history", history.slice(0, 60));
 
         PRS.medals.check(S);
         return result;

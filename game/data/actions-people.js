@@ -35,10 +35,6 @@
         p.belted = false;
         p.x = S.player.x; p.y = S.player.y;
         S.player.carrying.push(p.id);
-        if (!S.flags.firstCarry) {
-            st.setFlag(S, "firstCarry", p.id);
-            if (P.isChild(p)) st.setFlag(S, "firstCarryChild");
-        }
         st.reindex(S);
         PRS.audio.play("grab");
     }
@@ -142,7 +138,6 @@
                 S.player.dragging = c.p.id;
                 c.p.state = "carried";
                 c.p.carriedBy = "player";
-                if (c.p.kg > 90) st.setFlag(S, "carriedHeavy");
                 st.reindex(S);
                 return "You get " + c.p.name + " under the arms and start dragging. It is " +
                     "undignified, it is slow, and it is under the smoke.";

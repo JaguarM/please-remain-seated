@@ -14,7 +14,6 @@
     const { clamp, clamp01 } = PRS.util;
 
     const DOWN_AT = 52;      // smoke dose at which a person stops being able to help themselves
-    const CRITICAL_AT = 96;  // and at which the report starts using a different word
 
     function isChild(p) { return p.traits.indexOf("child") >= 0 || p.traits.indexOf("infant") >= 0; }
     function isPet(p) { return p.traits.indexOf("pet") >= 0; }
@@ -170,10 +169,6 @@
                 p.helper = false;
                 PRS.state.log(S, p.name + " (" + p.seat + ") stops coughing and goes quiet.", "bad");
                 PRS.audio.play("bad");
-            }
-            if (p.smokeDose > CRITICAL_AT && p.state !== "secured" && !p.critical) {
-                p.critical = true;
-                PRS.state.note(S, p.name + " was unconscious in heavy smoke for an extended period.");
             }
 
             // ---- noticing ---------------------------------------------------------------------
@@ -373,7 +368,6 @@
         p.belted = false;
         S.stats.helpersRecruited++;
         PRS.state.log(S, p.name + " is helping. " + (reason || ""), "great");
-        PRS.state.note(S, p.name + " (" + p.seat + ") assisted with the evacuation of the cabin.");
         PRS.audio.play("good");
         return true;
     }
@@ -441,7 +435,7 @@
     }
 
     PRS.pax = {
-        DOWN_AT, CRITICAL_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
+        DOWN_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
         carryOverhead, canCarry, advance, recruit, resistance, persuasion, convince,
         odds, worthAsking,
         face, palette,

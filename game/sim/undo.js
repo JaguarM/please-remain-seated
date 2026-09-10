@@ -64,7 +64,6 @@
             flags: copy(S.flags),
             medals: copy(S.medals),
             stats: copy(S.stats),
-            notes: S.notes.slice(),
             actions: S.actions.slice(),
             logLength: S.log.length,
             bags: copy(S._bags || {}),
@@ -92,7 +91,6 @@
         S.flags = copy(snap.flags);
         S.medals = copy(snap.medals);
         S.stats = copy(snap.stats);
-        S.notes = snap.notes.slice();
         S.actions = snap.actions.slice();
         S.log.length = snap.logLength;
         S._eventClock = snap.eventClock;

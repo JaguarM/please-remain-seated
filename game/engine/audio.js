@@ -1,8 +1,8 @@
 // Every sound in the game is synthesised here, because the game ships as a folder you can open
 // from disk and a folder you can open from disk should not need forty .ogg files to make a noise.
 //
-// The palette is the aeroplane's own: the two-tone cabin chime, the seatbelt sign, the flat hiss
-// of the air conditioning, and one low roar under all of it that gets louder as the fire does.
+// The palette is the aeroplane's own: the two-tone cabin chime, the flat hiss of the air
+// conditioning, and one low roar under all of it that gets louder as the fire does.
 (function (global) {
     "use strict";
 
@@ -119,8 +119,6 @@
         // Two-tone cabin chime, the "bing-bong" that in this game always means bad news.
         chime() { tone(880, 0.5, { type: "sine", gain: 0.16 });
                   tone(660, 0.7, { type: "sine", gain: 0.14, delay: 0.28 }); },
-        // The seatbelt sign, which is one tone and a smug one.
-        beltSign() { tone(1046, 0.35, { type: "triangle", gain: 0.14 }); },
         click() { tone(520, 0.045, { type: "square", gain: 0.05 }); },
         select() { tone(660, 0.06, { type: "square", gain: 0.07 });
                    tone(990, 0.08, { type: "square", gain: 0.05, delay: 0.05 }); },
@@ -133,15 +131,12 @@
         smother() { noise(0.35, { freq: 300, gain: 0.14, filter: "lowpass" }); },
         flare() { noise(0.5, { freq: 220, freqTo: 1500, gain: 0.22, filter: "lowpass" });
                   tone(90, 0.5, { type: "sawtooth", gain: 0.1, slideTo: 200 }); },
-        fireGrow() { tone(70, 0.9, { type: "sawtooth", gain: 0.09, slideTo: 55 }); },
         grab() { noise(0.13, { freq: 500, gain: 0.09, filter: "lowpass" }); },
         drop() { noise(0.16, { freq: 200, gain: 0.11, filter: "lowpass" }); },
         secure() { tone(523, 0.1, { type: "triangle", gain: 0.1 });
                    tone(784, 0.14, { type: "triangle", gain: 0.1, delay: 0.09 });
                    tone(1046, 0.2, { type: "triangle", gain: 0.09, delay: 0.19 }); },
-        slap() { noise(0.09, { freq: 1800, gain: 0.2, q: 0.5 }); },
         refuse() { tone(220, 0.16, { type: "square", gain: 0.07, slideTo: 160 }); },
-        cough() { noise(0.22, { freq: 480, freqTo: 200, gain: 0.13, filter: "lowpass" }); },
         alarm() { for (let i = 0; i < 3; i++) tone(2400, 0.12, { type: "square", gain: 0.09, delay: i * 0.18 }); },
         masksDrop() { noise(0.4, { freq: 700, gain: 0.1 });
                       tone(440, 0.6, { type: "sine", gain: 0.08, delay: 0.1 }); },

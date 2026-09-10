@@ -30,19 +30,12 @@
     // agent that gets past the case and onto the cell.
     const AGENTS = {
         water:     { knock: 26, hold: 34, decay: 0.020, smoke: +14, coolsCore: 0.55, name: "water" },
-        icewater:  { knock: 32, hold: 40, decay: 0.017, smoke: +10, coolsCore: 0.70, name: "iced water" },
-        soda:      { knock: 20, hold: 24, decay: 0.024, smoke: +16, coolsCore: 0.40, name: "soft drink" },
-        coffee:    { knock: 14, hold: 16, decay: 0.030, smoke: +18, coolsCore: 0.22, name: "hot coffee" },
-        foam:      { knock: 44, hold: 70, decay: 0.010, smoke: +6,  coolsCore: 0.30, name: "foam" },
         halon:     { knock: 74, hold: 82, decay: 0.014, smoke: -8,  coolsCore: 0.10, name: "halon" },
         smother:   { knock: 30, hold: 46, decay: 0.016, smoke: -14, coolsCore: 0.12, name: "smothering" },
         wetcloth:  { knock: 38, hold: 56, decay: 0.013, smoke: -10, coolsCore: 0.34, name: "a wet cloth" },
         beat:      { knock: 16, hold: 8,  decay: 0.060, smoke: +22, coolsCore: 0.02, name: "beating" },
-        // These make it worse, and they are in the same table so the code cannot pretend it did
-        // not know that.
-        spirits:   { knock: -40, hold: 0, decay: 0.10, smoke: +30, coolsCore: 0.00, name: "spirits" },
-        perfume:   { knock: -55, hold: 0, decay: 0.10, smoke: +34, coolsCore: 0.00, name: "perfume" },
-        sanitiser: { knock: -48, hold: 0, decay: 0.10, smoke: +26, coolsCore: 0.00, name: "hand gel" },
+        // Opening the bin is an agent too, and it is in the same table so the code cannot pretend
+        // it did not know that it makes things worse.
         air:       { knock: -22, hold: 0, decay: 0.10, smoke: +8,  coolsCore: 0.00, name: "air" },
     };
 
@@ -70,12 +63,10 @@
                 lastVent: 0,
             },
             oxygen: 1.0,         // cabin oxygen fraction available to the fire
-            packsHigh: false,    // recirc on high: more oxygen, more spread, thinner smoke
             totalBurned: 0,
             ventCount: 0,
             peakIntensity: 0,
             suppressedSeconds: 0,
-            history: [],
         };
         for (let x = 0; x < cabin.W; x++) {
             for (let y = 0; y < cabin.H; y++) {
@@ -200,7 +191,6 @@
         const coreRate = f.core.rate
             * (f.core.inSink ? 0.30 : 1)
             * (1 - 0.35 * f.core.contained)
-            * (f.packsHigh ? 1.10 : 1)
             * (1 + 0.10 * f.core.vented);          // each vented cell heats its neighbours
         f.core.heat += coreRate * dt * 0.55;
 
@@ -258,7 +248,7 @@
                 }
 
                 const suppressed = clamp01(f.suppress[i] / 70);
-                const air = f.oxygen * (f.packsHigh ? 1.16 : 1)
+                const air = f.oxygen
                           * (f.binOpen[cabin.binKey(x, y < cabin.AISLE_Y ? "left" : "right")] ? 1.12 : 1);
 
                 // Growth. A fire with fuel and air doubles about every forty seconds; suppression
@@ -276,7 +266,7 @@
                 f.totalBurned += eaten;
 
                 // Smoke. A suppressed fire smokes more, not less, which surprises people.
-                const smokeRate = inten * (0.024 + 0.034 * suppressed) * (f.packsHigh ? 0.8 : 1);
+                const smokeRate = inten * (0.024 + 0.034 * suppressed);
                 f.smoke[i] = clamp(f.smoke[i] + smokeRate * dt, 0, 100);
                 f.heat[i] = clamp(f.heat[i] + (inten * 0.03 - 0.8) * dt, 0, 100);
 
@@ -314,7 +304,7 @@
      */
     function advanceSmoke(f, dt, S) {
         const next = new Float32Array(N);
-        const drift = f.packsHigh ? 0.16 : 0.09;   // fore-aft airflow from the packs
+        const drift = 0.09;   // fore-aft airflow from the packs
         const rate = clamp01(dt * 0.16);
         for (let x = 0; x < cabin.W; x++) {
             for (let y = 0; y < cabin.H; y++) {
@@ -338,7 +328,7 @@
             }
         }
         // The packs scrub a little of it, and the recirculation filters take a little more.
-        const scrub = (f.packsHigh ? 0.0055 : 0.0022) * dt;
+        const scrub = 0.0022 * dt;
         for (let i = 0; i < N; i++) f.smoke[i] = clamp(next[i] * (1 - scrub), 0, 100);
     }
 

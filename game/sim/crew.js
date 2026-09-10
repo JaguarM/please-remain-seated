@@ -83,14 +83,13 @@
     }
 
     /** Force the procedure forward. Actions call this; it never goes backwards. */
-    function setPhase(S, phase, why) {
+    function setPhase(S, phase) {
         if (phase <= S.crewPhase) return false;
         S.crewPhase = phase;
         S.crewPhaseAt = S.clock.elapsed;
         for (const c of S.crew) c.askedThisPhase = false;
         const p = PHASES[phase];
         PRS.state.log(S, "CABIN CREW — " + p.name.toUpperCase() + ". " + p.desc, "crew");
-        if (why) PRS.state.note(S, why);
         onPhaseEnter(S, phase);
         return true;
     }
@@ -144,7 +143,7 @@
 
         // Secure-cabin is on the clock and not on the evidence, so it jumps the queue.
         if (S.crewPhase < 5 && S.clock.remaining < 190) {
-            setPhase(S, 5, "Cabin secured for landing.");
+            setPhase(S, 5);
             return;
         }
         if (S.crewPhase >= 5) return;
@@ -160,14 +159,7 @@
             cred >= 74 || worst > 55 || smoke > 18 || S.cabinFlags.masksDropped,
         ][S.crewPhase];
         if (!ready) return;
-
-        const why = [
-            "A passenger reported a smell " + PRS.util.mmss(S.clock.elapsed) + " into the descent.",
-            "Cabin crew commenced investigation.",
-            "Cabin crew commenced firefighting with BCF.",
-            "Flight deck notified; emergency declared.",
-        ][S.crewPhase];
-        setPhase(S, next, why);
+        setPhase(S, next);
     }
 
     /** One crew member walks one step toward a target tile. Crew are not fast either. */
@@ -231,8 +223,6 @@
                             PRS.state.log(S, "“STAND BACK!” " + c.name + " empties a halon bottle " +
                                 "into row " + (cabin.rowAt(target.x) || "?") + ". The flame goes " +
                                 "out like a light. The bin keeps ticking.", "crew");
-                            PRS.state.note(S, c.name + " discharged BCF at row " +
-                                (cabin.rowAt(target.x) || "?") + ".");
                         }
                     }
                 } else {
