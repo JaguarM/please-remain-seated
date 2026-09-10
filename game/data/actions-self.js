@@ -30,16 +30,6 @@
                   "Nobody else on this aeroplane can do that.", kind: "great" };
           } },
 
-        { id: "self.hood_off", item: "hood", deck: "self", tags: ["self"], danger: "bad",
-          label: "Take the smoke hood off", cost: 8,
-          detail: "So that people can hear what you are saying to them.",
-          when: (S) => st.wearing(S, "hood"),
-          run(S) {
-              S.player.wearing.hood = false;
-              return { text: "You pull the hood off so somebody can hear you. It is a reasonable " +
-                  "trade and it is a trade.", kind: "bad" };
-          } },
-
         { id: "self.wet_shirt", item: (S) => { const s = st.inventoryHas(S, "cloth"); return s ? s.id : null; }, deck: "self", tags: ["self"], danger: "good",
           label: "Tie something wet over your face", cost: 12,
           when: (S) => (!!st.inventoryHas(S, "cloth")) && !st.wearing(S, "wet_towel") &&
@@ -50,17 +40,6 @@
               return { text: "Over the nose and mouth, tied at the back. It stops the particles " +
                   "and it does nothing at all about the carbon monoxide, and one out of two is " +
                   "the best offer on this aeroplane.", kind: "good" };
-          } },
-
-        { id: "self.hold_breath", deck: "self", tags: ["self"],
-          label: "Hold your breath and go through it", cost: 14,
-          detail: "Fourteen seconds of not breathing. It is a real technique.",
-          when: (S) => smokeHere(S) > 25,
-          run(S) {
-              S.player.smokeDose = Math.max(0, S.player.smokeDose - 8);
-              S.player.stamina = Math.max(0, S.player.stamina - 20);
-              return "You take one breath from as low as you can get and hold it. Fourteen " +
-                  "seconds is a very long time when you have been running.";
           } },
 
         { id: "self.inhaler", item: "inhaler", deck: "self", tags: ["self"], danger: "good",
@@ -93,15 +72,6 @@
                   "everybody in four rows looks at you has changed completely.", kind: "good" };
           } },
 
-        { id: "self.lanyard", item: "lanyard", deck: "self", tags: ["self"],
-          label: "Put the lanyard on", cost: 5,
-          when: (S) => have(S, "lanyard") && !st.wearing(S, "lanyard"),
-          run(S) {
-              S.player.wearing.lanyard = true;
-              return "AVIATION SAFETY EXPO 2023 — DELEGATE, round your neck, face out. Nobody is " +
-                  "going to read it and everybody is going to see it.";
-          } },
-
         { id: "self.gloves", item: "gloves", deck: "self", tags: ["self"], danger: "good",
           label: "Put the welding gloves on", cost: 8,
           when: (S) => have(S, "gloves") && !st.wearing(S, "gloves"),
@@ -113,14 +83,6 @@
           } },
 
         // ------------------------------------------------------------------------ your state ---
-        { id: "self.brace", deck: "self", tags: ["self"], danger: "good",
-          label: "Brace", cost: 10,
-          when: (S) => S.clock.remaining < 200 && !S.player.braced,
-          run(S) {
-              S.player.braced = true;
-              return { text: "Head down, hands over the back of it, feet back behind your knees. " +
-                  "It is the last thing on the list and there is not much list left.", kind: "good" };
-          } },
 
         { id: "self.calm", deck: "self", tags: ["self"],
           label: "Get your own breathing under control", cost: 14,
@@ -135,7 +97,9 @@
         { id: "self.panic", deck: "self", tags: ["self"], danger: "bad",
           label: "Let go of it", cost: 18,
           detail: "Stop holding it together. See what is underneath.",
-          when: (S) => S.player.panic > 50,
+          // Only for the one person whose perk needs it: past eighty, everything Priya does
+          // costs half. For anybody else this is eighteen seconds of coming apart.
+          when: (S) => st.hasPerk(S, "adrenaline") && S.player.panic > 50,
           run(S) {
               S.player.panic = Math.min(100, S.player.panic + 30);
               if (st.hasPerk(S, "adrenaline") && S.player.panic >= 80) {
@@ -175,15 +139,6 @@
                   "four seconds of somebody in row 16 asking you to sit down.";
               return "You are now the only continuous record of this event. That is going to be " +
                   "important and it is not going to be comfortable.";
-          } },
-
-        { id: "self.torch_on", item: "torch", deck: "self", tags: ["self"], danger: "good",
-          label: "Turn the torch on", cost: 4,
-          when: (S) => have(S, "torch") && !S.flags.torchOn,
-          run(S) {
-              st.setFlag(S, "torchOn");
-              return { text: "The beam goes about a metre into the smoke and stops dead, which " +
-                  "tells you more about the smoke than anything else has.", kind: "good" };
           } },
 
         // ------------------------------------------------------------------------- thinking ---

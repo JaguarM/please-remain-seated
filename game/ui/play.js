@@ -45,13 +45,8 @@
     const SHORT = {
         water_big: "water", wet_towel: "towel", blanket: "blanket", gloves: "gloves",
         hood: "hood", goggles: "goggles", multitool: "multi-tool", tape: "tape",
-        binbag: "bin liners", first_aid: "first aid", inhaler: "inhaler", torch: "torch",
-        strap: "strap", scissors: "scissors", hivis: "hi-vis", clipboard: "clipboard",
-        lanyard: "lanyard", megaphone: "megaphone", airhorn: "air horn", whistle: "whistle",
-        phone: "phone", pretzels: "pretzels", carrier: "carrier", umbrella: "umbrella",
-        gin: "miniatures", thermos: "thermos", energy: "energy drink", vape: "vape",
-        halon_bottle: "halon", water_ext: "extinguisher", crash_axe: "axe",
-        wipes: "wet wipes", sock: "sock", pillow: "pillow",
+        binbag: "bin liners", first_aid: "first aid", inhaler: "inhaler", strap: "strap",
+        hivis: "hi-vis", phone: "phone", halon_bottle: "halon", water_ext: "extinguisher",
     };
 
     function build(container, state) {

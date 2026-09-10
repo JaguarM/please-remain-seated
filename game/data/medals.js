@@ -98,9 +98,6 @@
         { id: "phase3_fast", name: "Four minutes early",
           text: "Had the crew fighting the fire before the eight minute mark.",
           when: (S) => S.crewPhase >= 3 && S.crewPhaseAt < 420 },
-        { id: "flight_deck", name: "Through the door",
-          text: "Got into the flight deck. Almost nobody gets into the flight deck.",
-          when: (S) => S.flags.cockpitOpened },
         { id: "took_halon", name: "Requisitioned",
           text: "Ended up holding a halon bottle you were not supposed to have.",
           when: (S) => S.inventory.some((s) => s.id === "halon_bottle") },
@@ -123,18 +120,9 @@
         { id: "calm", name: "Never above thirty",
           text: "Went through the whole thing without your panic reaching thirty.",
           when: (S) => S.clock.landed && S.stats.maxPanic !== undefined && S.stats.maxPanic < 30 },
-        { id: "found_vape", name: "The other one",
-          text: "Found a second vape, of the same make and with the same cell, in the aft " +
-                "lavatory bin, eleven rows from the fire. Somebody put it there and said nothing.",
-          when: (S) => !!PRS.state.slotOf(S, "vape") },
         { id: "filmed_it", name: "Content",
           text: "Filmed the fire. The footage is very good. That is the problem.",
           when: (S) => S.stats.filmed >= 3 },
-
-        // -------------------------------------------------------------------------- absurd ---
-        { id: "call_button", name: "Forty times",
-          text: "Pressed the call button forty times. It was heard. It was ignored.",
-          when: (S) => has(S, "crew.call_button") >= 40 },
 
         // ------------------------------------------------ the ones that open a character ------
         { id: "five_down", name: "Sixteen went quiet",

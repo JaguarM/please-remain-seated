@@ -5,9 +5,9 @@
 // Eleven rows of list for one choice the player was not really making.
 //
 // So there is one of each now, and it picks the best thing you are carrying and says so on the
-// button. Getting a better thing — filling a bin liner at the tap, soaking the blanket, taking the
-// ice off the trolley — is still a real decision, it just happens where it belongs, which is at
-// the tap and the trolley rather than in a list of near-identical verbs.
+// button. Getting a better thing — filling a bin liner at the tap, soaking the blanket — is still
+// a real decision, it just happens where it belongs, which is at the tap rather than in a list of
+// near-identical verbs.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -32,16 +32,8 @@
     const LIQUIDS = [
         { id: "bag", name: "the nine litres in the bin liner", agent: "water", amount: 2.4,
           spread: 0.7, have: (S) => !!S.flags.bagFull, use: (S) => st.setFlag(S, "bagFull", false) },
-        { id: "jug", name: "the galley jug", agent: "water", amount: 1.6, spread: 0.3,
-          have: (S) => !!S.flags.haveJug, use: (S) => st.setFlag(S, "haveJug", false) },
-        { id: "ice", name: "the ice bucket", agent: "icewater", amount: 1.4, spread: 0.4,
-          have: (S) => !!S.flags.haveIce, use: (S) => st.setFlag(S, "haveIce", false) },
         { id: "water_big", name: "the water bottle", agent: "water", amount: 1.0, spread: 0.35,
           have: (S) => charged(S, "water_big"), use: (S) => spend(S, "water_big") },
-        { id: "energy", name: "a can of energy drink", agent: "soda", amount: 1.0, spread: 0.3,
-          have: (S) => charged(S, "energy"), use: (S) => spend(S, "energy") },
-        { id: "thermos", name: "the thermos", agent: "coffee", amount: 1.0, spread: 0.3,
-          have: (S) => charged(S, "thermos"), use: (S) => spend(S, "thermos") },
     ];
 
     // The jacket is last and is always available, which is why the action never disappears.

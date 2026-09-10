@@ -70,10 +70,10 @@
             }
         }
         // Every action that names a thing in your bag must name a real one, or the bottle's card
-        // will quietly not know about it. Three of them are the crew's kit, which items.js does
+        // will quietly not know about it. Two of them are the crew's kit, which items.js does
         // not list because you cannot pack it.
         if (PRS.actions && PRS.data && PRS.data.items) {
-            const kit = { halon_bottle: true, water_ext: true, crash_axe: true };
+            const kit = { halon_bottle: true, water_ext: true };
             for (const def of PRS.actions.all()) {
                 if (typeof def.item === "string" && !kit[def.item] && !PRS.data.items.byId(def.item)) {
                     bad.push("Action " + def.id + " uses an item that does not exist: " + def.item + ".");

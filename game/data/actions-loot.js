@@ -1,8 +1,7 @@
 // Deck: where the equipment actually is.
 //
-// The bag holds three things. Everything else in items.js is somewhere in this aeroplane: eight
-// things in the galleys, the seat pockets and the footwells, and thirteen in other people's
-// laps.
+// The bag holds three things. Everything else in items.js is somewhere in this aeroplane: two
+// things in the galley drawers, and four in other people's laps.
 //
 // That is a deliberate swap. It used to be that a player made forty-three decisions on a screen
 // before they had seen the cabin, and then spent the flight with a bag they could not remember
@@ -91,7 +90,8 @@
         // ---------------------------------------------------------------- getting hold of it ---
         {
             id: "loot.ask_for", deck: "people", tags: ["reveal", "social"], danger: "good",
-            targets: (S) => revealed(S).filter((c) => c.p.state !== "down"),
+            targets: (S) => revealed(S).filter((c) => c.p.state !== "down" &&
+                                                      P.worthAsking(S, c.p, 24)),
             label: (S, c) => "Ask " + c.p.name + " for the " + short(c.item.name),
             detail: (S, c) => c.item.note,
             cost: 13,
@@ -126,29 +126,11 @@
         },
 
         {
-            id: "loot.take_anyway", deck: "people", tags: ["reveal", "hands"], danger: "bad",
-            targets: (S) => revealed(S).filter((c) => c.p.state !== "down" && inReach(S, c.p)),
-            label: (S, c) => "Take the " + short(c.item.name) + " off " + c.p.name + " anyway",
-            detail: "Faster than asking. It costs you with them and with everybody watching.",
-            cost: 6,
-            run(S, c) {
-                st.give(S, c.p.carries);
-                c.p.carries = null;
-                c.p.trust -= 45;
-                c.p.panic = Math.min(100, c.p.panic + 20);
-                S.credibility = Math.max(0, S.credibility - 8);
-                S.cabinPanic = Math.min(100, S.cabinPanic + 5);
-                return { text: "You take it out of a stranger's hands on an aeroplane. Four " +
-                    "people see you do it and none of them know why.", kind: "bad" };
-            },
-        },
-
-        {
             id: "loot.ask_anyone", deck: "people", tags: ["reveal", "social"], danger: "good",
             label: (S) => "Ask out loud whether anybody has anything useful",
             detail: "One question to four rows. It is how you find the things you did not pack.",
             when: (S) => S.credibility > 25 &&
-                         st.withinEarshot(S, 3).some((p) => p.carries),
+                         st.withinEarshot(S, 3).some((p) => p.carries && P.worthAsking(S, p, 10)),
             cost: 20,
             run(S) {
                 const offered = [];
@@ -173,44 +155,6 @@
         },
 
         // -------------------------------------------------------------- searching the cabin ---
-        {
-            id: "loot.seat_pocket", deck: "cabin", tags: ["reveal", "hands"],
-            label: (S) => "Go through the seat pockets in row " + cabin.rowAt(S.player.x),
-            detail: "Six of them. A safety card, a sick bag, and sometimes something.",
-            when: (S) => cabin.rowAt(S.player.x) !== null &&
-                         !S.flags["pocket" + S.player.x],
-            cost: 9,
-            run(S) {
-                st.setFlag(S, "pocket" + S.player.x);
-                const got = takeFromStash(S, "pocket");
-                if (!got) {
-                    return "Safety cards, three sick bags, an in-flight magazine and a boarding " +
-                        "pass for a flight in 2023. The safety card is the only one of those " +
-                        "that would have helped and you have already read it.";
-                }
-                return { text: "Somebody left " + article(got.name) + " in a seat pocket. " +
-                    got.note, kind: "good" };
-            },
-        },
-
-        {
-            id: "loot.under_seat", deck: "cabin", tags: ["reveal", "hands"],
-            label: (S) => "Look under the seats in row " + cabin.rowAt(S.player.x),
-            detail: "Life vests, shoes, and whatever went down there at the start of the flight.",
-            when: (S) => cabin.rowAt(S.player.x) !== null && !S.flags["under" + S.player.x],
-            cost: 11,
-            run(S) {
-                st.setFlag(S, "under" + S.player.x);
-                const got = takeFromStash(S, "underseat");
-                if (!got) {
-                    return "Six life vests in six pouches, a shoe, and a very great deal of dust. " +
-                        "You are on your hands and knees, which is where the good air is, so this " +
-                        "was not entirely wasted.";
-                }
-                return { text: "Under one of the seats: " + article(got.name) + ". " + got.note,
-                         kind: "good" };
-            },
-        },
 
         {
             id: "loot.galley_drawer", deck: "cabin", tags: ["reveal", "hands"], danger: "good",
@@ -224,24 +168,6 @@
                 if (!got) return "Cups, napkins, a hundred and forty sachets of sugar.";
                 return { text: "In the second drawer down: " + article(got.name) + ". " + got.note,
                          kind: "great" };
-            },
-        },
-
-        {
-            id: "loot.lav_cabinet", deck: "cabin", tags: ["reveal", "hands"],
-            label: "Open the cabinet over the lavatory basin",
-            detail: "There is one. There is always one and it is never locked.",
-            when: (S) => cabin.kindAt(S.player.x, S.player.y) === "lav" && !S.flags.lavCabinet,
-            cost: 10,
-            run(S) {
-                st.setFlag(S, "lavCabinet");
-                const got = takeFromStash(S, "galley");
-                if (!got) {
-                    return "Paper towels, hand cream, and a roll of blue paper that is going to " +
-                        "be wet in about nine seconds.";
-                }
-                return { text: "Behind the mirror: " + article(got.name) + ". " + got.note,
-                         kind: "good" };
             },
         },
     ]);

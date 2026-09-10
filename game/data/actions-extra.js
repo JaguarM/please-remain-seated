@@ -70,6 +70,7 @@
 
         { id: "extra.hostile_job", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("hostile"),
+          when: (S, c) => P.worthAsking(S, c.p, 22),
           label: (S, c) => "Give " + who(c) + " a job",
           detail: "The obstructive ones obstruct because nobody has given them anything to do.",
           cost: 20,
@@ -89,6 +90,7 @@
         // ------------------------------------------------------------------------ the drunk ---
         { id: "extra.drunk_task", deck: "people", tags: ["social"],
           targets: withTrait("drunk"),
+          when: (S, c) => P.worthAsking(S, c.p, 26),
           label: (S, c) => "Give " + who(c) + " something simple to do",
           detail: "One instruction. Four words. No context.",
           cost: 13,
@@ -120,6 +122,7 @@
         // ------------------------------------------------------------------- the medical ones ---
         { id: "extra.medic_station", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("medical"),
+          when: (S, c) => P.worthAsking(S, c.p, 30),
           label: (S, c) => "Put " + who(c) + " in the forward galley with the casualties",
           detail: "One person who knows what they are doing, in one place, and bring them people.",
           cost: 26,
@@ -159,6 +162,7 @@
         // ------------------------------------------------------------------ the off-duty crew ---
         { id: "extra.offduty", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("crew"),
+          when: (S, c) => P.worthAsking(S, c.p, 34),
           label: (S, c) => "Tell " + who(c) + " to act like crew",
           detail: "They know the aeroplane, the drill and the kit. They are in seat 15E.",
           cost: 20,
@@ -363,7 +367,10 @@
         { id: "extra.warn_row", deck: "fire", tags: ["social"], danger: "good",
           label: (S) => "Clear the two rows either side of the fire",
           detail: "Not because they are burning. Because in ninety seconds they will be.",
-          when: (S) => Math.abs(S.player.x - S.fire.core.x) <= 3,
+          when: (S) => Math.abs(S.player.x - S.fire.core.x) <= 3 &&
+                       S.pax.some((p) => Math.abs(p.x - S.fire.core.x) <= 2 &&
+                           p.state !== "secured" && p.state !== "dead" &&
+                           !P.needsCarrying(p) && P.worthAsking(S, p, 20)),
           cost: 40,
           run(S) {
               let moved = 0;
@@ -422,19 +429,6 @@
                   "somebody because they assumed somebody else had them.", kind: "great" };
           } },
 
-        { id: "extra.clear_exit_row", deck: "cabin", tags: ["social"], danger: "good",
-          label: "Clear the overwing exit row", cost: 26,
-          detail: "The one clear column across the middle of this aeroplane, and there are " +
-                  "bags in it.",
-          when: (S) => Math.abs(S.player.x - cabin.OVERWING_X) <= 1 && !S.flags.exitRowClear,
-          run(S) {
-              st.setFlag(S, "exitRowClear");
-              delete S.cabinFlags.aisleBlocked[cabin.OVERWING_X];
-              return { text: "Four bags, a coat and a pushchair out of the overwing row and over " +
-                  "the seat backs. The middle of this aeroplane is a floor you can cross again.",
-                  kind: "great" };
-          } },
-
         // --------------------------------------------------------------------- more of yourself ---
 
         // ------------------------------------------------------------------ more of the crew ---
@@ -471,21 +465,6 @@
                   "manual and that they read it in February.", kind: "great" };
           } },
 
-        { id: "extra.crew_seatbelt", deck: "crew", tags: ["social"],
-          targets: (S) => PRS.crew.adjacentCrew(S).map((c) => ({ key: c.id, c: c })),
-          when: (S) => S.cabinFlags.beltSignOn && S.crewPhase >= 3,
-          label: (S, t) => "Ask " + t.c.name + " to have the seatbelt sign turned off",
-          detail: "Forty people are sitting down because of a light.",
-          cost: 22,
-          run(S, t) {
-              S.cabinFlags.beltSignOn = false;
-              for (const p of S.pax) if (p.state === "seated") p.belted = false;
-              return { text: "The sign goes off with a chime and about forty people who have " +
-                  "been waiting for permission stand up at once. This is either the best or the " +
-                  "worst thing you have done and you will find out in nine minutes.",
-                  kind: "neutral" };
-          } },
-
         // ------------------------------------------------------------- more of the desperate ---
     ]);
 
@@ -497,7 +476,8 @@
         { id: "people.speech", deck: "people", tags: ["social"], danger: "good",
           label: "Stand on a seat and address the cabin", cost: 30,
           detail: "Everybody within six rows, once, and you only get one of these.",
-          when: (S) => cabin.rowAt(S.player.x) !== null && !S.flags.gaveSpeech,
+          when: (S) => cabin.rowAt(S.player.x) !== null && !S.flags.gaveSpeech &&
+                       st.withinEarshot(S, 6).some((p) => P.worthAsking(S, p, 6)),
           run(S) {
               st.setFlag(S, "gaveSpeech");
               let convinced = 0;
@@ -515,27 +495,12 @@
                   "minutes into this.", kind: convinced > 3 ? "great" : "plain" };
           } },
 
-        { id: "people.delegate", deck: "people", tags: ["social"], danger: "good",
-          targets: (S) => st.reachable(S)
-              .filter((p) => !p.helper && p.state !== "down" && p.state !== "secured")
-              .map((p) => ({ key: p.id, p: p })),
-          label: (S, c) => "Put " + c.p.name + " in charge instead of you",
-          detail: "Hand the whole thing over. Some people are better at it than you are.",
-          cost: 16,
-          run(S, c) {
-              if (P.convince(S, c.p, 4).ok) {
-                  P.recruit(S, c.p, "You have handed the whole thing over.");
-                  return { text: "“You do it. You're better at this than me.” " + c.p.name +
-                      " looks at you, and takes it, and is better at it than you.", kind: "great" };
-              }
-              return { text: c.p.name + " says no. It is the correct answer and it does not help.",
-                       kind: "bad" };
-          } },
-
         { id: "people.roll_call", deck: "people", tags: ["social"], danger: "good",
           label: "Shout the seat numbers of everybody who cannot walk", cost: 24,
           detail: "Not to them. To everybody else.",
-          when: (S) => !!S.flags.knowTheList,
+          when: (S) => !!S.flags.knowTheList &&
+                       S.pax.some((p) => !p.helper && p.state !== "secured" && p.state !== "down" &&
+                           p.state !== "dead" && !P.needsCarrying(p) && P.worthAsking(S, p, 14)),
           run(S) {
               const need = S.pax.filter((p) => P.needsCarrying(p) && p.state !== "secured");
               let helped = 0;

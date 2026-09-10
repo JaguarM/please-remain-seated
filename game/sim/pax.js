@@ -453,6 +453,20 @@
         return { ok: got >= need, margin: got - need, need: need, got: got };
     }
 
+    /** The chance the roll in convince() comes off, worked out before it is rolled. */
+    function odds(S, p, extra) {
+        return clamp01((persuasion(S, extra) + 14 - resistance(S, p)) / 28);
+    }
+
+    /**
+     * Whether asking is worth the seconds: one chance in four, or better. A conversation that
+     * is going to be refused is not offered, because a list of things people will say no to is
+     * not a list of things you can do.
+     */
+    function worthAsking(S, p, extra) {
+        return odds(S, p, extra) >= 0.25;
+    }
+
     function speak(S, p) {
         const data = PRS.data.passengers;
         if (p.state === "down") return "(" + p.name + " does not answer.)";
@@ -464,6 +478,7 @@
     PRS.pax = {
         DOWN_AT, CRITICAL_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
         carryOverhead, canCarry, refusalFor, advance, recruit, resistance, persuasion, convince,
+        odds, worthAsking,
         face, palette,
         speak, nearestSafeX,
     };

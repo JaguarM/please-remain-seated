@@ -19,9 +19,9 @@
     function anyNear(S) { return C.adjacentCrew(S).length > 0; }
     function cred(S, n) { S.credibility = Math.min(100, Math.max(0, S.credibility + n)); }
 
-    /** The crew's willingness to do a thing for you, rolled against credibility. */
-    function ask(S, c, difficulty, bonus) {
-        let score = S.credibility + (bonus || 0) + S.rng.range(-12, 12);
+    /** The crew's willingness to do a thing for you, before the dice. */
+    function askScore(S, c, bonus) {
+        let score = S.credibility + (bonus || 0);
         score += c.obliging * 8;
         score += S.derived.voiceMul * 12;
         if (st.hasPerk(S, "chapter_and_verse")) score += 26;
@@ -32,33 +32,27 @@
         if (st.wearing(S, "hivis")) score += 8;
         if (S.player.burns > 20) score += 12;
         if (S.flags.havePhoto) score += 14;
-        const ok = score >= difficulty;
+        return score;
+    }
+
+    /** The same, rolled against credibility. */
+    function ask(S, c, difficulty, bonus) {
+        const ok = askScore(S, c, bonus) + S.rng.range(-12, 12) >= difficulty;
         if (ok) c.obliging++; else c.refusals++;
         return ok;
     }
 
+    /**
+     * Whether asking is worth the seconds: one chance in four, or better. A request the crew
+     * are going to refuse is not offered. It stops being refused as your credibility rises,
+     * and the way that rises is evidence, which is most of this deck.
+     */
+    function worth(S, c, difficulty, bonus) {
+        return askScore(S, c, bonus) + 6 >= difficulty;
+    }
+
     A.register([
         // ------------------------------------------------------------------- the call button ---
-        { id: "crew.call_button", deck: "crew", tags: ["social"],
-          label: "Press the call button", cost: 3,
-          detail: (S) => { const n = S.counts["crew.call_button"] || 0;
-                           return n ? "You have pressed it " + n + " times." : "Ding."; },
-          when: (S) => cabin.rowAt(S.player.x) !== null || S.player.y !== cabin.AISLE_Y,
-          run(S) {
-              const n = (S.counts["crew.call_button"] || 0) + 1;
-              PRS.audio.play("beltSign");
-              cred(S, n < 6 ? 2 : 0.2);
-              if (n === 1) return "Ding. A light comes on above your head and nothing else " +
-                  "happens at all.";
-              if (n < 5) return "Ding. Two lights. Three lights. The crew are still at the trolley.";
-              if (n < 12) return "Ding. Somebody four rows back tuts.";
-              if (n < 25) return "Ding. Yasmin Aboud looks down the cabin at your light, and then " +
-                  "at the trolley, and then at your light.";
-              if (n < 40) return { text: "Ding. The purser has now seen the light " + n + " times " +
-                  "and has formed a view about the sort of person you are.", kind: "bad" };
-              return { text: "Ding. That is " + n + " presses of a call button on an aeroplane " +
-                  "that is on fire. It is going to be in the transcript.", kind: "bad" };
-          } },
 
         { id: "crew.call_button_hold", deck: "crew", tags: ["social"], danger: "neutral",
           label: "Hold the call button down", cost: 14,
@@ -77,6 +71,7 @@
         // ----------------------------------------------------------------------- talking to ---
         { id: "crew.tell", deck: "crew", tags: ["social"],
           targets: near,
+          when: (S, t) => worth(S, t.c, 30),
           label: (S, t) => "Tell " + t.c.name + " about the bin",
           detail: (S, t) => t.c.role + " · " + (t.c.refusals ? "has said no " +
                             t.c.refusals + " times" : "has not refused you yet"),
@@ -164,27 +159,10 @@
                   "passenger who is being difficult.", kind: "great" };
           } },
 
-        { id: "crew.purser", deck: "crew", tags: ["social"],
-          label: "Ask for the purser by name",
-          detail: "Ingrid Halloway. Thirty-one years on the type. She is the one who can decide.",
-          when: (S) => S.crewPhase < 4,
-          cost: 24,
-          run(S) {
-              const p = C.byId(S, "purser");
-              if (ask(S, p, 34, 10)) {
-                  p.x = S.player.x; p.y = cabin.AISLE_Y;
-                  cred(S, 20);
-                  return { text: "Ingrid Halloway comes down the aisle at a speed that is not a " +
-                      "walk and is not a run and is a thing cabin crew are trained to do.",
-                      kind: "good" };
-              }
-              return { text: "“The purser is dealing with something.” The purser is at the front " +
-                  "of the aeroplane, dealing with something.", kind: "bad" };
-          } },
-
         { id: "crew.ask_halon", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S) => !st.slotOf(S, "halon_bottle"),
+          when: (S, t) => !st.slotOf(S, "halon_bottle") && t.c.halon > 0 &&
+                          worth(S, t.c, 62, st.hasPerk(S, "firecraft") ? 25 : 0),
           label: (S, t) => "Ask " + t.c.name + " for the halon bottle",
           detail: "There are two on this aeroplane and neither of them is yours.",
           cost: 22,
@@ -206,7 +184,7 @@
 
         { id: "crew.ask_hood", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S) => !st.slotOf(S, "hood"),
+          when: (S, t) => !st.slotOf(S, "hood") && t.c.hood > 0 && worth(S, t.c, 58),
           label: (S, t) => "Ask " + t.c.name + " for a smoke hood",
           cost: 20,
           run(S, t) {
@@ -222,7 +200,7 @@
 
         { id: "crew.ask_extinguisher", deck: "crew", tags: ["social"],
           targets: near,
-          when: (S) => !st.slotOf(S, "water_ext"),
+          when: (S, t) => !st.slotOf(S, "water_ext") && worth(S, t.c, 44),
           label: (S, t) => "Ask " + t.c.name + " for the water extinguisher",
           cost: 18,
           run(S, t) {
@@ -238,24 +216,9 @@
               return { text: "“I'll bring it. Sit down.” They do not bring it.", kind: "bad" };
           } },
 
-        { id: "crew.ask_ice", deck: "crew", tags: ["social"],
-          targets: near,
-          when: (S) => !S.flags.haveIce,
-          label: (S, t) => "Ask " + t.c.name + " for the ice bucket",
-          detail: "It is the one thing on the trolley that is worth having.",
-          cost: 12,
-          run(S, t) {
-              if (ask(S, t.c, 20)) {
-                  st.setFlag(S, "haveIce");
-                  return { text: "Three litres of ice and water, handed over without a single " +
-                      "question, because ice is not equipment. Ice is service.", kind: "good" };
-              }
-              return { text: "“We've finished the service.”", kind: "bad" };
-          } },
-
         { id: "crew.move_trolley", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S) => S.cabinFlags.cartOut,
+          when: (S, t) => S.cabinFlags.cartOut && worth(S, t.c, 36),
           label: (S, t) => "Ask " + t.c.name + " to stow the trolley",
           detail: "Two hundred kilos across the aisle is the single biggest thing in your way.",
           cost: 20,
@@ -272,7 +235,7 @@
 
         { id: "crew.ask_masks", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S) => !S.cabinFlags.masksDropped,
+          when: (S, t) => !S.cabinFlags.masksDropped && worth(S, t.c, 66),
           label: (S, t) => "Ask " + t.c.name + " to drop the oxygen masks",
           detail: "It is the wrong oxygen for this and it is oxygen.",
           cost: 24,
@@ -290,6 +253,7 @@
 
         { id: "crew.ask_pa", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
+          when: (S, t) => worth(S, t.c, 50),
           label: (S, t) => "Ask " + t.c.name + " to make an announcement",
           detail: "One sentence to sixty people beats sixty conversations.",
           cost: 22,
@@ -311,7 +275,7 @@
 
         { id: "crew.ask_interphone", deck: "crew", tags: ["social"],
           targets: near,
-          when: (S) => S.crewPhase < 4,
+          when: (S, t) => S.crewPhase < 4 && worth(S, t.c, 56),
           label: (S, t) => "Tell " + t.c.name + " to call the flight deck",
           detail: "The two people who can put this aeroplane on the ground do not know yet.",
           cost: 26,
@@ -341,58 +305,6 @@
                   kind: "great" };
           } },
 
-        { id: "crew.follow", deck: "crew", tags: ["move"],
-          targets: near,
-          label: (S, t) => "Stay with " + t.c.name,
-          detail: "Where the crew go, the equipment goes.",
-          cost: 10,
-          run(S, t) {
-              A.moveTo(S, t.c.x, cabin.AISLE_Y);
-              return "You stay on " + t.c.name + "'s shoulder. They do not like it and they do " +
-                  "not stop you.";
-          } },
-
         // ---------------------------------------------------------------------- flight deck ---
-
-        { id: "crew.cockpit", deck: "crew", tags: ["social"], danger: "good",
-          label: "Get into the flight deck",
-          detail: "You are type rated on this aeroplane. They will open it for you.",
-          when: (S) => st.hasPerk(S, "flight_deck") && S.player.x <= 1 && !S.flags.cockpitOpened,
-          cost: 40,
-          run(S) {
-              st.setFlag(S, "cockpitOpened");
-              C.setPhase(S, 4, "Deadheading captain admitted to the flight deck.");
-              return { text: "The interphone, then the code, then the door. Two people who have " +
-                  "been flying an aeroplane for nine minutes with no idea what is happening " +
-                  "behind them turn round and look at you.", kind: "great" };
-          } },
-
-        { id: "crew.mayday", deck: "crew", tags: ["social"], danger: "good",
-          label: "Tell the flight deck to declare and get it down",
-          when: (S) => S.flags.cockpitOpened && !S.flags.maydayCalled,
-          cost: 30,
-          run(S) {
-              st.setFlag(S, "maydayCalled");
-              const cut = Math.min(S.clock.remaining - 45, 150);
-              if (cut > 0) { S.clock.remaining -= cut; S.clock.total -= cut; }
-              return { text: "“Mayday, mayday, mayday, smoke in the cabin, request immediate " +
-                  "descent and the longest runway you have.” You have just taken " +
-                  Math.round(cut) + " seconds off this flight, and the fire has not agreed to " +
-                  "take " + Math.round(cut) + " seconds off anything.", kind: "great" };
-          } },
-
-        { id: "crew.ask_lights", deck: "crew", tags: ["social"],
-          targets: near,
-          when: (S) => !S.cabinFlags.lightsUp,
-          label: (S, t) => "Ask " + t.c.name + " to put the cabin lights up",
-          cost: 12,
-          run(S, t) {
-              if (ask(S, t.c, 24)) {
-                  S.cabinFlags.lightsUp = true;
-                  return { text: "The cabin lights go to full. Everybody can suddenly see the " +
-                      "smoke they had been managing not to see.", kind: "good" };
-              }
-              return { text: "“We dim for landing.”", kind: "bad" };
-          } },
     ]);
 })(window);

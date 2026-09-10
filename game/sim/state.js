@@ -169,17 +169,12 @@
     }
 
     /**
-     * Where the cabin keeps the things you did not pack. Eight items across three kinds of hiding
-     * place, shuffled per run, so searching the galley is a real decision about thirteen seconds
+     * Where the cabin keeps the things you did not pack: two things in the galley drawers, in an
+     * order shuffled per run, so searching the galley is a real decision about thirteen seconds
      * rather than a lever with a known output.
      */
     function buildStash(S) {
-        const rng = S.rng;
-        S.stash = {
-            galley:    rng.shuffle(["first_aid", "binbag", "thermos", "energy"]),
-            pocket:    rng.shuffle(["scissors", "wipes"]),
-            underseat: rng.shuffle(["sock", "pillow"]),
-        };
+        S.stash = { galley: S.rng.shuffle(["first_aid", "binbag"]) };
     }
 
     /** Put an item into your hands. Topping up something you already have counts. */

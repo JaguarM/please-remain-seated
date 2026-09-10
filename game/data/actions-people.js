@@ -180,7 +180,9 @@
         {
             id: "people.hoist", deck: "people", tags: ["carry"], danger: "bad",
             targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried"),
-            when: (S, c) => st.hasPerk(S, "hoist"),
+            // Only from the front rows, where they land in the cross-aisle and count. Five rows
+            // nearer the fire is not an outcome anybody needs a strongman for.
+            when: (S, c) => st.hasPerk(S, "hoist") && c.p.x - 5 <= cabin.FWD_CROSS_X,
             label: (S, c) => "Throw " + who(c) + " over the seats toward the front",
             detail: "It covers four rows in one second. They will not enjoy it.",
             cost: 12,
@@ -211,7 +213,8 @@
         {
             id: "people.pass_forward", deck: "people", tags: ["carry", "social"], danger: "good",
             targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried"),
-            when: (S, c) => st.helperCount(S) >= 2 || S.credibility > 55,
+            when: (S, c) => (st.helperCount(S) >= 2 || S.credibility > 55) &&
+                            (c.p.state === "down" || P.worthAsking(S, c.p, 15)),
             label: (S, c) => "Pass " + who(c) + " forward, hand to hand",
             detail: "Down the aisle over the heads of everybody who is still sitting down.",
             cost: 26,
@@ -238,6 +241,7 @@
         {
             id: "people.recruit", deck: "people", tags: ["social"], danger: "good",
             targets: (S) => reachAwake(S).filter((c) => !c.p.helper),
+            when: (S, c) => P.worthAsking(S, c.p, 6),
             label: (S, c) => "Ask " + who(c) + " to help you",
             detail: (S, c) => {
                 const r = P.resistance(S, c.p);
@@ -270,7 +274,10 @@
 
         {
             id: "people.recruit_row", deck: "people", tags: ["social"], danger: "good",
-            when: (S) => st.hasPerk(S, "flock") && cabin.rowAt(S.player.x) !== null,
+            when: (S) => st.hasPerk(S, "flock") && cabin.rowAt(S.player.x) !== null &&
+                         S.pax.some((p) => p.row === cabin.rowAt(S.player.x) && !p.helper &&
+                             p.state !== "down" && p.state !== "secured" && p.state !== "dead" &&
+                             P.worthAsking(S, p, 10)),
             label: (S) => "Ask the whole of row " + cabin.rowAt(S.player.x) + " to help",
             detail: "Six people at once. This is what the perk is for.",
             cost: 34,
@@ -318,25 +325,11 @@
             },
         },
 
-        {
-            id: "people.thank_helper", deck: "people", tags: ["social"],
-            targets: (S) => reach(S).filter((c) => c.p.helper),
-            label: (S, c) => "Tell " + who(c) + " they are doing well",
-            detail: "It costs eight seconds and it is not nothing.",
-            cost: 8,
-            run(S, c) {
-                c.p.trust = Math.min(100, c.p.trust + 15);
-                c.p.panic = Math.max(0, c.p.panic - 18);
-                c.p.taskLeft = Math.max(0, (c.p.taskLeft || 0) - 5);
-                return c.p.name + " does not answer. " + c.p.name + " nods once and goes back " +
-                    "for the next one, slightly faster.";
-            },
-        },
-
         // ------------------------------------------------------------------------- talking ---
         {
             id: "people.tell", deck: "people", tags: ["social"],
             targets: reachAwake,
+            when: (S, c) => P.worthAsking(S, c.p, 0),
             label: (S, c) => "Tell " + who(c) + " there is a fire",
             detail: (S, c) => c.p.trust > 30 ? "They are listening to you now."
                                              : "They are not going to believe you.",
@@ -370,68 +363,6 @@
         },
 
         {
-            id: "people.point_at_it", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            label: (S, c) => "Make " + who(c) + " look at the bin",
-            detail: "Physically turn their head if you have to.",
-            cost: 11,
-            run(S, c) {
-                const visible = PRS.fire.worst(S.fire) > 12;
-                c.p.awareness = Math.min(100, c.p.awareness + (visible ? 40 : 14));
-                if (visible) {
-                    c.p.trust = Math.min(100, c.p.trust + 25);
-                    return { text: c.p.name + " sees it. There is a particular noise a person " +
-                        "makes and " + c.p.name + " makes it.", kind: "good" };
-                }
-                return c.p.name + " looks at the bin. The bin looks like a bin.";
-            },
-        },
-
-        {
-            id: "people.lie", deck: "people", tags: ["social"], danger: "neutral",
-            targets: reachAwake,
-            label: (S, c) => "Tell " + who(c) + " the crew asked you to move them",
-            detail: "It is not true. It works about half the time and it costs you later.",
-            cost: 12,
-            run(S, c) {
-                const roll = say(S, c.p, "the crew asked me", { bonus: 26 });
-                if (roll.ok) {
-                    c.p.trust = Math.min(100, c.p.trust + 26);
-                    c.p.belted = false;
-                    c.p.state = c.p.state === "seated" ? "standing" : c.p.state;
-                    st.setFlag(S, "toldALie");
-                    return { text: "“Oh — well, if the crew said.” " + c.p.name + " is out of " +
-                        "the seat in four seconds, which is faster than the truth has managed " +
-                        "all afternoon.", kind: "good" };
-                }
-                c.p.trust -= 20;
-                S.credibility = Math.max(0, S.credibility - 6);
-                return { text: "“I'll wait for them to tell me themselves, thank you.” That is " +
-                    "going to be harder next time.", kind: "bad" };
-            },
-        },
-
-        {
-            id: "people.truth", deck: "people", tags: ["social"],
-            targets: reachAwake,
-            label: (S, c) => "Tell " + who(c) + " exactly how bad it is",
-            detail: "No softening. The number of cells, the smoke, the time.",
-            cost: 20,
-            run(S, c) {
-                const roll = say(S, c.p, "the truth", { bonus: st.hasPerk(S, "reads_fire") ? 22 : 4,
-                                                        awareness: 34 });
-                c.p.panic = Math.min(100, c.p.panic + 22);
-                if (roll.ok) {
-                    c.p.trust = Math.min(100, c.p.trust + 34);
-                    return { text: c.p.name + " takes it. Actually takes it. “What do you want me " +
-                        "to do.”", kind: "great" };
-                }
-                return { text: c.p.name + " does not want it and you have just made them much " +
-                    "more frightened without making them any more useful.", kind: "bad" };
-            },
-        },
-
-        {
             id: "people.reassure", deck: "people", tags: ["social"],
             targets: reachAwake,
             label: (S, c) => "Calm " + who(c) + " down",
@@ -448,47 +379,6 @@
                 }
                 return c.p.name + "'s breathing comes down. It takes thirteen seconds and it is " +
                     "thirteen seconds well spent.";
-            },
-        },
-
-        {
-            id: "people.shout_at", deck: "people", tags: ["social"], danger: "bad",
-            targets: reachAwake,
-            label: (S, c) => "Shout at " + who(c),
-            cost: 7,
-            run(S, c) {
-                const roll = say(S, c.p, "MOVE", { bonus: -10, awareness: 24 });
-                c.p.panic = Math.min(100, c.p.panic + 20);
-                S.cabinPanic = Math.min(100, S.cabinPanic + 4);
-                if (roll.ok) {
-                    c.p.belted = false;
-                    c.p.state = P.looseState(c.p);
-                    return { text: c.p.name + " gets up because you shouted, which will work " +
-                        "exactly once.", kind: "plain" };
-                }
-                c.p.trust -= 14;
-                return { text: c.p.name + " shouts back. Three other people join in on their side.",
-                         kind: "bad" };
-            },
-        },
-
-        {
-            id: "people.threaten", deck: "people", tags: ["social"], danger: "bad",
-            targets: reachAwake,
-            label: (S, c) => "Threaten " + who(c),
-            when: (S, c) => c.p.traits.indexOf("hostile") >= 0 || S.player.panic > 60,
-            cost: 10,
-            run(S, c) {
-                const roll = say(S, c.p, "threat", { bonus: st.hasPerk(S, "authority") ? 30 : -14 });
-                if (roll.ok) {
-                    c.p.belted = false;
-                    c.p.state = P.looseState(c.p);
-                    return { text: c.p.name + " believes you, gets up, and is going to describe " +
-                        "you very accurately to an investigator in about six weeks.", kind: "plain" };
-                }
-                c.p.trust -= 30;
-                S.credibility = Math.max(0, S.credibility - 8);
-                return { text: c.p.name + " calls for the cabin crew. Loudly. By name.", kind: "bad" };
             },
         },
 
@@ -531,46 +421,7 @@
             },
         },
 
-        {
-            id: "people.tape_to_seat", item: "tape", deck: "people", tags: ["social", "fiddly"], danger: "bad",
-            targets: (S) => reachAwake(S).filter((c) => c.p.state === "aisle"),
-            when: (S) => !!st.slotOf(S, "tape") && st.slotOf(S, "tape").uses > 0,
-            label: (S, c) => "Tape " + who(c) + " into a seat",
-            cost: 24,
-            run(S, c) {
-                st.useCharge(S, st.slotOf(S, "tape"));
-                const p = c.p;
-                p.state = "seated"; p.x = p.homeX; p.y = p.homeY; p.belted = true;
-                p.trust = -60;
-                delete S.cabinFlags.aisleBlocked[p.homeX];
-                st.reindex(S);
-                S.credibility = Math.max(0, S.credibility - 10);
-                return { text: "You duct tape a member of the public into seat " + p.seat + ". " +
-                    "The aisle is clear. There is going to be a paragraph about this.", kind: "bad" };
-            },
-        },
-
         // ------------------------------------------------------------------------- the body ---
-        {
-            id: "people.unbuckle", deck: "people", tags: ["hands", "fiddly"],
-            targets: (S) => reach(S).filter((c) => c.p.belted),
-            label: (S, c) => "Unbuckle " + who(c),
-            cost: 6,
-            run(S, c) { c.p.belted = false;
-                        return "The buckle comes up. " + c.p.name + " is loose."; },
-        },
-
-        {
-            id: "people.cut_belt", item: (S) => { const s = st.inventoryHas(S, "cut"); return s ? s.id : null; }, deck: "people", tags: ["hands"],
-            targets: (S) => reach(S).filter((c) => c.p.belted),
-            when: (S) => !!st.inventoryHas(S, "cut"),
-            label: (S, c) => "Cut " + who(c) + "'s seatbelt",
-            detail: "Two seconds instead of six, and it cannot be done up again.",
-            cost: 3,
-            run(S, c) { c.p.belted = false;
-                        return "You cut the belt off " + c.p.name + ". Nobody is putting them " +
-                               "back in that seat now."; },
-        },
 
         {
             id: "people.shake", deck: "people", tags: ["hands"],
@@ -685,21 +536,6 @@
         },
 
         {
-            id: "people.brace", deck: "people", tags: ["social"], danger: "good",
-            targets: (S) => reach(S).filter((c) => !c.p.braced),
-            label: (S, c) => "Show " + who(c) + " the brace position",
-            detail: "Head down, hands over, feet back. It is worth doing and it is on the card.",
-            cost: 14,
-            run(S, c) {
-                c.p.braced = true;
-                c.p.panic = Math.max(0, c.p.panic - 12);
-                return { text: c.p.name + " gets into the brace position properly, which almost " +
-                    "nobody on any aeroplane ever does. It is worth about four seconds of smoke.",
-                    kind: "good" };
-            },
-        },
-
-        {
             id: "people.floor", deck: "people", tags: ["hands"], danger: "good",
             targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried"),
             label: (S, c) => "Get " + who(c) + " down onto the floor",
@@ -731,60 +567,13 @@
             },
         },
 
-        {
-            id: "people.give_gin", item: "gin", deck: "people", tags: ["hands"],
-            targets: reachAwake,
-            when: (S) => { const s = st.slotOf(S, "gin"); return s && s.uses > 0; },
-            label: (S, c) => "Give " + who(c) + " a miniature",
-            detail: "It is a terrible idea and it will absolutely work.",
-            cost: 6,
-            run(S, c) {
-                st.useCharge(S, st.slotOf(S, "gin"));
-                c.p.panic = Math.max(0, c.p.panic - 34);
-                c.p.trust = Math.min(100, c.p.trust + 28);
-                c.p.awareness = Math.max(0, c.p.awareness - 10);
-                return c.p.name + " drinks fifty millilitres of gin at eleven thousand feet and " +
-                    "becomes noticeably easier to work with and noticeably worse at everything.";
-            },
-        },
-
-        {
-            id: "people.give_pretzels", item: "pretzels", deck: "people", tags: ["hands"],
-            targets: (S) => reachAwake(S).filter((c) => P.isChild(c.p)),
-            when: (S) => { const s = st.slotOf(S, "pretzels"); return s && s.uses > 0; },
-            label: (S, c) => "Give " + who(c) + " the pretzels",
-            cost: 5,
-            run(S, c) {
-                st.useCharge(S, st.slotOf(S, "pretzels"));
-                c.p.trust = 90;
-                c.p.panic = Math.max(0, c.p.panic - 40);
-                return { text: c.p.name + " will now follow you anywhere in the world. It cost a " +
-                    "bag of pretzels. Nothing else in this game has this exchange rate.",
-                    kind: "good" };
-            },
-        },
-
-        {
-            id: "people.give_torch", item: "torch", deck: "people", tags: ["hands"],
-            targets: reachAwake,
-            when: (S) => !!st.slotOf(S, "torch"),
-            label: (S, c) => "Give " + who(c) + " the torch",
-            detail: "Somebody at the front needs to be able to see the door.",
-            cost: 6,
-            run(S, c) {
-                c.p.trust = Math.min(100, c.p.trust + 25);
-                st.setFlag(S, "torchGiven");
-                return c.p.name + " has the torch. When the smoke gets to the floor there is now " +
-                    "one light in this cabin that is pointing at a door.";
-            },
-        },
-
         // ------------------------------------------------------------------------- the ones ---
 
         {
             id: "people.follow", deck: "people", tags: ["social"], danger: "good",
             targets: (S) => reachAwake(S).filter((c) => !P.needsCarrying(c.p) &&
                                                         c.p.state !== "secured"),
+            when: (S, c) => P.worthAsking(S, c.p, 8),
             label: (S, c) => "Tell " + who(c) + " to walk forward on their own",
             detail: "The cheapest save there is, and it only works on the ones who can walk.",
             cost: 18,
@@ -807,7 +596,10 @@
 
         {
             id: "people.chain", deck: "people", tags: ["social"], danger: "good",
-            when: (S) => cabin.rowAt(S.player.x) !== null && S.credibility > 48,
+            when: (S) => cabin.rowAt(S.player.x) !== null && S.credibility > 48 &&
+                         S.pax.some((p) => p.row === cabin.rowAt(S.player.x) &&
+                             p.state !== "secured" && p.state !== "dead" &&
+                             !P.needsCarrying(p) && P.worthAsking(S, p, 14)),
             label: (S) => "Get row " + cabin.rowAt(S.player.x) + " to hold onto each other and go",
             detail: "Hands on shoulders. A line. It is how you move a whole row at once.",
             cost: 62,

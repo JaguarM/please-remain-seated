@@ -12,12 +12,13 @@ every file is a classic script, so a double-clicked `index.html` works from disk
 
 ![The cabin at four minutes to touchdown](docs/cabin.png)
 
-*Four minutes two to touchdown. Eleven souls secured, four people helping, three people on the
-floor, and the fire has taken the overwing exit row — the clear column in the middle, which was
-the only thing worth carrying anybody to for the first half of the flight. Everybody with a green
-tick is somebody who is somewhere better than their seat. Not a screenshot: `tools/render_frame.py`
-draws the game's own simulation with the game's own sprite maps, and the bots roll their own dice
-off the run seed, so `--seed=606 --at=540` gives you this picture and not one like it.*
+*Four minutes nine to touchdown. Nine souls secured at the two ends, nobody helping, eight
+people on the floor, and the fire has moved: the seats round 14C are burnt through and it is
+in rows 4 and 5 now, and 16 to 19. The aisle is full of people who have stood up with their
+bags and stopped. Everybody with a green tick is somebody who is somewhere better than their
+seat. Not a screenshot: `tools/render_frame.py` draws the game's own simulation with the
+game's own sprite maps, and the bots roll their own dice off the run seed, so `--seed=606
+--at=540` gives you this picture and not one like it.*
 
 If your browser is unusually strict about `file://`, any static server will do:
 
@@ -77,30 +78,28 @@ between three and twenty-seven, and the route to the top of that range is not in
 
 **Almost nothing is decided before you board.** Three decisions, none of them longer than twenty
 seconds: who you are, what you are wearing, and which three things are on you. Everything else —
-the other forty items, and ten of the twelve characters — is found in the aeroplane or earned by
+the other five items, and ten of the twelve characters — is found in the aeroplane or earned by
 flying it. The only thing progress gates is characters, and every unlock condition is printed on
 its own locked card, so the roster is a list of things to try rather than a wall.
 
 What is in it
 -------------
 
-- **189 hand-written actions** across seven decks, each with its own cost, conditions and line of
-  text. Walking is not one of them — it is on the map, where the aeroplane is — so a turn offers
-  about **twenty to forty concrete options**, every one of them a decision. Twenty-three per
-  cent of every list, every turn, used to be the words “go to”, and the list only ever contains things
-  that are actually possible right now. There were 325 of them until a playtest said the options
-  were the ridiculous part rather than the story; the 139 that went were flavour, near-duplicates,
-  readouts of the fire's state, and things whose only function was to make the day worse.
+- **126 hand-written actions** across seven decks, each with its own cost, conditions and line of
+  text. Walking is not one of them — it is on the map, where the aeroplane is. There were 325;
+  two trims took them down, the second on one rule: nothing stays unless it can help. Flavour,
+  near-duplicates, readouts of the fire's state, jokes that cost seconds, and things whose only
+  function was to make the day worse are gone. So is every request that was going to be refused:
+  a card never offers you a conversation you are about to lose. What went is in `archive/`.
 - **Twelve playable characters**, two to start and ten earned, on five stats — strength, speed,
   lungs, nerve, voice — with a signature ability and a genuine flaw each. A retired fire officer
   who is the slowest person in the cast. An eight-year-old who fits under the seats and cannot
   lift an adult. An air marshal with a firearm and no useful application for it.
 - **Six outfits**, which do nothing at all except move your five numbers, and **three item slots**
   — the airline's cabin baggage allowance, still being enforced while its aeroplane is on fire.
-- **Thirty-one items**, of which ten are ever in your bag. The rest are already aboard: seven in
-  the galley drawers, the seat pockets and the footwells, and **thirteen in other passengers'
-  laps**, which means the way you get equipped is by talking to people. And one more, which is in
-  a bin at the back and does nothing at all.
+- **Fourteen items**, of which nine are ever in your bag. The rest are already aboard: two in
+  the galley drawers, and **four in other passengers' laps**, which means the way you get
+  equipped is by talking to people.
 - **Sixty named passengers**, each with a weight, a temperament, a seat and an opinion, and a
   **helper system** that is the only thing in the game that scales. All sixty have faces, and the
   faces are the same map with five pixels moved, so the aeroplane can look calm and then stop.
@@ -112,7 +111,7 @@ What is in it
 - Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
 - A **fire, smoke and heat simulation** over a 30×9 cabin grid, ventilation-limited, with a core
   that suppression cannot touch.
-- **Forty-three medals**, **ten endings**, and an **incident report** written in the flat voice of
+- **Forty medals**, **nine endings**, and an **incident report** written in the flat voice of
   an air accident investigator: every soul on board by seat with what happened to them, your own
   actions quoted back in order, and where the fifteen minutes went.
 
@@ -221,12 +220,12 @@ and they are what the design is aiming at rather than something that was guessed
 
 | bot | what it does | souls secured of 60 | not accounted for |
 |-----|--------------|---------------------|-------------------|
-| `fire` | only fights the fire | **2.5** | 6.1 |
-| `idle` | never leaves its seat | 4.8 | 18.8 |
-| `random` | picks uniformly from everything | 9.3 | 12.4 |
-| `novelty` | always takes the thing it has taken least | 10.7 | 6.0 |
-| `carry` | carries and drags, one at a time | 21.0 | 11.5 |
-| `good` | recruits early, then carries | **26.6** (best 36) | 9.6 |
+| `fire` | only fights the fire | **4.0** | 11.3 |
+| `idle` | never leaves its seat | 4.1 | 22.2 |
+| `random` | picks uniformly from everything | 9.8 | 16.2 |
+| `novelty` | always takes the thing it has taken least | 17.1 | 13.1 |
+| `carry` | carries and drags, one at a time | 14.4 | 19.4 |
+| `good` | recruits early, then carries | **29.1** (best 49) | 12.8 |
 
 The fire bot is the interesting row. It secures almost nobody and it has the fewest casualties,
 because holding a fire down really does keep a cabin breathable — it just leaves everybody in the
@@ -241,9 +240,9 @@ passenger, the clock, the random stream. It found two bugs on the first run: the
 were closures that could not be snapshotted, and refilling one *draws from the random stream*, so
 losing them across an undo silently desynchronised every roll afterwards.
 
-`coverage.js` walks the registry instead of playing: for each of the 189 definitions it builds a
+`coverage.js` walks the registry instead of playing: for each of the 126 definitions it builds a
 world designed to make that one possible, stands the player in every plausible place, and performs
-it. It currently reports **189 of 189 reachable, none throw**. It has already found one action
+it. It currently reports **126 of 126 reachable, none throw**. It has already found one action
 that asked for an item which had never been added to `items.js`, and so could never have appeared
 in a real game at all.
 

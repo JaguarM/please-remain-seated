@@ -169,8 +169,8 @@
             stats: { strength: 5, speed: 5, lungs: 7, nerve: 9, voice: 8 },
             perks: ["flight_deck", "reads_fire", "knows_kit"],
             perkName: "Four bars",
-            perkText: "The flight deck will open for you. You can call for an emergency descent, " +
-                      "and the crew will do what you tell them the first time you tell them.",
+            perkText: "Cabin crew hear a licence number and stop arguing. Every request you " +
+                      "make of them lands, including the one that gets the flight deck told.",
             flawName: "The descent is not free",
             flawText: "Getting down early puts the aeroplane on the ground sooner and the fire " +
                       "does not slow down to match. You will have less time, not more.",

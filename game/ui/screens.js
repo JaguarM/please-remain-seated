@@ -89,10 +89,9 @@
                     "three and twenty, and the way to find the top of that range is not in the " +
                     "fire deck."),
                 para("Most of the equipment is not in your bag.", "You carry three things. The " +
-                    "other forty are aboard already: in the galley drawers, under the seats, in " +
-                    "the lavatory cabinet, and — twenty-three of them — in other passengers' " +
-                    "laps. Asking somebody what they have got costs seven seconds and is the " +
-                    "same conversation that turns them into a helper."),
+                    "other six are aboard already: two in the galley drawers, and four in other " +
+                    "passengers' laps. Asking somebody what they have got costs seven seconds " +
+                    "and is the same conversation that turns them into a helper."),
                 para("The aeroplane is the menu.", "Click a person, the fire, a door, a galley " +
                     "or the lavatory and a card opens with the handful of things you could do " +
                     "about it, each with its price in seconds. Out of reach is not a dead " +

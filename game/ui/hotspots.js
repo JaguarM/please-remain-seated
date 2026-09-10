@@ -48,10 +48,10 @@
      "people.recruit", "people.pass_forward", "people.show_photo", "people.direct_helper",
      "people.revive", "loot.ask_carrying", "loot.ask_for", "loot.take_down",
      "fire.douse", "fire.smother", "fire.close_bin", "fire.tape_bin", "fire.photograph",
-     "fire.halon", "fire.halon_bursts", "fire.water_ext", "fire.case_to_lav", "fire.case_in_sink",
+     "fire.halon", "fire.water_ext", "fire.case_to_lav", "fire.case_in_sink",
      "crew.show_photo", "crew.show_burn", "crew.lead", "crew.tell", "crew.move_trolley",
-     "cabin.fill_bottle", "cabin.wet_blanket", "cabin.fill_sink", "cabin.trigger_detector",
-     "cabin.stow_trolley", "cabin.galley_drawer", "loot.lav_cabinet",
+     "cabin.fill_bottle", "cabin.wet_blanket", "cabin.trigger_detector",
+     "cabin.stow_trolley", "cabin.galley_drawer",
      "self.hood", "self.gloves", "self.goggles",
     ].forEach((id) => { FIRST[id] = true; });
 

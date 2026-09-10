@@ -55,9 +55,6 @@ function build(opts) {
         id: "water_ext", name: "Water extinguisher", kg: 6.4,
         sprite: "cabin:extinguisher_water", uses: 2, agent: "water",
         tags: ["extinguisher", "water"], blurb: "", note: "" } });
-    S.inventory.push({ id: "crash_axe", uses: null, spent: false, item: {
-        id: "crash_axe", name: "Crash axe", kg: 1.4, sprite: "cabin:crash_axe", uses: null,
-        tags: ["tool", "cut", "pry"], blurb: "", note: "" } });
 
     if (opts.elapsed) PRS.actions.spend(S, opts.elapsed, { tags: [] });
 
@@ -87,8 +84,7 @@ function build(opts) {
     if (opts.bare) {
         // Nothing fetched, nothing carried, nothing used: the world the "go and get it" actions
         // live in. Everything above is undone.
-        S.inventory = S.inventory.filter((s) => ["halon_bottle", "water_ext", "crash_axe"]
-                                                .indexOf(s.id) < 0);
+        S.inventory = S.inventory.filter((s) => ["halon_bottle", "water_ext"].indexOf(s.id) < 0);
     }
     Object.assign(S.flags, opts.bare ? { havePhoto: true } : {
         havePhoto: true, haveIce: true, bagFull: true, sinkFull: true, haveJug: true,
@@ -188,7 +184,6 @@ const SCENARIOS = [
     { name: "case in lav",  opts: { elapsed: 240, exposed: true, caseInLav: true } },
     { name: "carrying",     opts: { elapsed: 300, carrying: true } },
     { name: "dragging",     opts: { elapsed: 300, dragging: true } },
-    { name: "cushion",      opts: { elapsed: 240, holdingCushion: true } },
     { name: "late",         opts: { elapsed: 700, crewPhase: 5, detector: true } },
     { name: "sat down",     opts: { elapsed: 240, seated: true } },
     { name: "calm start",   opts: { elapsed: 20, crewPhase: 0, credibility: 5, fire: false,

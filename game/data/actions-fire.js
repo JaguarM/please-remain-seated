@@ -215,41 +215,11 @@
                 text: "You pull the pin and put the whole bottle into the locker. Everything " +
                       "orange in a three metre radius stops being orange at once." }) },
 
-        { id: "fire.halon_bursts", item: "halon_bottle", deck: "fire", tags: ["fire", "hands"], danger: "good",
-          label: "Halon, in short bursts", cost: 20,
-          detail: "Make the bottle last. A trained person does it this way.",
-          when: (S) => nearFire(S) && haveCharged(S, "halon_bottle") &&
-                       (st.hasPerk(S, "firecraft") || st.hasPerk(S, "knows_kit")),
-          run(S) {
-              const s = slot(S, "halon_bottle");
-              s.uses = Math.max(0, s.uses - 0.34);
-              const t = hot(S);
-              F.apply(S.fire, t.x, t.y, "halon", 0.7, 0.5);
-              S.stats.agentsUsed++;
-              PRS.audio.play("halon");
-              return { text: "Three one-second bursts at the base, sweeping. A third of a bottle " +
-                       "and the same result as the whole bottle.", kind: "good" };
-          } },
-
         { id: "fire.water_ext", item: "water_ext", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Water extinguisher from the galley", cost: 15,
           when: (S) => nearFire(S) && haveCharged(S, "water_ext"),
           run: (S) => pour(S, "water_ext", "water", { amount: 2.0, spread: 0.6, sound: "spray",
                 text: "Nine litres under pressure, straight in." }) },
-
-        { id: "fire.crash_axe", item: "crash_axe", deck: "fire", tags: ["fire", "hands"], danger: "good",
-          label: "Open the panel with the crash axe", cost: 24,
-          detail: "There is fire behind the sidewall and you cannot reach it through the sidewall.",
-          when: (S) => nearFire(S) && !!slot(S, "crash_axe"),
-          run(S) {
-              const t = hot(S);
-              F.apply(S.fire, t.x, t.y, "smother", 0.6, 0);
-              S.fire.fuel[cabin.idx(t.x, t.y)] *= 0.6;
-              st.setFlag(S, "panelOpen");
-              return { text: "Four swings and the sidewall panel comes off. Behind it there is " +
-                       "insulation, a loom, and a great deal of orange you had not been able to " +
-                       "see. Now you can put something on it.", kind: "good" };
-          } },
 
         // ---------------------------------------------------------- firebreaks and prevention ---
         { id: "fire.firebreak", item: "water_big", deck: "fire", tags: ["fire", "hands"], danger: "good",
@@ -277,24 +247,6 @@
                        "thing to do.", kind: "good" };
           } },
 
-        { id: "fire.wet_carpet", item: (S) => S.flags.bagFull ? "binbag" : "water_big", deck: "fire", tags: ["fire"], danger: "good",
-          label: "Soak the carpet across the aisle", cost: 12,
-          detail: "A firebreak across the whole cabin, at the one tile everything has to cross.",
-          when: (S) => S.player.y === cabin.AISLE_Y &&
-                       (haveCharged(S, "water_big") || S.flags.bagFull),
-          run(S) {
-              if (S.flags.bagFull) S.flags.bagFull = false;
-              else st.useCharge(S, slot(S, "water_big"));
-              for (let y = 1; y <= 7; y++) {
-                  const i = cabin.idx(S.player.x, y);
-                  S.fire.suppress[i] = Math.min(100, S.fire.suppress[i] + 34);
-              }
-              S.stats.agentsUsed++;
-              return { text: "You lay a wet line all the way across the cabin at row " +
-                       (cabin.rowAt(S.player.x) || "?") + ". The fire will get past it. It will " +
-                       "take four times as long.", kind: "good" };
-          } },
-
         { id: "fire.pull_cushion", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Pull the burning seat cushion out", cost: 14,
           detail: "Take the fuel away from the fire rather than the fire away from the fuel.",
@@ -305,39 +257,9 @@
               S.fire.fuel[i] *= 0.3;
               S.fire.intensity[i] *= 0.5;
               S.player.burns += st.wearing(S, "gloves") ? 4 : 15;
-              st.setFlag(S, "holdingCushion");
-              return { text: "You rip the cushion out of the frame. Most of the fire goes with it " +
-                       "and it is now a burning cushion that you are holding.", kind: "good" };
-          } },
-
-        { id: "fire.cushion_to_lav", deck: "fire", tags: ["fire", "carry"], danger: "good",
-          label: "Put the burning cushion in the lavatory", cost: 26,
-          when: (S) => S.flags.holdingCushion,
-          run(S) {
-              const r = A.route(S, cabin.AFT_GALLEY_X, 7);
-              if (r) A.travel(S, r);
-              st.setFlag(S, "holdingCushion", false);
-              return { text: "You put a burning seat cushion in a lavatory and shut the door on " +
-                       "it. It is a small metal room with a smoke detector and no people in it, " +
-                       "which makes it the best place on this aeroplane for a fire.", kind: "good" };
-          } },
-
-        { id: "fire.stand_between", deck: "fire", tags: ["fire"], danger: "bad",
-          label: "Stand between the fire and the people", cost: 20,
-          detail: "Your body is a heat shield. It is not a very good one.",
-          when: (S) => nearFire(S) && st.paxAt(S, S.player.x, S.player.y).length +
-                       cabin.neighbours(S.player.x, S.player.y)
-                            .reduce((n, [x, y]) => n + st.paxAt(S, x, y).length, 0) > 0,
-          run(S) {
-              S.player.burns += 14;
-              S.player.smokeDose += 5;
-              for (const [x, y] of cabin.neighbours(S.player.x, S.player.y)) {
-                  for (const p of st.paxAt(S, x, y)) p.burns = Math.max(0, p.burns - 6);
-              }
-              S.credibility = Math.min(100, S.credibility + 8);
-              return { text: "You put yourself between the locker and the row behind it and stay " +
-                       "there. It works, in the sense that the heat has to go through you first.",
-                       kind: "bad" };
+              return { text: "You rip the cushion out of the frame. Most of the fire goes with it, " +
+                       "and you throw it down the aisle onto carpet over aluminium, where there " +
+                       "is nothing for it to eat.", kind: "good" };
           } },
 
         // --------------------------------------------------------------------- looking at it ---
@@ -355,7 +277,9 @@
                        "with flame coming out of the seam. You now have something to show people " +
                        "instead of something to say to them.", kind: "good" };
           } },
+    ]);
 
+    A.register([
         { id: "fire.point", deck: "fire", tags: ["fire", "social"],
           label: "Point at it and say nothing", cost: 4,
           detail: "For the people nearby who have still not looked up.",
@@ -373,77 +297,6 @@
                      "pointing, which is more than have looked all flight.";
           } },
 
-        // Shouting works once. The cabin has a finite amount of attention for one man shouting
-        // one word, and a play-tester bot found that out by shouting it a hundred and twenty-three
-        // times and evacuating the aeroplane by panic.
-        { id: "fire.shout", deck: "fire", tags: ["fire", "social"], danger: "bad",
-          label: "Shout FIRE",
-          detail: (S) => (S.counts["fire.shout"] || 0) === 0
-              ? "It will work. That is the problem with it."
-              : "You have already shouted it. It is worth less every time.",
-          cost: (S) => 8 + (S.counts["fire.shout"] || 0) * 14,
-          when: (S) => (S.counts["fire.shout"] || 0) < 3,
-          run(S) {
-              const n = S.counts["fire.shout"] || 0;
-              const heard = 1 / (1 + n * 2.5);
-              S.cabinAwareness = Math.min(100, S.cabinAwareness + 34 * heard);
-              S.cabinPanic = Math.min(100, S.cabinPanic + 26 * heard);
-              S.credibility = Math.min(100, S.credibility + 8 * heard);
-              for (const p of S.pax) p.awareness = Math.min(100, p.awareness + 26 * heard);
-              PRS.audio.play("alarm");
-              if (n === 0) {
-                  return { text: "You shout the word. Sixty people hear it at once and about " +
-                      "forty of them stand up at the same time, in an aisle that is fifty " +
-                      "centimetres wide, facing the wrong way.", kind: "bad" };
-              }
-              return { text: "You shout it again. A cabin that has already heard a man shout " +
-                  "FIRE has decided what it thinks about the man, and it does not revisit that " +
-                  "on the second hearing.", kind: "bad" };
-          } },
-    ]);
-
-    A.register([
-        { id: "fire.umbrella", item: "umbrella", deck: "fire", tags: ["fire", "reach"],
-          label: "Reach the bin latch with the umbrella", cost: 9,
-          detail: "From the aisle, without standing under a locker that is on fire.",
-          when: (S) => !!slot(S, "umbrella") && Math.abs(S.player.x - S.fire.core.x) <= 2,
-          run(S) {
-              const key = cabin.binKey(S.fire.core.x, "left");
-              if (S.cabinFlags.binsOpen[key]) {
-                  delete S.cabinFlags.binsOpen[key];
-                  delete S.fire.binOpen[key];
-                  F.starve(S.fire, S.fire.core.x, S.fire.core.y, 0.8);
-                  return { text: "You hook the latch with the umbrella and swing the locker shut " +
-                           "from two metres away, with your face nowhere near it.", kind: "good" };
-              }
-              S.cabinFlags.binsOpen[key] = true;
-              S.fire.binOpen[key] = true;
-              S.fire.core.exposed = true;
-              S.player.lookedAtFire = true;
-              S.credibility = Math.min(100, S.credibility + 20);
-              return { text: "You flip the latch with the umbrella from the aisle and the locker " +
-                       "drops open. Everybody in four rows can now see it, which is the point.",
-                       kind: "great" };
-          } },
-
-        { id: "fire.packs", deck: "fire", tags: ["fire", "cabin"],
-          label: (S) => S.fire.packsHigh ? "Ask for the packs back to normal"
-                                         : "Ask for the air conditioning on high",
-          detail: "More air moves the smoke out faster and feeds the fire. Pick your problem.",
-          when: (S) => S.crewPhase >= 2 &&
-                       S.clock.elapsed - (S.flags.packsAt === undefined ? -999 : S.flags.packsAt) > 90,
-          cost: 18,
-          run(S) {
-              st.setFlag(S, "packsAt", S.clock.elapsed);
-              S.fire.packsHigh = !S.fire.packsHigh;
-              if (S.fire.packsHigh) {
-                  return { text: "The packs go to high. The noise in the cabin doubles, the smoke " +
-                           "layer visibly lifts, and the fire gets a great deal more interested.",
-                           kind: "neutral" };
-              }
-              return { text: "The packs come back. The smoke settles lower and stops moving, and " +
-                       "the fire calms down about as much as a fire ever does.", kind: "neutral" };
-          } },
 
         { id: "fire.seal_vent", item: "tape", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
           label: "Tape over the air vents in this row", cost: 20,

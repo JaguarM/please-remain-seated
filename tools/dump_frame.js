@@ -34,7 +34,7 @@ const out = opt("out", path.join(__dirname, "..", "docs", "frame.json"));
 
 const S = PRS.state.create({
     characterId: character,
-    items: ["water_big", "wet_towel", "blanket", "gloves", "phone", "hivis", "tape", "torch"],
+    items: ["water_big", "wet_towel", "blanket", "gloves", "phone", "hivis", "tape"],
     seed: seed,
 });
 

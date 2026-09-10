@@ -1,4 +1,4 @@
-// Ten ways for fifteen minutes to end.
+// Nine ways for fifteen minutes to end.
 //
 // None of them is "you put the fire out", because the fire does not go out, and none of them is a
 // clean win, because there is no arrangement of sixty seats and nine hundred seconds that gets
@@ -28,28 +28,6 @@
                      "the cabin interphone recorded you saying it") + ".\n\n" +
                     "It will not note that nobody listened, because the report does not have a " +
                     "field for that.";
-            },
-        },
-        {
-            id: "second_vape",
-            title: "THE OTHER ONE",
-            when: (S, R) => !!PRS.state.slotOf(S, "vape"),
-            text(S, R) {
-                return "In your pocket, when they took your coat off you on the taxiway, there " +
-                    "was a vape pen.\n\nIt is not yours. You found it in the waste bin of the " +
-                    "aft lavatory " + PRS.util.mmss(S.flags.vapeFoundAt || 0) + " into the " +
-                    "descent and you put it in your pocket without deciding to, the way you " +
-                    "pick up a thing that should not be where it is.\n\nIt is the same make as " +
-                    "the one in the locker. The same cell, from the same batch, sold in the same " +
-                    "airside shop in the same terminal. Somebody used it in that cubicle, an hour " +
-                    "out, got frightened by how hot it was getting, and put it in a bin eleven " +
-                    "rows from the one that was already going.\n\nThey did not say anything. " +
-                    "They are on the taxiway too, in a foil blanket, being handed a cup of tea, " +
-                    "and they are never going to say anything.\n\n" + R.secured + " souls " +
-                    "secured. " + R.tally.unhurt + " walked off. " + R.lost + " not accounted " +
-                    "for.\n\nThe investigator will log the second unit as an incidental " +
-                    "recovery and it will appear once, in an appendix, in a list of items found " +
-                    "in the cabin, between a paperback and a single shoe.";
             },
         },
 
@@ -160,8 +138,7 @@
             when: (S, R) => R.byYou >= 8,
             text(S, R) {
                 return "You carried " + R.byYou + " people the length of an aeroplane, one at a " +
-                    "time, through smoke, past a trolley, over " +
-                    (S.counts["move.over_seats"] || 0) + " rows of seats, with " +
+                    "time, through smoke, past a trolley, with " +
                     Math.round(S.player.burns) + " on the burn scale and " +
                     Math.round(S.player.smokeDose) + " on the other one.\n\n" +
                     "It is a physical limit and you found it. There was no arrangement of those " +

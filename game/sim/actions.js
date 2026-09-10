@@ -251,8 +251,7 @@
 
         let intake = smoke * dt * 0.0034 * d.smokeMul;
         if (st.wearing(S, "hood")) intake *= 0.05;
-        else if (st.wearing(S, "wet_towel") || st.wearing(S, "wipes")) intake *= 0.45;
-        else if (st.wearing(S, "pillow")) intake *= 0.62;
+        else if (st.wearing(S, "wet_towel") || st.wearing(S, "blanket")) intake *= 0.45;
         if (st.hasPerk(S, "under_the_smoke")) intake *= 0.55;
         if (p.crouching) intake *= 0.7;
         p.smokeDose += intake;
@@ -267,7 +266,6 @@
         if (st.wearing(S, "goggles")) fear *= 0.7;
         if (st.wearing(S, "headphones")) fear *= 0.6;
         if (st.wearing(S, "earplugs")) fear *= 0.75;
-        if (st.slotOf(S, "rosary") && S.flags.prayed) fear *= 0.8;
         if (st.hasPerk(S, "calm_presence")) fear *= 0.5;
         p.panic = clamp(p.panic + fear * dt * 0.11 - dt * 0.035, 0, 100);
 
