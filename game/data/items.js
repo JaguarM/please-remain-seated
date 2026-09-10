@@ -24,11 +24,11 @@
           tags: ["water", "douse", "drink", "refillable"], refill: "tap",
           note: "Three good pours. The lavatory tap fills it again in nine seconds." },
 
-        { id: "phone", name: "Your phone", where: "bag", sprite: "cabin:phone",
+        { id: "phone", name: "Phone", where: "bag", sprite: "cabin:phone",
           uses: null, tags: ["phone", "evidence"],
           note: "Photograph the fire and people believe you. Show them and they believe you faster." },
 
-        { id: "blanket", name: "Your own travel blanket", where: "bag", sprite: "cabin:blanket",
+        { id: "blanket", name: "Travel blanket", where: "bag", sprite: "cabin:blanket",
           uses: null, agent: "smother", tags: ["cloth", "smother", "wettable", "cover"],
           note: "Never runs out. Soak it in a lavatory and it becomes the second best thing here." },
 

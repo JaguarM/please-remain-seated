@@ -21,7 +21,7 @@
             }
             return out.slice(0, 30);
           },
-          label: (S, c) => "Give " + c.p.name + " the " + c.s.item.name.toLowerCase(),
+          label: (S, c) => "Hand " + c.p.name + " the " + PRS.loot.short(c.s.item.name),
           detail: "You will not have it any more. They will.",
           cost: 9,
           run(S, c) {
@@ -33,7 +33,7 @@
               if (c.s.id === "inhaler" || c.s.id === "first_aid") {
                   c.p.smokeDose = Math.max(0, c.p.smokeDose - 14);
               }
-              return { text: "You give " + c.p.name + " the " + c.s.item.name.toLowerCase() +
+              return { text: "You hand " + c.p.name + " the " + PRS.loot.short(c.s.item.name) +
                   " and do not explain and do not wait. It is the best use of that object " +
                   "available and it is now somebody else's problem to use it well.", kind: "good" };
           } },
