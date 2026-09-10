@@ -35,6 +35,33 @@
   ],
   "source": "make_cabin_textures.py"
  },
+ "binbag": {
+  "palette": {
+   "d": "#33373f",
+   "g": "#5c626c",
+   "h": "#7d848f",
+   "k": "#141414"
+  },
+  "rows": [
+   "................",
+   "................",
+   "....kkkkkkkk....",
+   "...khhhhhhhhk...",
+   "..kgddddddddgk..",
+   "..kdddddddddddk.",
+   "..kdddddddddddk.",
+   "..kdddddddddddk.",
+   "..kdddddddddddk.",
+   "..kdddddddddddk.",
+   "..kgddddddddgk..",
+   "...kggggggggk...",
+   "....kkkkkkkk....",
+   "......kgggk.....",
+   ".......kkk......",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
  "blanket": {
   "palette": {
    "b": "#2f3f5e",
@@ -1158,6 +1185,33 @@
   ],
   "source": "make_cabin_textures.py"
  },
+ "hivis": {
+  "palette": {
+   "h": "#a89a1e",
+   "k": "#1e2024",
+   "s": "#c9ced6",
+   "y": "#d8c828"
+  },
+  "rows": [
+   "................",
+   "...kkk....kkk...",
+   "..kyyk....kyyk..",
+   "..kyykkkkkkyyk..",
+   "..kyyyyyyyyyyk..",
+   "..kyyyyyyyyyyk..",
+   "..kssssssssssk..",
+   "..kssssssssssk..",
+   "..kyyyyyyyyyyk..",
+   "..kyyyyyyyyyyk..",
+   "..kssssssssssk..",
+   "..kssssssssssk..",
+   "..kyyyyyyyyyyk..",
+   "..khhhhhhhhhhk..",
+   "..kkkkkkkkkkkk..",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
  "ice_bucket": {
   "palette": {
    "h": "#b3bcc7",
@@ -1205,6 +1259,34 @@
    "................",
    "................",
    "................",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "inhaler": {
+  "palette": {
+   "b": "#3a6fd0",
+   "c": "#a0b8e8",
+   "k": "#1e2024",
+   "l": "#6b9be8",
+   "m": "#2b4a94"
+  },
+  "rows": [
+   "................",
+   "......kkkk......",
+   ".....kcccck.....",
+   ".....klbbbk.....",
+   ".....klbbbk.....",
+   ".....klbbbk.....",
+   ".....klbbbk.....",
+   ".....klbbbk.....",
+   ".....klbbbk.....",
+   "..kkkklbbbk.....",
+   ".kmmmmlbbbk.....",
+   ".kmmmmbbbbk.....",
+   ".kkkkkkkkkk.....",
    "................",
    "................",
    "................"
@@ -1658,6 +1740,34 @@
    "....kdccccdk....",
    "....kdddddk.....",
    ".....kkkkk......",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "multitool": {
+  "palette": {
+   "b": "#2f3f7a",
+   "h": "#dfe4ec",
+   "k": "#1e2024",
+   "m": "#4f5a68",
+   "r": "#c9a227"
+  },
+  "rows": [
+   "................",
+   "...........kk...",
+   "..........khhk..",
+   ".........khhhk..",
+   "........khhhk...",
+   ".......khhhk....",
+   "......khhhk.....",
+   ".....khhhk......",
+   "....kkhhk.......",
+   "...kmmkk........",
+   "..kmbbmmk.......",
+   "..kmbrbmmk......",
+   "..kmbbbmmk......",
+   "..kmmmmmmk......",
+   "...kkkkkk.......",
    "................"
   ],
   "source": "make_cabin_textures.py"

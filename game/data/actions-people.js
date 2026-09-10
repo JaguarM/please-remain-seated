@@ -74,7 +74,6 @@
     function say(S, p, line, opts) {
         opts = opts || {};
         const roll = P.convince(S, p, opts.bonus || 0);
-        S.stats.wordsSpoken += (line || "").split(" ").length;
         p.awareness = Math.min(100, p.awareness + (opts.awareness || 10));
         return roll;
     }
@@ -278,7 +277,7 @@
             detail: "A panicking person is a person who cannot be asked to do anything.",
             cost: 13,
             run(S, c) {
-                const drop = 22 + S.derived.voiceMul * 14 + (st.hasPerk(S, "calm_presence") ? 20 : 0);
+                const drop = 22 + S.derived.voiceMul * 14;
                 c.p.panic = Math.max(0, c.p.panic - drop);
                 c.p.trust = Math.min(100, c.p.trust + 12);
                 if (c.p.state === "aisle" && c.p.panic < 50) {

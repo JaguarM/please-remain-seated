@@ -57,7 +57,7 @@
                            "endings", "events"]) {
             if (!PRS[key]) bad.push("Missing module: PRS." + key);
         }
-        if (PRS.actions && PRS.actions.count() < 100) {
+        if (PRS.actions && PRS.actions.count() < 60) {
             bad.push("Only " + PRS.actions.count() + " actions registered; a deck failed to load.");
         }
         // Every action must have an id and a run, or it will fail in the player's hands and not
@@ -70,35 +70,22 @@
             }
         }
         // Every action that names a thing in your bag must name a real one, or the bottle's card
-        // will quietly not know about it. Two of them are the crew's kit, which items.js does
-        // not list because you cannot pack it.
+        // will quietly not know about it.
         if (PRS.actions && PRS.data && PRS.data.items) {
-            const kit = { halon_bottle: true, water_ext: true };
             for (const def of PRS.actions.all()) {
-                if (typeof def.item === "string" && !kit[def.item] && !PRS.data.items.byId(def.item)) {
+                if (typeof def.item === "string" && !PRS.data.items.byId(def.item)) {
                     bad.push("Action " + def.id + " uses an item that does not exist: " + def.item + ".");
                 }
             }
         }
         // The data modules the run cannot be built without.
-        for (const key of ["characters", "outfits", "items", "passengers"]) {
+        for (const key of ["characters", "items", "passengers"]) {
             if (!PRS.data || !PRS.data[key]) bad.push("Missing data: PRS.data." + key + ".");
         }
         // Every item has to live somewhere, or the bag screen and the aeroplane disagree.
         if (PRS.data && PRS.data.items) {
             const homeless = PRS.data.items.ITEMS.filter((i) => !i.where);
             if (homeless.length) bad.push(homeless.length + " items have no `where`.");
-        }
-        // Every character's unlock has to be a key some medal actually grants.
-        if (PRS.data && PRS.data.characters && PRS.medals) {
-            const granted = {};
-            for (const m of PRS.medals.MEDALS) if (m.unlocks) granted[m.unlocks] = true;
-            for (const ch of PRS.data.characters.CHARACTERS) {
-                if (ch.locked && !granted[ch.unlockKey]) {
-                    bad.push(ch.name + " is locked behind '" + ch.unlockKey +
-                             "', which no medal grants.");
-                }
-            }
         }
         // Every sprite an item names must exist.
         if (PRS.data && PRS.data.items && PRS.atlas) {
@@ -109,13 +96,16 @@
                 }
             }
         }
-        // Every passenger's seat must exist in the cabin.
+        // Every passenger's seat must exist in the cabin, and what is in their lap must exist.
         if (PRS.data && PRS.data.passengers && PRS.cabin) {
             for (const row of PRS.data.passengers.ROSTER) {
                 const seat = row[1];
                 const x = PRS.cabin.xOfRow(parseInt(seat, 10));
                 const y = PRS.cabin.yOfLetter(seat.replace(/[0-9]/g, ""));
                 if (x === null || y === null) bad.push("Seat " + seat + " is not in this aircraft.");
+                if (row[9] && !PRS.data.items.byId(row[9])) {
+                    bad.push(row[0] + " is holding an item that does not exist: " + row[9] + ".");
+                }
             }
         }
         return bad.slice(0, 12);

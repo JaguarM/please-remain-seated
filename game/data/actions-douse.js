@@ -63,9 +63,7 @@
     /** Put it on, say what happened, and be honest that none of it reached the cell. */
     function apply(S, entry, target, sound) {
         entry.use(S);
-        let amount = entry.amount;
-        if (st.hasPerk(S, "firecraft")) amount *= 1.5;
-        const r = F.apply(S.fire, target.x, target.y, entry.agent, amount, entry.spread || 0.35);
+        const r = F.apply(S.fire, target.x, target.y, entry.agent, entry.amount, entry.spread || 0.35);
         S.stats.agentsUsed++;
         PRS.audio.play(sound);
         const gone = S.fire.intensity[cabin.idx(target.x, target.y)] < 1;

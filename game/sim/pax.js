@@ -131,34 +131,9 @@
 
     /** Can the player physically pick this person up at all. */
     function canCarry(S, p) {
-        const st = PRS.state;
         if (p.state === "secured" || p.state === "dead") return false;
         if (S.player.carrying.length >= S.derived.maxCarry) return false;
-        if (st.hasPerk(S, "small")) return isChild(p) || isPet(p);
-        if (st.hasPerk(S, "brute")) return true;
-        if (p.kg > S.derived.carryCap) return false;
-        if (S.character.id === "miriam" && !isChild(p) && !isPet(p)) return false;
-        return true;
-    }
-
-    function refusalFor(S, p) {
-        const st = PRS.state;
-        if (p.state === "secured") return p.name + " is already forward and out of this.";
-        if (p.state === "dead") return "No.";
-        if (S.player.carrying.length >= S.derived.maxCarry) {
-            return "Your arms are full. Put somebody down first.";
-        }
-        if (st.hasPerk(S, "small")) {
-            return "You are eight years old and " + p.name + " is an adult. It is not going to work.";
-        }
-        if (S.character.id === "miriam" && !isChild(p) && !isPet(p)) {
-            return "You are four foot eleven. You cannot lift " + p.name + ". You can talk to them.";
-        }
-        if (p.kg > S.derived.carryCap) {
-            return p.name + " weighs " + p.kg + " kilos and you are not going to lift that. " +
-                   "Somebody else might.";
-        }
-        return "Not right now.";
+        return p.kg <= S.derived.carryCap;
     }
 
     // ------------------------------------------------------------------------------ advance ---
@@ -225,8 +200,6 @@
             if (p.traits.indexOf("drunk") >= 0) fear *= 0.4;
             if (p.trust > 40) fear *= 0.7;
             if (p.state === "secured") fear *= 0.5;
-            if (PRS.state.hasPerk(S, "calm_presence") &&
-                Math.abs(p.x - S.player.x) <= 2) fear *= 0.45;
             p.panic = clamp(p.panic + fear * dt * 0.1, 0, 100);
 
             // ---- standing up, and getting in the way -----------------------------------------
@@ -341,9 +314,8 @@
         const fright = 1 + clamp01(p.panic / 100) * 0.5;
         // The aisle is fifty centimetres wide. A second pair of hands is worth almost a whole
         // extra pair; a seventh is worth rather less, because six of them are already in it.
-        const congestion = 1 + (PRS.state.hasPerk(S, "flock") ? 0.08 : 0.13)
-                             * Math.max(0, activeHelpers(S) - 1);
-        p.taskLeft = (16 + best.kg * 0.22 + dist * 2.1) * 1.05 * fog * fright * congestion;
+        const congestion = 1 + 0.08 * Math.max(0, activeHelpers(S) - 1);
+        p.taskLeft = (14 + best.kg * 0.2 + dist * 2.0) * fog * fright * congestion;
         p.x = best.x; p.y = best.y;
     }
 
@@ -368,8 +340,7 @@
         if (helperCap(S) <= 0) return;
         // About one conversion every two minutes per helper, at full credibility, and none at all
         // while nobody believes anything is happening.
-        const rate = (PRS.state.hasPerk(S, "flock") ? 0.0068
-                      : PRS.state.hasPerk(S, "deferred") ? 0.0014 : 0.0036) * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
+        const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
         if (!S.rng.chance(rate)) return;
         const near = S.pax.filter((q) => !q.helper && q.state !== "down" && q.state !== "dead" &&
             q.state !== "secured" && Math.abs(q.x - p.x) <= 3 &&
@@ -387,7 +358,7 @@
     }
 
     function helperCap(S) {
-        return (PRS.state.hasPerk(S, "flock") ? 10 : 7) - activeHelpers(S);
+        return 7 - activeHelpers(S);
     }
 
     /** Turn somebody into a helper. The single highest-value thing in the game. */
@@ -433,12 +404,6 @@
         let v = 32 * S.derived.voiceMul;
         v += S.credibility * 0.45;
         if (st.wearing(S, "hivis")) v += 12;
-        if (st.wearing(S, "lanyard")) v += 9;
-        if (st.slotOf(S, "clipboard")) v += 7;
-        if (st.hasPerk(S, "authority")) v += 22;
-        if (st.hasPerk(S, "respected")) v += 20;
-        if (st.hasPerk(S, "flock")) v += 14;
-        if (st.hasPerk(S, "invisible")) v -= 18;
         if (S.player.panic > 80) v -= 14;
         if (S.player.burns > 20) v += 8;         // a burn on your hand is an argument
         return v + (extra || 0);
@@ -477,7 +442,7 @@
 
     PRS.pax = {
         DOWN_AT, CRITICAL_AT, isChild, isPet, canWalk, canStandUp, looseState, needsCarrying, displayState, condition,
-        carryOverhead, canCarry, refusalFor, advance, recruit, resistance, persuasion, convince,
+        carryOverhead, canCarry, advance, recruit, resistance, persuasion, convince,
         odds, worthAsking,
         face, palette,
         speak, nearestSafeX,

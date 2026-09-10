@@ -41,20 +41,11 @@ const ONLY = args.filter((a) => a.indexOf("--") !== 0)[0] || null;
 function build(opts) {
     opts = opts || {};
     const S = PRS.state.create({
-        characterId: opts.character || "beverley",
-        outfitId: opts.outfit || "work",
-        items: PRS.data.items.ITEMS.map((i) => i.id),   // the three-slot limit is not enforced here
+        characterId: opts.character || "ansel",
+        // Everything, including the crew's kit, which normally has to be asked for.
+        items: PRS.data.items.ITEMS.map((i) => i.id),
         seed: opts.seed || 4242,
     });
-    // Kit the crew hand over, which normally has to be asked for.
-    S.inventory.push({ id: "halon_bottle", uses: 1, spent: false, item: {
-        id: "halon_bottle", name: "BCF halon extinguisher", kg: 3.2,
-        sprite: "cabin:extinguisher", uses: 1, agent: "halon", tags: ["extinguisher", "halon"],
-        blurb: "", note: "" } });
-    S.inventory.push({ id: "water_ext", uses: 2, spent: false, item: {
-        id: "water_ext", name: "Water extinguisher", kg: 6.4,
-        sprite: "cabin:extinguisher_water", uses: 2, agent: "water",
-        tags: ["extinguisher", "water"], blurb: "", note: "" } });
 
     if (opts.elapsed) PRS.actions.spend(S, opts.elapsed, { tags: [] });
 
@@ -87,12 +78,8 @@ function build(opts) {
         S.inventory = S.inventory.filter((s) => ["halon_bottle", "water_ext"].indexOf(s.id) < 0);
     }
     Object.assign(S.flags, opts.bare ? { havePhoto: true } : {
-        havePhoto: true, haveIce: true, bagFull: true, sinkFull: true, haveJug: true,
-        haveBlankets: 4, haveCushion: true, knowTheList: true, wilburSaid: true,
-        chipConfessed: true, usedPA: true, tookAVote: true,
+        havePhoto: true, bagFull: true, wilburSaid: true, chipConfessed: true, usedPA: true,
         holdingCase: !!opts.holdingCase, caseInLav: !!opts.caseInLav,
-        holdingCushion: !!opts.holdingCushion, lavClosed: true, panelOpen: false,
-        cockpitOpened: !!opts.cockpit,
     });
     S.credibility = opts.credibility === undefined ? 85 : opts.credibility;
     S.cabinAwareness = 70;
@@ -108,8 +95,6 @@ function build(opts) {
             S.cabinFlags.binsOpen[cabin.binKey(S.fire.core.x + d, "left")] = true;
         }
     }
-    if (opts.gunDrawn) S.flags.gunDrawn = true;
-    if (opts.vest) S.player.wearing.vest = true;
     if (opts.wetBlanket) { const b = PRS.state.slotOf(S, "blanket"); if (b) b.wet = true; }
     if (opts.emptyBottle) {
         for (const id of ["water_big", "wet_towel"]) {
@@ -151,10 +136,8 @@ function build(opts) {
     S.player.burns = opts.burns === undefined ? 25 : opts.burns;
     S.player.smokeDose = 25;
     S.player.panic = opts.panic === undefined ? 55 : opts.panic;
-    S.player.stamina = 30;
     if (opts.wearHood) S.player.wearing.hood = true;
-    if (opts.seated) { S.player.x = S.player.homeX; S.player.y = S.player.homeY;
-                       S.player.seatedTurns = 1; }
+    if (opts.seated) { S.player.x = S.player.homeX; S.player.y = S.player.homeY; }
     PRS.state.reindex(S);
     return S;
 }
@@ -189,7 +172,7 @@ const SCENARIOS = [
     { name: "calm start",   opts: { elapsed: 20, crewPhase: 0, credibility: 5, fire: false,
                                     panic: 20, burns: 0, cartOut: true } },
     { name: "hooded",       opts: { elapsed: 300, wearHood: true } },
-    { name: "flight deck",  opts: { elapsed: 300, cockpit: true, crewPhase: 4 } },
+    { name: "declared",     opts: { elapsed: 300, crewPhase: 4 } },
     { name: "bare",         opts: { elapsed: 240, bare: true, crewPhase: 2, cartOut: true } },
     { name: "bare late",    opts: { elapsed: 820, bare: true, crewPhase: 4, detector: true,
                                     panic: 90 } },
@@ -199,13 +182,11 @@ const SCENARIOS = [
     { name: "empty handed", opts: { elapsed: 300, emptyBottle: true, bare: true } },
     { name: "jammed",       opts: { elapsed: 300, blockAisle: true, binsOpen: true,
                                     cartOut: true } },
-    { name: "kitted out",   opts: { elapsed: 300, gunDrawn: true, vest: true, wetBlanket: true,
-                                    binsOpen: true } },
+    { name: "kitted out",   opts: { elapsed: 300, wetBlanket: true, binsOpen: true } },
 ];
 
-// Some perks gate whole families, so the character has to change too. Beverley has most of them.
-const CHARACTERS = ["beverley", "gordy", "yuki", "dale", "miriam", "rusk", "ansel", "mo",
-                    "kip", "nils", "volk", "ubel"];
+// Strength gates a few carries, so both characters are tried.
+const CHARACTERS = ["ansel", "gordy"];
 
 /** Every tile you could stand on. The slow second pass, for the ones the short list missed. */
 function everywhere() {

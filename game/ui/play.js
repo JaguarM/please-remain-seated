@@ -43,9 +43,9 @@
     // What a thing in your bag is called under a forty-eight pixel icon.
     const SHORT = {
         water_big: "water", wet_towel: "towel", blanket: "blanket", gloves: "gloves",
-        hood: "hood", goggles: "goggles", multitool: "multi-tool", tape: "tape",
-        binbag: "bin liners", first_aid: "first aid", inhaler: "inhaler", strap: "strap",
-        hivis: "hi-vis", phone: "phone", halon_bottle: "halon", water_ext: "extinguisher",
+        hood: "hood", multitool: "multi-tool", tape: "tape", binbag: "bin liners",
+        first_aid: "first aid", inhaler: "inhaler", hivis: "hi-vis", phone: "phone",
+        halon_bottle: "halon", water_ext: "extinguisher",
     };
 
     function build(container, state) {
@@ -124,6 +124,8 @@
         loop();
         if (!store.get("seenHelp", false)) showHelp();
     }
+
+    function showHelp() { PRS.screens.help(root, S.character); }
 
     /**
      * Every action in the game makes a noise now, so there has to be a way to stop it. The
@@ -988,7 +990,7 @@
             return;
         }
         if (ev.key === "Escape") {
-            if ($(".help-veil", root)) hideHelp();
+            if ($(".help-veil", root)) PRS.screens.hideHelp(root);
             else closeCard();
             return;
         }
@@ -999,49 +1001,6 @@
         }
         if (ev.key === "m" || ev.key === "M") { toggleSound(); return; }
         if (ev.key === "?") { showHelp(); return; }
-    }
-
-    // ------------------------------------------------------------------------------ the help ---
-
-    /** Five sentences, once, with pictures. Reachable again from the button by the clock. */
-    function showHelp() {
-        if ($(".help-veil", root)) return;
-        const veil = el("div", { class: "help-veil",
-                                 onclick: (ev) => { if (ev.target === veil) hideHelp(); } }, [
-            el("div", { class: "help" }, [
-                el("h3", { text: "How to play" }),
-                helpLine(PRS.atlas.icon("pax_worried", 2, PRS.render.paletteOf(S.pax[20] || S.character)),
-                    "Click a person",
-                    "to talk to them, treat them, or pick them up and carry them to a green end " +
-                    "of the aeroplane. Nobody counts until they are there."),
-                helpLine(PRS.atlas.icon("fire_2", 2), "Click the fire",
-                    "to fight it. Nothing puts it out. Everything buys time."),
-                helpLine(PRS.atlas.icon("pax", 2, PRS.render.paletteOf(S.character)), "Click yourself",
-                    "for everything about where you are standing - the tap, the lockers, the " +
-                    "trolley - and for the things in your bag."),
-                helpLine(PRS.atlas.icon("floor_aisle", 2), "Click anywhere else to walk there.",
-                    "Whatever is under the pointer lights up, with the price. Arrow keys step."),
-                helpLine(el("span", { class: "help-clock", text: "0:09" }), "Time only moves when you act.",
-                    "Every click costs the seconds it says. Backspace takes the last one back."),
-                el("div", { class: "title-buttons" }, [
-                    el("button", { class: "big", text: "Got it", onclick: hideHelp }),
-                ]),
-            ]),
-        ]);
-        root.appendChild(veil);
-    }
-
-    function helpLine(icon, head, body) {
-        return el("div", { class: "help-line" }, [
-            el("div", { class: "help-icon" }, [icon]),
-            el("div", {}, [el("b", { text: head }), el("span", { text: body })]),
-        ]);
-    }
-
-    function hideHelp() {
-        const veil = root && $(".help-veil", root);
-        if (veil) veil.remove();
-        store.set("seenHelp", true);
     }
 
     // -------------------------------------------------------------------------------- the log ---

@@ -75,8 +75,7 @@
           label: "Get your own breathing under control", cost: 14,
           when: (S) => S.player.panic > 35,
           run(S) {
-              const drop = 26 + (st.hasPerk(S, "calm_presence") ? 20 : 0);
-              S.player.panic = Math.max(0, S.player.panic - drop);
+              S.player.panic = Math.max(0, S.player.panic - 26);
               return "Four in, seven hold, eight out, twice. It works. It always works and it is " +
                   "the last thing anybody thinks of.";
           } },

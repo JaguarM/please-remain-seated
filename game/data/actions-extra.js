@@ -122,7 +122,6 @@
           run(S, c) {
               st.setFlag(S, "chipConfessed");
               S.fire.core.exposed = true;
-              S.player.lookedAtFire = true;
               S.credibility = Math.min(100, S.credibility + 34);
               c.p.trust = 40;
               c.p.traits = c.p.traits.filter((t) => t !== "hostile" && t !== "sceptic");
@@ -171,7 +170,7 @@
 
         { id: "extra.crew_water", deck: "crew", tags: ["social"], danger: "good",
           targets: (S) => PRS.crew.adjacentCrew(S).map((c) => ({ key: c.id, c: c })),
-          when: (S) => !!S.flags.wilburSaid || st.hasPerk(S, "reads_fire") || S.fire.core.exposed,
+          when: (S) => !!S.flags.wilburSaid || S.fire.core.exposed,
           label: (S, t) => "Tell " + t.c.name + " to use water, not the halon",
           detail: "Halon does the flame. Water does the cell. Only one of those comes back.",
           cost: 20,

@@ -78,7 +78,6 @@ const FILES = [
     "game/data/passengers.js",
     "game/data/characters.js",
     "game/data/items.js",
-    "game/data/outfits.js",
     "game/data/events.js",
     "game/data/medals.js",
     "game/data/endings.js",
@@ -250,17 +249,11 @@ function pickBy(list, score) {
 
 function playOne(PRS, opts) {
     const chars = PRS.data.characters.CHARACTERS;
-    const items = PRS.data.items.ITEMS;
     const seed = opts.seed !== undefined ? opts.seed : (Math.random() * 0xffffffff) >>> 0;
     const rng = PRS.util.makeRng(seed);
 
     const ch = opts.char ? PRS.data.characters.byId(opts.char) : rng.pick(chars);
-    // Three things out of the twelve the bag screen offers, and one outfit. Everything else in
-    // items.js is in the aeroplane, to be found.
-    const bag = rng.shuffle(PRS.data.items.BAG_POOL).slice(0, PRS.data.items.SLOTS);
-    const outfit = opts.outfit || rng.pick(PRS.data.outfits.OUTFITS).id;
-
-    const S = PRS.state.create({ characterId: ch.id, items: bag, outfitId: outfit, seed: seed });
+    const S = PRS.state.create({ characterId: ch.id, seed: seed });
     setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = BOTS[opts.strategy || "random"];
     let steps = 0;
@@ -296,7 +289,6 @@ function playOne(PRS, opts) {
         try { PRS.actions.land(S); } catch (err) { errors.push({ where: "land", err: err }); }
     }
     return { S: S, steps: steps, errors: errors, seed: seed, character: ch.id,
-             outfit: outfit,
              result: S.result || null };
 }
 
@@ -318,8 +310,7 @@ function main() {
     console.log("Decks: " + JSON.stringify(PRS.actions.deckCounts()));
 
     // How many concrete actions exist at the very start, before targets multiply further.
-    const probe = PRS.state.create({ characterId: "volk", outfitId: "work",
-        items: PRS.data.items.PRESETS[0].items, seed: 1 });
+    const probe = PRS.state.create({ characterId: "ansel", seed: 1 });
     console.log("Concrete actions available on turn one: " + PRS.actions.available(probe).length);
 
     const strategies = strategy ? [strategy] : Object.keys(BOTS);

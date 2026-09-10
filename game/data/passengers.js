@@ -68,9 +68,9 @@
     };
 
     // name, seat, kg, hair, skin, shirt, traits, one thing they say, one thing they say when
-    // you put your hands on them, and - for twenty-three of them - the thing they turn out to
-    // have in their lap. Most of the equipment in this game is on other passengers, and the
-    // only way to it is to ask.
+    // you put your hands on them, and - for seven of them - the thing they turn out to have in
+    // their lap. Most of the equipment in this game is on other passengers, and the only way to
+    // it is to ask. The easy ones are with the helpful; the smoke hood is with a sceptic.
     const ROSTER = [
         ["Marguerite Okonjo", "1A", 64, "black_long", "g", "cream", ["helpful"],
          "“I have been watching you. You are the only one moving.”",
@@ -148,7 +148,7 @@
         ["Kwabena Asare", "11F", 88, "black", "g", "suit", ["sceptic"],
          "“The overhead bins are certified. I sell the certification.”",
          "“…the certification is for the panel, not the contents. Oh no.”",
-         null],
+         "hood"],
         ["Junie Marsh", "12A", 55, "ginger_long", "a", "mustard", ["asleep"],
          "(asleep, mouth open, headphones in, one shoe off)",
          "“nnnh — are we landing — is this Faro—”"],
@@ -228,7 +228,8 @@
          "“Is it the meal? Have I missed the meal?”"],
         ["Sanne de Vries", "18A", 60, "blond_long", "a", "denim", [],
          "“I'll go if she goes. She won't go.”",
-         "“She's not going. Take me. Come back for her.”"],
+         "“She's not going. Take me. Come back for her.”",
+         "wet_towel"],
         ["Iris Colbeck", "18B", 68, "white", "a", "forest", ["elderly", "sceptic"],
          "“Sanne is being dramatic. Sanne has always been dramatic.”",
          "“Sanne? SANNE? Where has she taken me?”"],
@@ -253,7 +254,8 @@
          "“I have asked you nicely eleven times. Eleven.”"],
         ["Stellan Aas", "22C", 86, "blond", "a", "olive", ["crew"],
          "“I'm a first officer. Off duty. Deadheading. Not my aeroplane.”",
-         "“It is my aeroplane, isn't it. Damn it. All right.”"],
+         "“It is my aeroplane, isn't it. Damn it. All right.”",
+         "multitool"],
         ["Noor Rahimi", "22E", 65, "black", "e", "teal", ["helpful"],
          "“I teach year fives. I can move eleven children in ninety seconds.”",
          "“Hands on shoulders, in a line, no talking. Watch.”",

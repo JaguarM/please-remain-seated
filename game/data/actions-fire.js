@@ -42,9 +42,7 @@
         if (!target) return "There is nothing burning within reach of you.";
         const s = itemId ? slot(S, itemId) : null;
         if (s) st.useCharge(S, s);
-        let amount = opts.amount === undefined ? 1 : opts.amount;
-        if (st.hasPerk(S, "firecraft") && agentName !== "spirits" && agentName !== "perfume"
-            && agentName !== "sanitiser") amount *= 1.5;
+        const amount = opts.amount === undefined ? 1 : opts.amount;
         const r = F.apply(S.fire, target.x, target.y, agentName, amount, opts.spread || 0.35);
         S.stats.agentsUsed++;
         PRS.audio.play(opts.sound || (r.agent.knock < 0 ? "flare" : "pour"));
@@ -122,7 +120,6 @@
           when: (S) => atCore(S) && !S.fire.core.exposed,
           run(S) {
               S.fire.core.exposed = true;
-              S.player.lookedAtFire = true;
               S.cabinFlags.binsOpen[cabin.binKey(S.fire.core.x, "left")] = true;
               S.fire.binOpen[cabin.binKey(S.fire.core.x, "left")] = true;
               S.fire.core.contained = 0;
@@ -269,8 +266,6 @@
           when: (S) => nearFire(S) && !!slot(S, "phone"),
           run(S) {
               st.setFlag(S, "havePhoto");
-              S.stats.filmed++;
-              S.player.filmedAt = S.clock.elapsed;
               S.credibility = Math.min(100, S.credibility + 12);
               return { text: "Four photographs and eleven seconds of video of an overhead locker " +
                        "with flame coming out of the seam. You now have something to show people " +

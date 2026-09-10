@@ -72,12 +72,6 @@
 
         if (tags.indexOf("carry") < 0 && tags.indexOf("move") < 0) c *= d.actionMul;
         if (tags.indexOf("social") >= 0) c *= (2.0 - d.voiceMul) * 0.72 + 0.5;
-        if (st.hasPerk(S, "fast_hands") && tags.indexOf("carry") < 0) c *= 0.75;
-        if (st.hasPerk(S, "flock") && tags.indexOf("social") >= 0) c *= 0.7;
-        if (S.character.id === "ubel" && tags.indexOf("social") >= 0) c += 8;
-        if (st.hasPerk(S, "adrenaline") && S.player.panic >= 80) c *= 0.5;
-        if (st.hasPerk(S, "adrenaline") && S.player.panic < 60) c *= 1.25;
-        if (st.hasPerk(S, "denial") && tags.indexOf("fire") >= 0 && !S.player.lookedAtFire) c *= 2;
 
         // Being in smoke slows everything, and being frightened slows the fiddly things.
         const smoke = S.fire.smoke[cabin.idx(S.player.x, S.player.y)];
@@ -252,8 +246,7 @@
         let intake = smoke * dt * 0.0034 * d.smokeMul;
         if (st.wearing(S, "hood")) intake *= 0.05;
         else if (st.wearing(S, "wet_towel") || st.wearing(S, "blanket")) intake *= 0.45;
-        if (st.hasPerk(S, "under_the_smoke")) intake *= 0.55;
-        if (p.crouching) intake *= 0.7;
+        if (p.crouching) intake *= 0.6;
         p.smokeDose += intake;
 
         if (inten > 16) {
@@ -263,19 +256,7 @@
 
         let fear = smoke * 0.035 + (inten > 8 ? 0.9 : 0) + S.cabinPanic * 0.012;
         fear *= d.panicMul;
-        if (st.wearing(S, "goggles")) fear *= 0.7;
-        if (st.wearing(S, "headphones")) fear *= 0.6;
-        if (st.wearing(S, "earplugs")) fear *= 0.75;
-        if (st.hasPerk(S, "calm_presence")) fear *= 0.5;
         p.panic = clamp(p.panic + fear * dt * 0.11 - dt * 0.035, 0, 100);
-
-        // Kip has to keep filming or he comes apart.
-        if (st.hasPerk(S, "filming")) {
-            const since = S.clock.elapsed - p.filmedAt;
-            if (since > 90) p.panic = clamp(p.panic + dt * 0.20, 0, 100);
-        }
-
-        p.stamina = clamp(p.stamina - dt * (p.carrying.length ? 0.34 : 0.06) + dt * 0.05, 0, 100);
 
         if (p.smokeDose > 92 && p.alive) {
             p.alive = false;
@@ -298,16 +279,17 @@
         if (cabin.kindAt(x, y) === "seat") {
             const occupied = st.paxAt(S, x, y).length > 0;
             if (occupied) c *= 1.6;
-            if (st.hasPerk(S, "small")) c *= 0.5;      // she goes under, not over
         }
         // The aisle, blocked by people who have stood up, or by the trolley.
         if (y === cabin.AISLE_Y) {
             const block = S.cabinFlags.aisleBlocked[x];
             if (block >= 9999) return Infinity;         // the trolley. You do not get past it.
-            if (block > 0 && !st.hasPerk(S, "small")) c += 6 + Math.min(20, block * 0.35);
+            if (block > 0) c += 6 + Math.min(20, block * 0.35);
             const bodies = st.paxAt(S, x, y).length;
-            if (bodies) c += bodies * (st.hasPerk(S, "small") ? 1 : 4);
+            if (bodies) c += bodies * 4;
         }
+        // On your hands and knees the air is better and everything else is slower.
+        if (S.player.crouching) c *= 1.5;
         const smoke = S.fire.smoke[cabin.idx(x, y)];
         if (smoke > 25 && !st.wearing(S, "goggles") && !st.wearing(S, "hood")) {
             c *= 1 + clamp01((smoke - 25) / 90) * 0.6;
@@ -315,7 +297,7 @@
         if (S.fire.intensity[cabin.idx(x, y)] > 30 && !st.wearing(S, "gloves")) c *= 1.5;
         for (const id of S.player.carrying) {
             const p = st.paxById(S, id);
-            if (p) c *= 1 + clamp01(p.kg / 120) * (st.hasPerk(S, "brute") ? 0.35 : 0.95) * d.carryMul;
+            if (p) c *= 1 + clamp01(p.kg / 120) * 0.95 * d.carryMul;
         }
         if (S.player.dragging) c *= 1.7;
         return c;

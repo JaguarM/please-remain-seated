@@ -83,11 +83,7 @@
           detail: "It is behind a placard and a clip. It is not locked.",
           when: (S) => atGalley(S) && !slot(S, "water_ext"),
           run(S) {
-              S.inventory.push({ id: "water_ext", uses: 2, spent: false, item: {
-                  id: "water_ext", name: "Water extinguisher", kg: 6.4,
-                  sprite: "cabin:extinguisher_water", uses: 2, agent: "water",
-                  tags: ["extinguisher", "water"], blurb: "From the galley stowage.",
-                  note: "Nine litres, two discharges." } });
+              st.give(S, "water_ext");
               S.credibility = Math.max(0, S.credibility - 6);
               return { text: "You unclip nine litres of water under pressure from the galley wall. " +
                   "A member of crew sees you do it and does not have time to have a view about it.",

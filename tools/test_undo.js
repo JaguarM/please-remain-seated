@@ -60,12 +60,7 @@ function digest(S) {
 }
 
 function fresh(seed, charId) {
-    return PRS.state.create({
-        characterId: charId,
-        outfitId: PRS.data.outfits.OUTFITS[seed % PRS.data.outfits.OUTFITS.length].id,
-        items: PRS.data.items.PRESETS[seed % PRS.data.items.PRESETS.length].items,
-        seed: seed,
-    });
+    return PRS.state.create({ characterId: charId, seed: seed });
 }
 
 let collapseOk = false;
@@ -75,7 +70,7 @@ const problems = [];
 
 for (let run = 0; run < 14; run++) {
     const seed = 7000 + run;
-    const charId = run % 2 ? "kip" : "miriam";
+    const charId = run % 2 ? "gordy" : "ansel";
     const S = fresh(seed, charId);
     let turn = 0;
 
@@ -142,7 +137,7 @@ for (let run = 0; run < 14; run++) {
 // A run of the same action undoes as one decision, which is what "go back" means to somebody who
 // has just walked three times in the wrong direction.
 {
-    const S = fresh(9200, "kip");
+    const S = fresh(9200, "gordy");
     const start = digest(S);
     let walks = 0;
     for (let i = 0; i < 3; i++) {
@@ -167,7 +162,7 @@ for (let run = 0; run < 14; run++) {
 
 // The bots do not go looking in bins, so the reveal rule is checked deliberately.
 for (const id of ["fire.open_bin", "loot.ask_carrying", "loot.galley_drawer", "extra.chip"]) {
-    const S = fresh(9100, "kip");
+    const S = fresh(9100, "ansel");
     const def = PRS.actions.byId(id);
     if (!def) { problems.push("no such action: " + id); continue; }
     let done = false;

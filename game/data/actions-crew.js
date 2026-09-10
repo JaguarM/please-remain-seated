@@ -23,11 +23,6 @@
         let score = S.credibility + (bonus || 0);
         score += c.obliging * 8;
         score += S.derived.voiceMul * 12;
-        if (st.hasPerk(S, "chapter_and_verse")) score += 26;
-        if (st.hasPerk(S, "flight_deck")) score += 22;
-        if (st.hasPerk(S, "authority")) score += 24;
-        if (st.hasPerk(S, "invisible")) score -= 26;
-        if (S.character.id === "ansel") score -= 10;
         if (st.wearing(S, "hivis")) score += 8;
         if (S.player.burns > 20) score += 12;
         if (S.flags.havePhoto) score += 14;
@@ -131,20 +126,15 @@
 
         { id: "crew.ask_halon", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
-          when: (S, t) => !st.slotOf(S, "halon_bottle") && t.c.halon > 0 &&
-                          worth(S, t.c, 62, st.hasPerk(S, "firecraft") ? 25 : 0),
+          when: (S, t) => !st.slotOf(S, "halon_bottle") && t.c.halon > 0 && worth(S, t.c, 62),
           label: (S, t) => "Ask " + t.c.name + " for the halon bottle",
           detail: "There are two on this aeroplane and neither of them is yours.",
           cost: 22,
           run(S, t) {
               if (t.c.halon <= 0) return { text: "“It's gone. Both of them are gone.”", kind: "bad" };
-              if (ask(S, t.c, 62, st.hasPerk(S, "firecraft") ? 25 : 0)) {
+              if (ask(S, t.c, 62)) {
                   t.c.halon--;
-                  S.inventory.push({ id: "halon_bottle", uses: 1, spent: false, item: {
-                      id: "halon_bottle", name: "BCF halon extinguisher", kg: 3.2,
-                      sprite: "cabin:extinguisher", uses: 1, agent: "halon",
-                      tags: ["extinguisher", "halon"], blurb: "Not yours.",
-                      note: "One discharge. Make it count." } });
+                  st.give(S, "halon_bottle");
                   return { text: "“Do you know how to use it?” You say yes. " + t.c.name +
                       " gives you a red bottle and eleven seconds of instructions.", kind: "great" };
               }
@@ -160,8 +150,7 @@
           run(S, t) {
               if (ask(S, t.c, 58)) {
                   t.c.hood--;
-                  S.inventory.push({ id: "hood", uses: 1, spent: false,
-                      item: PRS.data.items.byId("hood") });
+                  st.give(S, "hood");
                   return { text: t.c.name + " hands you a foil packet. It is the crew's own and " +
                       "they now do not have it.", kind: "great" };
               }

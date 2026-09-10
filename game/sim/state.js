@@ -16,16 +16,13 @@
         const seed = opts.seed || (Date.now() >>> 0);
         const rng = util.makeRng(seed);
         const ch = PRS.data.characters.byId(opts.characterId);
-        const outfit = PRS.data.outfits.byId(opts.outfitId);
-        const derived = PRS.data.characters.derive(ch, outfit);
+        const derived = PRS.data.characters.derive(ch);
 
         const S = {
             seed: seed,
             rng: rng,
             character: ch,
-            outfit: outfit,
             derived: derived,
-            difficulty: opts.difficulty || "normal",
 
             clock: {
                 total: FLIGHT_SECONDS,
@@ -33,29 +30,24 @@
                 elapsed: 0,
                 landed: false,
                 descentCalled: false,
-                announcements: 0,
             },
 
             player: {
                 x: cabin.xOfRow(9), y: cabin.AISLE_Y,
                 seat: opts.seatOverride || "9C",
                 homeX: cabin.xOfRow(9), homeY: 3,
-                panic: ch.perks.indexOf("adrenaline") >= 0 ? 45 : 12,
+                panic: 12,
                 smokeDose: 0,
                 burns: 0,
-                stamina: 100,
+                crouching: false,
                 carrying: [],       // passenger ids
                 dragging: null,
                 wearing: {},        // itemId -> true
-                held: null,         // itemId currently in hand, for flavour
-                filmedAt: 0,
-                seatedTurns: 0,
-                lookedAtFire: ch.perks.indexOf("denial") < 0,
                 alive: true,
                 downedAt: null,
             },
 
-            inventory: (opts.items || []).map(function (id) {
+            inventory: (opts.items || PRS.data.items.START_BAG).map(function (id) {
                 const item = PRS.data.items.byId(id);
                 return item ? { id: id, item: item, uses: item.uses, wet: false, spent: false } : null;
             }).filter(Boolean),
@@ -69,16 +61,10 @@
                 masksDropped: false,
                 detectorSounded: false,
                 paLive: false,
-                beltSignOn: true,
-                lightsUp: false,
                 cartOut: true,
                 cartX: cabin.xOfRow(11),
                 aisleBlocked: {},         // x -> seconds of blockage remaining
-                lavFwdOccupied: true,
-                lavAftOccupied: false,
                 binsOpen: {},
-                exitsArmed: true,
-                depressurised: false,
             },
 
             credibility: 0,        // 0..100. Nobody believes you and they are right not to.
@@ -94,9 +80,8 @@
             notes: [],             // report-worthy moments
             stats: {
                 stepsTaken: 0, carriesCompleted: 0, metresCarried: 0,
-                agentsUsed: 0, wordsSpoken: 0, timeArguing: 0, timeCarrying: 0,
-                timeFighting: 0, timeWasted: 0, helpersRecruited: 0, revives: 0,
-                filmed: 0,
+                agentsUsed: 0, timeArguing: 0, timeCarrying: 0,
+                timeFighting: 0, helpersRecruited: 0,
             },
             ended: null,
         };
@@ -271,8 +256,6 @@
     function has(S, flag) { return !!S.flags[flag]; }
     function setFlag(S, flag, value) { S.flags[flag] = value === undefined ? true : value; }
 
-    function hasPerk(S, perk) { return S.character.perks.indexOf(perk) >= 0; }
-
     function wearing(S, itemId) { return !!S.player.wearing[itemId]; }
 
     /** The number the report cares about, computed live so the HUD can show it. */
@@ -328,7 +311,7 @@
     PRS.state = {
         FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
         inventoryHas, inventoryAll, slotOf, useCharge, give, buildStash,
-        has, setFlag, hasPerk, wearing,
+        has, setFlag, wearing,
         securedCount, downCount, helperCount, log, note, line,
     };
 })(window);

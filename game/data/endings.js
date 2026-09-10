@@ -84,38 +84,6 @@
             },
         },
         {
-            id: "content",
-            title: "FORTY MILLION VIEWS",
-            when: (S, R) => S.character.id === "kip" && S.stats.filmed >= 4,
-            text(S, R) {
-                return "The footage is nine minutes and eleven seconds long and it is the best " +
-                    "thing that has ever been filmed inside an aeroplane.\n\n" +
-                    "It is also the only continuous record of the event, so it is Exhibit 1, and " +
-                    "it is going to be watched frame by frame by people who do this for a living " +
-                    "and who are going to be able to say exactly when the bin went and exactly " +
-                    "how long it took anybody to move.\n\n" + R.secured + " souls secured. " +
-                    "You carried " + R.byYou + " of them yourself, with one hand, filming with " +
-                    "the other, and the comments are going to be about that.\n\n" +
-                    "Your channel is going to be very large and you are never going to enjoy it.";
-            },
-        },
-        {
-            id: "denial",
-            title: "THERE WAS NO FIRE",
-            when: (S, R) => S.character.id === "nils" && !S.player.lookedAtFire,
-            text(S, R) {
-                return "You never looked.\n\nFifteen minutes, a smell, a haze, a woman shouting " +
-                    "about a bin, and at no point did you stand up and put your eyes on it, " +
-                    "because you knew what it was. You have known what things are for forty-four " +
-                    "years and you have been right nearly every time.\n\n" +
-                    R.lost + " souls were not accounted for.\n\n" +
-                    "In your statement you say the crew handled it well. In your statement you " +
-                    "say there was a great deal of unnecessary panic. In your statement you use " +
-                    "the phrase “one individual in particular”.\n\n" +
-                    "You are describing the person who carried your neighbour off.";
-            },
-        },
-        {
             id: "nobody",
             title: "PLEASE REMAIN SEATED",
             when: (S, R) => R.secured === 0,

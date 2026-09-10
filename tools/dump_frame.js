@@ -29,14 +29,10 @@ const opt = (name, dflt) => {
 const at = Number(opt("at", 420));           // seconds elapsed to stop at
 const bot = BOTS[opt("bot", "good")];
 const seed = Number(opt("seed", 20260908));
-const character = opt("char", "volk");
+const character = opt("char", "ansel");
 const out = opt("out", path.join(__dirname, "..", "docs", "frame.json"));
 
-const S = PRS.state.create({
-    characterId: character,
-    items: ["water_big", "wet_towel", "blanket", "gloves", "phone", "hivis", "tape"],
-    seed: seed,
-});
+const S = PRS.state.create({ characterId: character, seed: seed });
 
 // The bot's coin, seeded from the same number, so this file's whole promise - that a picture
 // regenerates from a seed - is actually true.

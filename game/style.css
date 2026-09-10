@@ -85,71 +85,6 @@ button.big:hover { background: #4b6191; }
 .prose p { color: var(--ink-dim); margin: 0 0 16px; }
 .prose p b { color: var(--ink); }
 
-/* ---------------------------------------------------------------------------- the pickers */
-
-.picker { padding: 34px 20px 20px; max-width: 1240px; margin: 0 auto; }
-.picker h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -0.02em; }
-.lede { color: var(--ink-dim); max-width: 74ch; margin: 0 0 24px; }
-
-.picker-body { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
-@media (max-width: 900px) { .picker-body { grid-template-columns: 1fr; } }
-
-.char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
-.char {
-  display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: start;
-  text-align: left; padding: 10px; background: var(--panel); border-color: var(--line);
-}
-.char.on { border-color: var(--gold); background: #2b2f38; }
-.char.locked { opacity: .42; cursor: default; }
-.char.locked:hover { background: var(--panel); }
-.char-face { grid-row: span 3; }
-.char-id b { display: block; font-size: 14px; }
-.char-id i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
-.char-stats { grid-column: 2; margin-top: 6px; }
-.stat { display: grid; grid-template-columns: 26px 1fr 14px; gap: 5px; align-items: center; }
-.stat span { font: 9px var(--mono); color: var(--ink-faint); }
-.stat b { font: 9px var(--mono); color: var(--ink-dim); text-align: right; }
-.stat-track { height: 3px; background: #2f3540; border-radius: 2px; overflow: hidden; }
-.stat-fill { height: 100%; background: var(--blue); }
-.char-perk { grid-column: 2; display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
-.char-perk span { font: 9px var(--mono); padding: 2px 5px; border-radius: 2px; }
-.char-perk .good { background: #1d3a26; color: var(--good); }
-.char-perk .bad { background: #3a1f1c; color: #e08076; }
-
-.char-detail { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 18px; position: sticky; top: 16px; }
-.char-detail h3 { margin: 0 0 2px; font-size: 20px; }
-.char-detail .sub { color: var(--ink-faint); font-size: 12px; margin-bottom: 12px; }
-.char-detail p { color: var(--ink-dim); font-size: 13px; }
-.perkbox { border-left: 2px solid; padding: 8px 0 8px 10px; margin: 12px 0; }
-.perkbox b { font-size: 12px; }
-.perkbox p { margin: 4px 0 0; font-size: 12px; }
-.perkbox.good { border-color: var(--good); } .perkbox.good b { color: var(--good); }
-.perkbox.bad { border-color: var(--bad); } .perkbox.bad b { color: #e08076; }
-
-.weigh { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
-.weigh-bar { flex: 1; height: 8px; background: var(--panel-2); border-radius: 4px; overflow: hidden; max-width: 420px; }
-.weigh-fill { height: 100%; background: var(--blue); transition: width .12s; }
-.weigh-fill.over { background: var(--bad); }
-.weigh b { font: 13px var(--mono); }
-.weigh i { font-style: normal; color: var(--ink-faint); font-size: 12px; }
-
-.presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
-.preset { text-align: left; max-width: 230px; padding: 8px 10px; background: var(--panel); }
-.preset b { display: block; font-size: 12px; }
-.preset i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
-
-.item-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
-.item {
-  display: grid; grid-template-columns: 48px 1fr auto; gap: 10px; align-items: start;
-  text-align: left; background: var(--panel); padding: 9px;
-}
-.item.on { border-color: var(--good); background: #222c26; }
-.item.blocked { opacity: .35; }
-.item-text b { display: block; font-size: 13px; }
-.item-text i { font-style: normal; display: block; font-size: 11px; color: var(--ink-faint); margin: 2px 0; }
-.item-text u { text-decoration: none; display: block; font-size: 11px; color: var(--blue); }
-.item-kg { font: 11px var(--mono); color: var(--ink-faint); }
-
 /* ------------------------------------------------------------------------------ the game */
 
 .play { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
@@ -301,79 +236,15 @@ button.big:hover { background: #4b6191; }
 .spend-fill { height: 100%; }
 .spend-row b { font: 11px var(--mono); color: var(--ink-faint); text-align: right; }
 
-.findings { color: var(--ink-dim); font-size: 13px; padding-left: 18px; }
-.findings li { margin-bottom: 6px; }
-.fireline { color: var(--ink-dim); font-size: 13px; }
-
 .medals { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
 .medal { background: var(--panel); border: 1px solid var(--line); border-left: 2px solid var(--gold); border-radius: 0 3px 3px 0; padding: 8px 10px; }
 .medal b { display: block; font-size: 12px; color: var(--gold); }
 .medal i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
 
-.history { border: 1px solid var(--line); border-radius: 4px; margin-bottom: 20px; }
-.hrow { display: grid; grid-template-columns: 1fr 100px 80px 34px 1fr; gap: 8px; padding: 6px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
-.hrow i { font-style: normal; color: var(--ink-faint); }
-
-.sprite-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(84px, 1fr)); gap: 8px; margin: 20px 0; }
-.sprite-cell { display: grid; place-items: center; gap: 4px; background: var(--panel); border: 1px solid var(--line); border-radius: 3px; padding: 8px 4px; }
-.sprite-cell span { font: 9px var(--mono); color: var(--ink-faint); text-align: center; word-break: break-all; }
-
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: #12151a; }
 ::-webkit-scrollbar-thumb { background: #333a46; border-radius: 5px; }
 ::-webkit-scrollbar-thumb:hover { background: #454e5d; }
-
-/* --------------------------------------------------- the three-step picker (v2 loadout) --- */
-
-/* A locked character is a goal, not a blank. The card shows the name, the face and exactly what
-   you have to do, because a row of question marks is not something anybody can aim at. */
-.char.locked { opacity: 1; cursor: default; filter: grayscale(0.7); }
-.char.locked .char-face { opacity: .45; }
-.char.locked:hover { background: var(--panel); border-color: var(--line); }
-.char-lock { grid-column: 2; margin-top: 6px; }
-.lock-tag {
-  font: 9px var(--mono); letter-spacing: .12em; color: var(--ink-faint);
-  border: 1px solid var(--line); border-radius: 2px; padding: 1px 4px;
-}
-.char-lock i { display: block; font-style: normal; font-size: 11px; color: var(--warn); margin-top: 4px; }
-
-.stat-fill.up { background: var(--good); }
-.stat-fill.down { background: #b06a5a; }
-.stat b.up { color: var(--good); }
-.stat b.down { color: #e08076; }
-.big-stats .stat { grid-template-columns: 30px 1fr 18px; margin-bottom: 3px; }
-.big-stats .stat-track { height: 6px; }
-.big-stats .stat span, .big-stats .stat b { font-size: 11px; }
-
-.outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
-.outfit { text-align: left; background: var(--panel); padding: 11px 12px; }
-.outfit.on { border-color: var(--gold); background: #2b2f38; }
-.outfit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
-.outfit-head b { font-size: 14px; }
-.outfit-mod { font: 10px var(--mono); color: var(--gold); white-space: nowrap; }
-.outfit i { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim); margin: 6px 0 4px; }
-.outfit u { display: block; text-decoration: none; font-size: 11px; color: var(--blue); }
-
-/* Three slots, drawn as three slots, so the size of the decision is visible before it is made. */
-.slots { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
-.slot {
-  display: flex; align-items: center; gap: 8px; min-width: 210px;
-  border: 1px dashed var(--line); border-radius: 4px; padding: 8px 10px;
-  background: #191c22;
-}
-.slot.filled { border-style: solid; border-color: var(--good); background: #202a24; }
-.slot b { font-size: 12px; font-weight: 500; }
-.slot:not(.filled) b { color: var(--ink-faint); font-weight: 400; }
-.slot-empty {
-  width: 48px; height: 48px; display: grid; place-items: center;
-  font: 700 20px var(--mono); color: #2f3540;
-}
-
-/* The bag grid lost its weight column when the allowance became a slot count. */
-.item { grid-template-columns: 48px 1fr; }
-/* A full bag dims the rest rather than blocking them: clicking one swaps out the oldest. */
-.item.dim { opacity: .62; }
-.item.dim:hover { opacity: 1; }
 
 /* Changing your mind. The button sits under the clock, because the clock is where the seconds
    come back to, and it always says what it would undo and what it gives back, or why it will
@@ -560,35 +431,25 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .help-line span { font-size: 12.5px; color: var(--ink-dim); }
 .help .title-buttons { margin: 14px 0 0; justify-content: flex-start; }
 
-/* ----------------------------------------------------------------------- one-click boarding */
+/* ------------------------------------------------------------------------ who is in seat 9C */
 
-/* The boarding pass on the title: who the one button puts on the aeroplane, with their face,
-   their clothes and the three things on them. Clicking it opens the setup screen. Nobody has to. */
-.pass {
-  display: inline-flex; align-items: center; gap: 12px; text-align: left;
-  padding: 8px 14px 8px 10px; margin: 0 0 2px;
-  background: var(--panel); border-color: var(--line);
+/* Two people, two buttons. The face, the five numbers, and the one sentence that says what
+   each of them is for, so the choice is made in the time it takes to read it. */
+.roster { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 4px 0 6px; }
+.boarding {
+  display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; text-align: left;
+  width: 350px; padding: 14px; background: var(--panel); border-color: var(--line);
 }
-.pass:hover { border-color: var(--gold); background: #2b2f38; }
-.pass-who b { display: block; font-size: 14px; line-height: 1.2; }
-.pass-who i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
-.pass-bag {
-  display: flex; gap: 6px; align-items: center; min-height: 32px;
-  padding-left: 12px; border-left: 1px solid var(--line);
-}
-.pass-bag i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
-.pass-change {
-  font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--gold);
-  padding-left: 12px; border-left: 1px solid var(--line);
-}
+.boarding:hover { border-color: var(--gold); background: #2b2f38; }
+.boarding.lit { border-color: #5a6b95; }
+.boarding img { margin-top: 2px; }
+.boarding-who b { display: block; font-size: 16px; line-height: 1.2; }
+.boarding-who i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint); margin-bottom: 8px; }
+.boarding-who u { display: block; text-decoration: none; font-size: 12px; color: var(--ink-dim); margin: 8px 0 10px; }
+.boarding-go { font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.stat { display: grid; grid-template-columns: 26px 1fr 14px; gap: 5px; align-items: center; }
+.stat span { font: 9px var(--mono); color: var(--ink-faint); }
+.stat b { font: 9px var(--mono); color: var(--ink-dim); text-align: right; }
+.stat-track { height: 3px; background: #2f3540; border-radius: 2px; overflow: hidden; }
+.stat-fill { height: 100%; background: var(--blue); }
 
-/* The setup screen: the three sections down the left, the composite you on the right, and the
-   one button in a panel that follows you down the page. */
-.setup h3 { font-size: 20px; letter-spacing: -0.02em; margin: 30px 0 4px; }
-.setup-sections > h3:first-child { margin-top: 0; }
-.sec-note { color: var(--ink-faint); font-size: 12px; max-width: 74ch; margin: 0 0 12px; }
-.setup .char-detail .sub { margin: 10px 0 0; }
-.setup .char-detail .slots { margin: 14px 0 0; gap: 6px; }
-.setup .char-detail .slot { min-width: 0; flex: 1 1 0; justify-content: center; padding: 6px; }
-.setup .char-detail .title-buttons { margin: 16px 0 0; }
-@media (max-width: 900px) { .setup .char-detail { position: static; order: -1; } }
