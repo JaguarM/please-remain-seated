@@ -142,6 +142,9 @@
             ]),
         ]);
         root.appendChild(veil);
+        // Escape closes it from any screen; the play screen has its own handler, which is fine.
+        veil.onkey = (ev) => { if (ev.key === "Escape") hideHelp(root); };
+        document.addEventListener("keydown", veil.onkey);
     }
 
     function helpLine(icon, head, body) {
@@ -153,7 +156,10 @@
 
     function hideHelp(root) {
         const veil = root && $(".help-veil", root);
-        if (veil) veil.remove();
+        if (veil) {
+            if (veil.onkey) document.removeEventListener("keydown", veil.onkey);
+            veil.remove();
+        }
         store.set("seenHelp", true);
     }
 
