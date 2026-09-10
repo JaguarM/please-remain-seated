@@ -196,36 +196,41 @@
         return out;
     }
 
+    // How far inside a body a click has to land on a burning tile before it counts as the
+    // person rather than the fire. The fire is the harder of the two to hit, so it gets the
+    // edges of the body as well as everything round it.
+    const BODY_INSET_IN_FIRE = 2;
+
     /**
      * What a click at a point would open. The point matters: a person no longer fills their
      * tile, so on a burning seat the body is the person and the flames round it are the fire.
      * On a tile with nothing burning, anywhere on it is the person, because there is nothing
      * else it could mean. The floor is a walk, and the hull is nothing.
      *
-     *   { kind: person|crew|you|fire|walk|none, thing, box, siblings }
+     *   { kind: person|crew|you|fire|walk|none, thing, fig, box, siblings }
      *
-     * `box` is where the body is, in sprite pixels, for the light the renderer draws round it.
-     * `siblings` is everything else on the tile, for the card's tabs, with the target first.
+     * `fig` is the figure as the renderer draws it - its sprite, its offset in a stack, and
+     * `box`, where the body is in sprite pixels - for the light drawn round it. `siblings` is
+     * everything else on the tile, for the card's tabs, with the target first.
      */
     function targetAt(S, x, y, fx, fy) {
         if (!cabin.inBounds(x, y)) return { kind: "none" };
         const things = thingsAt(S, x, y);
-        const fig = PRS.render.figureAt(S, x, y, fx === undefined ? 0.5 : fx,
-                                        fy === undefined ? 0.5 : fy);
-        let thing = null, box = null;
-        if (fig) {
-            thing = things.filter((t) => t.kind === fig.kind && t.id === fig.id)[0] || null;
-            box = fig.box;
-        }
-        if (!thing && fireAt(S, x, y)) thing = things.filter((t) => t.kind === "fire")[0];
+        const burning = fireAt(S, x, y);
+        let fig = PRS.render.figureAt(S, x, y, fx === undefined ? 0.5 : fx,
+                                      fy === undefined ? 0.5 : fy,
+                                      burning ? BODY_INSET_IN_FIRE : -1);
+        let thing = null;
+        if (fig) thing = things.filter((t) => t.kind === fig.kind && t.id === fig.id)[0] || null;
+        if (!thing && burning) { thing = things.filter((t) => t.kind === "fire")[0]; fig = null; }
         if (!thing && things.length) {
             thing = things[0];
-            const f = PRS.render.figures(S, x, y).filter((g) => g.id === thing.id)[0];
-            box = f ? f.box : null;
+            fig = PRS.render.figures(S, x, y).filter((g) => g.id === thing.id)[0] || null;
         }
         if (thing) {
             const rest = things.filter((t) => t !== thing);
-            return { kind: thing.kind, thing: thing, box: box, siblings: [thing].concat(rest) };
+            return { kind: thing.kind, thing: thing, fig: fig, box: fig ? fig.box : null,
+                     siblings: [thing].concat(rest) };
         }
         if (cabin.solid(x, y)) return { kind: "none" };
         return { kind: "walk" };

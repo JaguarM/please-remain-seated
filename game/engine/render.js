@@ -112,14 +112,20 @@
             if (p.state === "gone" || p.state === "carried") continue;
             if (p.x !== x || p.y !== y) continue;
             const [dx, dy] = FAN[Math.min(FAN.length - 1, n++)];
-            out.push({ kind: "person", id: p.id, who: p, box: shift(spriteBox(faceOf(p)), dx, dy) });
+            const sprite = faceOf(p);
+            out.push({ kind: "person", id: p.id, who: p, sprite: sprite, dx: dx, dy: dy,
+                       box: shift(spriteBox(sprite), dx, dy) });
         }
+        const crewFace = S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax";
         for (const c of S.crew) {
             if (c.x !== x || c.y !== y) continue;
-            out.push({ kind: "crew", id: c.id, who: c, box: spriteBox("pax") });
+            out.push({ kind: "crew", id: c.id, who: c, sprite: crewFace, dx: 0, dy: 0,
+                       box: spriteBox(crewFace) });
         }
         if (S.player.x === x && S.player.y === y) {
-            out.push({ kind: "you", id: "you", who: S.player, box: spriteBox(playerFace(S)) });
+            const sprite = playerFace(S);
+            out.push({ kind: "you", id: "you", who: S.player, sprite: sprite, dx: 0, dy: 0,
+                       box: spriteBox(sprite) });
         }
         return out;
     }
@@ -128,16 +134,68 @@
         return [box[0] + dx, box[1] + dy, box[2] + dx, box[3] + dy];
     }
 
-    /** The topmost figure under a point in a tile, or null if the point is on the tile itself. */
-    function figureAt(S, x, y, fx, fy) {
+    /**
+     * The topmost figure under a point in a tile, or null if the point is on the tile itself.
+     * `inset` is how many sprite pixels inside the body the click has to be: negative is a
+     * pixel of grace, for a tile where the body is the only thing to hit; positive gives the
+     * edges of the body to whatever is round it, which on a burning tile is the fire, because
+     * the fire is the harder of the two to land on.
+     */
+    function figureAt(S, x, y, fx, fy, inset) {
         const list = figures(S, x, y);
         const px = fx * TILE, py = fy * TILE;
-        // A pixel of grace all round, because a body outline is a hard thing to land on.
+        const n = inset === undefined ? -1 : inset;
         for (let i = list.length - 1; i >= 0; i--) {
             const b = list[i].box;
-            if (px >= b[0] - 1 && px < b[2] + 1 && py >= b[1] - 1 && py < b[3] + 1) return list[i];
+            if (px >= b[0] + n && px < b[2] - n && py >= b[1] + n && py < b[3] - n) return list[i];
         }
         return null;
+    }
+
+    // -------------------------------------------------------------------------------- halo ---
+    //
+    // The light round the thing under the pointer is the thing's own shape: every transparent
+    // pixel that touches an opaque one, one pixel deep, going round the corners. It is worked
+    // out from the map once per sprite and colour and kept, like any other stamp.
+
+    const halos = new Map();
+
+    function haloStamp(name, scale, colour) {
+        const key = name + "@" + scale + "|" + colour;
+        const hit = halos.get(key);
+        if (hit) return hit;
+        const sp = atlas.get(name);
+        const rows = sp ? sp.rows : [];
+        const w = rows.length ? Math.max.apply(null, rows.map((r) => r.length)) : TILE;
+        const h = rows.length || TILE;
+        const solid = (x, y) => y >= 0 && y < h && x >= 0 && x < rows[y].length && rows[y][x] !== ".";
+        const canvas = document.createElement("canvas");
+        canvas.width = (w + 2) * scale;
+        canvas.height = (h + 2) * scale;
+        const cx = canvas.getContext("2d");
+        cx.fillStyle = colour;
+        for (let y = -1; y <= h; y++) {
+            for (let x = -1; x <= w; x++) {
+                if (solid(x, y)) continue;
+                let near = false;
+                for (let dy = -1; dy <= 1 && !near; dy++) {
+                    for (let dx = -1; dx <= 1; dx++) {
+                        if ((dx || dy) && solid(x + dx, y + dy)) { near = true; break; }
+                    }
+                }
+                if (near) cx.fillRect((x + 1) * scale, (y + 1) * scale, scale, scale);
+            }
+        }
+        halos.set(key, canvas);
+        return canvas;
+    }
+
+    /** A one-pixel halo round a sprite drawn at (px, py), in a colour, at an alpha. */
+    function halo(ctx, name, px, py, scale, colour, alpha) {
+        const prev = ctx.globalAlpha;
+        ctx.globalAlpha = prev * Math.min(1, alpha === undefined ? 1 : alpha);
+        ctx.drawImage(haloStamp(name, scale, colour), (px - scale) | 0, (py - scale) | 0);
+        ctx.globalAlpha = prev;
     }
 
     // ---------------------------------------------------------------------------------- fx ---
@@ -614,10 +672,10 @@
 
     /**
      * What is under the pointer, lit. There are three things you can click - a person, the fire,
-     * yourself - and the light says which one this click would be: a person is lit round their
-     * body, the fire round its tile, and the floor gets the walk drawn on it with the price.
-     * `opts.target` is the thing hotspots.js says the click would open, so the light and the
-     * click cannot disagree.
+     * yourself - and the light says which one this click would be: a halo in the shape of the
+     * person, a halo in the shape of the fire, and the floor gets the walk drawn on it with the
+     * price. `opts.target` is the thing hotspots.js says the click would open, so the light and
+     * the click cannot disagree.
      */
     function drawHover(ctx, S, opts, T, scale, t) {
         const hr = opts.hoverRoute;
@@ -635,34 +693,28 @@
         }
         if (!opts.hover || !cabin.inBounds(opts.hover.x, opts.hover.y)) return;
         const hx = opts.hover.x * T, hy = opts.hover.y * T;
-        const beat = 0.7 + 0.3 * Math.abs(Math.sin((t || 0) * 0.005));
+        const beat = 0.72 + 0.28 * Math.abs(Math.sin((t || 0) * 0.005));
 
-        if (tg && tg.box) {
-            // A body: a soft light behind it and a line round it, so the person under the
-            // pointer is the brightest thing on the aeroplane.
-            const b = tg.box, pad = scale;
-            const bx = hx + b[0] * scale - pad, by = hy + b[1] * scale - pad;
-            const bw = (b[2] - b[0]) * scale + 2 * pad, bh = (b[3] - b[1]) * scale + 2 * pad;
-            ctx.save();
-            ctx.fillStyle = "rgba(255,255,255,0.16)";
-            ctx.fillRect(bx, by, bw, bh);
-            ctx.strokeStyle = "#ffffff";
-            ctx.globalAlpha = beat;
-            ctx.lineWidth = Math.max(1, scale);
-            ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
-            ctx.restore();
+        if (tg && tg.fig) {
+            // A body: one pixel of light all the way round it, in its own shape.
+            const f = tg.fig;
+            halo(ctx, f.sprite, hx + f.dx * scale, hy + f.dy * scale, scale, "#ffffff", beat);
             return;
         }
         if (tg && tg.kind === "fire") {
-            // The fire is the tile, so the whole tile lights.
-            ctx.save();
-            ctx.fillStyle = "rgba(255,240,200,0.14)";
-            ctx.fillRect(hx, hy, T, T);
-            ctx.strokeStyle = "#fff4b0";
-            ctx.globalAlpha = beat;
-            ctx.lineWidth = Math.max(1, scale);
-            ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
-            ctx.restore();
+            // The fire: the same light, in the shape of the flames on this tile. Embers are
+            // too sparse to have a shape, so they get the tile.
+            const name = fireSpriteAt(S, opts.hover.x, opts.hover.y);
+            if (name && name !== "ember") {
+                halo(ctx, name, hx, hy, scale, "#fff4b0", beat);
+            } else {
+                ctx.save();
+                ctx.strokeStyle = "#fff4b0";
+                ctx.globalAlpha = beat;
+                ctx.lineWidth = Math.max(1, scale);
+                ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
+                ctx.restore();
+            }
             return;
         }
         if (tg && tg.kind === "none") return;
@@ -835,7 +887,7 @@
     PRS.render = {
         TILE, fit, tileAt, draw, drawSummary,
         paletteOf, faceOf, zoneAir, fireSpriteAt,
-        spriteBox, figures, figureAt,
+        spriteBox, figures, figureAt, halo,
         fx: { say, pulse, flash: flashOver, shake, clear: clearFx },
     };
 })(window);

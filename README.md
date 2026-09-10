@@ -136,14 +136,15 @@ her the water — are on their card, not yours.
 **A person is the thing in the middle of the tile, and the fire is the tile.** Nobody fills their
 seat any more; a burning tile burns edge to edge from the first stage, and a seat that is on fire
 is drawn as a seat that is on fire. So on a burning seat with somebody in it, the body is the
-person and the flames round it are the fire, and the card gets a tab for the other one.
+person and the flames round it are the fire, and the card gets a tab for the other one. The fire
+is the harder of the two to hit, so it gets the outer two pixels of the body as well.
 
-**Pointing costs nothing, and it shows.** Whatever is under the pointer lights up: a person round
-their body, the fire round its tile, the floor with the price of walking to it. Hover somebody and
-you get their name, their weight and what state they are in. Hover a row on a card and the person
-it would happen to is bracketed on the cabin, wherever they are, with the price on their tile.
-Neither direction moves the clock. A plan costs nothing until it is a decision, which is the one
-mercy in this game that is free.
+**Pointing costs nothing, and it shows.** Whatever is under the pointer gets a one-pixel halo in
+its own shape — the person's silhouette, or the flames on that tile — and the floor gets the
+price of walking to it. Hover somebody and you get their name, their weight and what state they
+are in. Hover a row on a card and the person it would happen to is bracketed on the cabin,
+wherever they are, with the price on their tile. Neither direction moves the clock. A plan costs
+nothing until it is a decision, which is the one mercy in this game that is free.
 
 **1–9** picks a row of the open card. **Backspace** undoes, from the button under the clock. **M**
 turns the sound off. **?** brings the five-line briefing back.
