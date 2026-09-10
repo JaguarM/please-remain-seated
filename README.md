@@ -76,11 +76,15 @@ for at touchdown, and the way you find that out is by looking at it.
 sixty. The arithmetic is the design, not the difficulty. What you are playing for is the difference
 between three and twenty-seven, and the route to the top of that range is not in the fire deck.
 
-**Almost nothing is decided before you board.** Three decisions, none of them longer than twenty
-seconds: who you are, what you are wearing, and which three things are on you. Everything else —
-the other five items, and ten of the twelve characters — is found in the aeroplane or earned by
-flying it. The only thing progress gates is characters, and every unlock condition is printed on
-its own locked card, so the roster is a list of things to try rather than a wall.
+**Almost nothing is decided before you board, and none of it has to be.** The title has one
+button, and it puts you on the aeroplane as whoever you were last time — the first time, that is
+Kip, in gym kit, with the sensible three — and the report has one button that puts you straight
+back on it. The three decisions, if you want them, are on one screen: who you are, what you are
+wearing, and which three things are on you, and none of them takes longer than twenty seconds.
+Everything else — the other five items, and ten of the twelve characters — is found in the
+aeroplane or earned by flying it. The only thing progress gates is characters, and every unlock
+condition is printed on its own locked card, so the roster is a list of things to try rather than
+a wall.
 
 What is in it
 -------------
