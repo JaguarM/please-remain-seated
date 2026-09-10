@@ -1,14 +1,14 @@
-// Deck: THE FIRE. Fifty-seven ways to attack a fire, and not one of them puts it out.
+// Deck: THE FIRE. Every way to attack a fire, and not one of them puts it out.
 //
-// This deck is the trap the game is built around. It is the biggest, the most satisfying, the most
-// obviously correct, and if you spend the flight in it you will finish with two souls secured and
-// an incident report that uses the word "obstructive". Everything here buys seconds. The people
-// deck spends them.
+// This deck is the trap the game is built around. It is the most satisfying, the most obviously
+// correct, and if you spend the flight in it you will finish with two souls secured and an
+// incident report that uses the word "obstructive". Everything here buys seconds. The people deck
+// spends them.
 //
-// The three that are not a trap, in case anybody ever reads this file instead of playing:
-// closing the bin, getting the case into a sink, and pre-wetting the row the fire is about to
-// reach. Those change the shape of the next nine minutes. The other fifty-four are a bottle of
-// water and a feeling.
+// The ones that are not a trap, in case anybody ever reads this file instead of playing: closing
+// or taping the bin, getting the case into a sink, and pre-wetting the row the fire is about to
+// reach. Those change the shape of the next nine minutes. The rest are a bottle of water and a
+// feeling. The pouring and smothering actions themselves are in actions-douse.js.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -16,7 +16,6 @@
     const st = PRS.state;
     const A = PRS.actions;
     const F = PRS.fire;
-    const clamp01 = PRS.util.clamp01;
 
     // The tile a fire action lands on: the worst one you can reach from where you are standing.
     function hot(S) {

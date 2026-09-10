@@ -7,14 +7,11 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
-    const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
-    const clamp = PRS.util.clamp;
 
     function slot(S, id) { return st.slotOf(S, id); }
     function have(S, id) { const s = slot(S, id); return s && !s.spent; }
-    function smokeHere(S) { return S.fire.smoke[cabin.idx(S.player.x, S.player.y)]; }
 
     A.register([
         // ------------------------------------------------------------------------ breathing ---
@@ -51,16 +48,6 @@
               return { text: "Two puffs. The bottom of your lungs comes back online.", kind: "good" };
           } },
 
-        { id: "self.goggles", item: "goggles", deck: "self", tags: ["self"], danger: "good",
-          label: "Put the swimming goggles on", cost: 7,
-          when: (S) => have(S, "goggles") && !st.wearing(S, "goggles"),
-          run(S) {
-              S.player.wearing.goggles = true;
-              return { text: "You put mirrored swimming goggles on in a burning aeroplane and you " +
-                  "can suddenly keep your eyes open in smoke that has everybody else's shut. You " +
-                  "look absurd. You look absurd and you can see.", kind: "good" };
-          } },
-
         // ---------------------------------------------------------------------------- wearing ---
         { id: "self.hivis", item: "hivis", deck: "self", tags: ["self"], danger: "good",
           label: "Put the hi-vis vest on", cost: 9,
@@ -94,24 +81,6 @@
                   "the last thing anybody thinks of.";
           } },
 
-        { id: "self.panic", deck: "self", tags: ["self"], danger: "bad",
-          label: "Let go of it", cost: 18,
-          detail: "Stop holding it together. See what is underneath.",
-          // Only for the one person whose perk needs it: past eighty, everything Priya does
-          // costs half. For anybody else this is eighteen seconds of coming apart.
-          when: (S) => st.hasPerk(S, "adrenaline") && S.player.panic > 50,
-          run(S) {
-              S.player.panic = Math.min(100, S.player.panic + 30);
-              if (st.hasPerk(S, "adrenaline") && S.player.panic >= 80) {
-                  return { text: "Everything goes very bright and very simple and very fast. You " +
-                      "have been waiting your whole life to find out what you are like at the " +
-                      "bottom of this and it turns out you are quick.", kind: "great" };
-              }
-              return { text: "You come apart for eighteen seconds in the aisle at row " +
-                  (cabin.rowAt(S.player.x) || "?") + ". Nobody helps. Two people film it.",
-                  kind: "bad" };
-          } },
-
         { id: "self.burn_gel_self", item: "first_aid", deck: "self", tags: ["self"], danger: "good",
           label: "Put burn gel on your own hands", cost: 18,
           when: (S) => S.player.burns > 15 && have(S, "first_aid") && slot(S, "first_aid").uses > 0,
@@ -123,23 +92,6 @@
           } },
 
         // ---------------------------------------------------------------------- the phone ------
-        { id: "self.film", item: "phone", deck: "self", tags: ["self"], danger: "good",
-          label: "Film what is happening", cost: 8,
-          when: (S) => have(S, "phone"),
-          run(S) {
-              S.stats.filmed++;
-              S.player.filmedAt = S.clock.elapsed;
-              st.setFlag(S, "havePhoto");
-              S.credibility = Math.min(100, S.credibility + 6);
-              if (st.hasPerk(S, "filming")) S.player.panic = Math.max(0, S.player.panic - 18);
-              const n = S.stats.filmed;
-              if (n === 1) return { text: "Eleven seconds of an overhead locker with light coming " +
-                  "out of the seam of it. You now have proof.", kind: "good" };
-              if (n < 4) return "More footage. The bin, the smoke line on the ceiling, and about " +
-                  "four seconds of somebody in row 16 asking you to sit down.";
-              return "You are now the only continuous record of this event. That is going to be " +
-                  "important and it is not going to be comfortable.";
-          } },
 
         // ------------------------------------------------------------------------- thinking ---
     ]);

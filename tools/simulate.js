@@ -121,6 +121,23 @@ let coin = () => Math.random();
 
 function setCoin(rng) { coin = rng; }
 
+// The map is the only way to move, so a bot that wants to be somewhere scores the walk entries
+// by where they end up: `walkTo` is the cheapest walk whose destination satisfies a test.
+function walkTo(list, pred) {
+    let best = null;
+    for (const e of list) {
+        if (e.id !== "move.walk" || !pred(e.ctx.x, e.ctx.y)) continue;
+        if (!best || e.cost < best.cost) best = e;
+    }
+    return best;
+}
+const beside = (x, y, tx, ty) => Math.abs(x - tx) + Math.abs(y - ty) <= 1;
+
+/** Somebody still in the cabin who could be moved: not secured, not in anybody's arms. */
+function movable(p) {
+    return p.state !== "secured" && p.state !== "dead" && p.state !== "carried" && !p.helper;
+}
+
 // Each bot scores the available actions and takes the best. `random` does not score at all, which
 // is the whole point of it.
 const BOTS = {
@@ -134,26 +151,31 @@ const BOTS = {
     },
 
     fire(PRS, S, list) {
+        const c = S.fire.core;
+        const go = walkTo(list, (x, y) => beside(x, y, c.x, c.y));
         return pickBy(list, (e) => {
             if (e.deck === "fire") return 100 - e.cost * 0.2;
-            if (e.id === "move.to_fire") return 60;
-            if (e.deck === "move") return 5;
+            if (e === go) return 60;
+            if (e.id === "move.walk") return 5 - e.cost * 0.1;
             return 0;
         });
     },
 
     carry(PRS, S, list) {
+        const cabin = PRS.cabin;
         const hands = S.player.carrying.length || (S.player.dragging ? 1 : 0);
-        const safe = PRS.cabin.isSafeZone(S.player.x, S.player.y);
+        const safe = cabin.isSafeZone(S.player.x, S.player.y);
+        const toSafe = hands ? walkTo(list, (x, y) => cabin.isSafeZone(x, y)) : null;
+        const toPax = hands ? null : walkTo(list, (x, y) =>
+            y === cabin.AISLE_Y && S.pax.some((p) => movable(p) && beside(x, y, p.x, p.y)));
         return pickBy(list, (e) => {
             if (hands && safe && (e.id === "people.put_down" || e.id === "people.stop_drag")) return 200;
-            if (hands && e.id === "move.fwd_galley") return 160;
+            if (e === toSafe) return 160;
             // Dragging is how you move anybody heavier than your arms, which for most of the cast
             // is most of the aeroplane.
             if (!hands && (e.id === "people.carry" || e.id === "people.drag")) return 120 - e.cost * 0.3;
-            if (!hands && e.id === "move.step") return 45;      // into the row, where the people are
-            if (!hands && e.id === "move.to_row") return 40 - e.cost * 0.4;
-            if (e.deck === "move") return 10;
+            if (e === toPax) return 40 - e.cost * 0.4;
+            if (e.id === "move.walk") return 10 - e.cost * 0.2;
             return 0;
         });
     },
@@ -161,23 +183,25 @@ const BOTS = {
     // What the game is actually about: recruit, delegate, and only then carry.
     good(PRS, S, list) {
         const st = PRS.state;
+        const cabin = PRS.cabin;
         const carrying = S.player.carrying.length || (S.player.dragging ? 1 : 0);
-        const safe = PRS.cabin.isSafeZone(S.player.x, S.player.y);
+        const safe = cabin.isSafeZone(S.player.x, S.player.y);
         const helpers = st.helperCount(S);
+        const toSafe = carrying ? walkTo(list, (x, y) => cabin.isSafeZone(x, y)) : null;
+        const toPax = carrying ? null : walkTo(list, (x, y) =>
+            y === cabin.AISLE_Y && S.pax.some((p) => movable(p) && beside(x, y, p.x, p.y)));
         return pickBy(list, (e) => {
             if (carrying && safe && (e.id === "people.put_down" ||
                                      e.id === "people.stop_drag")) return 300;
-            if (carrying && e.id === "move.fwd_galley") return 250;
-            if (e.id === "fire.photograph" && !S.flags.havePhoto) return 240;
+            if (e === toSafe) return 250;
+            if (e.id === "fire.photograph") return 240;
             if (e.id === "crew.show_photo") return 230;
-            if (e.id === "cabin.trigger_detector" && !S.cabinFlags.detectorSounded) return 220;
+            if (e.id === "cabin.trigger_detector") return 220;
             // Recruit early, then use your own arms. A helper found at minute two works for
             // thirteen minutes; one found at minute twelve works for three.
             const early = S.clock.elapsed < 330;
             if (e.id === "people.recruit" && helpers < 6) return (early ? 210 : 120) - e.cost * 0.2;
-            if (e.id === "people.recruit_row" && helpers < 6) return early ? 215 : 100;
             if (e.id === "people.follow") return 200 - e.cost * 0.5;
-            if (e.id === "people.chain") return 205 - e.cost * 0.6;
             if (e.id === "fire.tape_bin" || e.id === "fire.close_bin") return 180;
             if (e.id === "cabin.stow_trolley") return 175;
             // Once there are enough helpers, the best thing you can do is be a fourteenth pair
@@ -188,8 +212,8 @@ const BOTS = {
                     p.traits.indexOf("immobile") >= 0 || p.traits.indexOf("elderly") >= 0);
                 return (urgent ? 185 : 140) - e.cost * 0.3;
             }
-            if (e.id === "move.to_row") return 34 - e.cost * 0.3;
-            if (e.deck === "move") return 12 - e.cost * 0.2;
+            if (e === toPax) return 34 - e.cost * 0.3;
+            if (e.id === "move.walk") return 12 - e.cost * 0.2;
             if (e.deck === "people") return 20;
             return 1;
         });
@@ -197,7 +221,7 @@ const BOTS = {
 
     // Never moves. Establishes the floor: what happens if you do nothing useful at all.
     idle(PRS, S, list) {
-        return pickBy(list, (e) => (e.deck === "self" || e.deck === "desperate") ? 10 : 0);
+        return pickBy(list, (e) => (e.deck === "self" ? 10 : 0));
     },
 
     // The coverage bot. Always takes the thing it has taken least, which walks it into the

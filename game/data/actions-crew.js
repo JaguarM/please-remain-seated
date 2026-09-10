@@ -16,7 +16,6 @@
     function near(S) {
         return C.adjacentCrew(S).map((c) => ({ key: c.id, c: c }));
     }
-    function anyNear(S) { return C.adjacentCrew(S).length > 0; }
     function cred(S, n) { S.credibility = Math.min(100, Math.max(0, S.credibility + n)); }
 
     /** The crew's willingness to do a thing for you, before the dice. */
@@ -130,35 +129,6 @@
                   "from here.", kind: "great" };
           } },
 
-        { id: "crew.regulation", deck: "crew", tags: ["social"], danger: "good",
-          targets: near,
-          when: (S) => st.hasPerk(S, "chapter_and_verse"),
-          label: (S, t) => "Quote the manual at " + t.c.name,
-          detail: "Section, sub-section, and the page it is on.",
-          cost: 26,
-          run(S, t) {
-              cred(S, 30);
-              C.setPhase(S, Math.max(S.crewPhase, 2));
-              return { text: "“Your operations manual, in-flight fire, section four: on discovery " +
-                  "of a fire in an overhead stowage the crew member shall not open the stowage but " +
-                  "shall — and I am quoting — inform the commander immediately.” " + t.c.name +
-                  " has gone a colour.", kind: "great" };
-          } },
-
-        { id: "crew.four_bars", deck: "crew", tags: ["social"], danger: "good",
-          targets: near,
-          when: (S) => st.hasPerk(S, "flight_deck"),
-          label: (S, t) => "Identify yourself to " + t.c.name,
-          detail: "Name, licence number, and the airline you fly for.",
-          cost: 16,
-          run(S, t) {
-              cred(S, 40);
-              C.setPhase(S, Math.max(S.crewPhase, 2));
-              return { text: "You give " + t.c.name + " your name, your operator and your licence " +
-                  "number, and something in the cabin changes shape. You are no longer a " +
-                  "passenger who is being difficult.", kind: "great" };
-          } },
-
         { id: "crew.ask_halon", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !st.slotOf(S, "halon_bottle") && t.c.halon > 0 &&
@@ -196,24 +166,6 @@
                       "they now do not have it.", kind: "great" };
               }
               return { text: "“They're for crew.” They are for crew.", kind: "bad" };
-          } },
-
-        { id: "crew.ask_extinguisher", deck: "crew", tags: ["social"],
-          targets: near,
-          when: (S, t) => !st.slotOf(S, "water_ext") && worth(S, t.c, 44),
-          label: (S, t) => "Ask " + t.c.name + " for the water extinguisher",
-          cost: 18,
-          run(S, t) {
-              if (ask(S, t.c, 44)) {
-                  S.inventory.push({ id: "water_ext", uses: 2, spent: false, item: {
-                      id: "water_ext", name: "Water extinguisher", kg: 6.4,
-                      sprite: "cabin:extinguisher_water", uses: 2, agent: "water",
-                      tags: ["extinguisher", "water"], blurb: "Nine litres, from the galley.",
-                      note: "Two good discharges." } });
-                  return { text: "The galley water extinguisher, which is nine litres and weighs " +
-                      "as much as a small child. You now have both hands full.", kind: "great" };
-              }
-              return { text: "“I'll bring it. Sit down.” They do not bring it.", kind: "bad" };
           } },
 
         { id: "crew.move_trolley", deck: "crew", tags: ["social"], danger: "good",
@@ -287,22 +239,6 @@
               }
               return { text: "“Not yet. We assess first, then we call.” That is the procedure and " +
                   "the procedure is costing you ninety seconds a minute.", kind: "bad" };
-          } },
-
-        { id: "crew.ask_lithium", deck: "crew", tags: ["social"], danger: "good",
-          targets: near,
-          when: (S) => S.fire.core.exposed,
-          label: (S, t) => "Tell " + t.c.name + " it is a lithium battery",
-          detail: "There is a specific drill for this and it is not the drill they are doing.",
-          cost: 18,
-          run(S, t) {
-              cred(S, 24);
-              st.setFlag(S, "toldLithium");
-              C.setPhase(S, Math.max(S.crewPhase, 3));
-              return { text: "“Lithium?” Everything in " + t.c.name + "'s training reorders " +
-                  "itself in about a second and a half. “Water. Not the BCF. Water, and keep " +
-                  "putting water on it.” Which is right, and which is nine minutes late.",
-                  kind: "great" };
           } },
 
         // ---------------------------------------------------------------------- flight deck ---

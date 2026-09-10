@@ -1,5 +1,5 @@
-// Deck: PEOPLE. Sixty-odd definitions, each of which appears once per person you can reach, so
-// in play this is several hundred entries and it is the only deck that scales.
+// Deck: PEOPLE. Each definition appears once per person you can reach, so in play this is the
+// only deck that scales.
 //
 // The arithmetic, written down once: you can carry about fourteen people in nine hundred seconds.
 // A recruited helper carries about nine. Four helpers is thirty-six. Nothing else in this game is
@@ -12,7 +12,6 @@
     const st = PRS.state;
     const A = PRS.actions;
     const P = PRS.pax;
-    const clamp = PRS.util.clamp;
 
     // ------------------------------------------------------------------------------ targeting ---
 
@@ -22,15 +21,11 @@
     function reachAwake(S) {
         return reach(S).filter((c) => c.p.state !== "down" && c.p.state !== "dead");
     }
-    function reachDown(S) {
-        return reach(S).filter((c) => c.p.state === "down");
-    }
     function carried(S) {
         return S.player.carrying.map((id) => ({ key: id, p: st.paxById(S, id) }))
                                 .filter((c) => c.p);
     }
     function who(c) { return c.p.name; }
-    function seatOf(c) { return c.p.seat; }
 
     // --------------------------------------------------------------------------- the carry ----
 
@@ -177,66 +172,6 @@
             },
         },
 
-        {
-            id: "people.hoist", deck: "people", tags: ["carry"], danger: "bad",
-            targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried"),
-            // Only from the front rows, where they land in the cross-aisle and count. Five rows
-            // nearer the fire is not an outcome anybody needs a strongman for.
-            when: (S, c) => st.hasPerk(S, "hoist") && c.p.x - 5 <= cabin.FWD_CROSS_X,
-            label: (S, c) => "Throw " + who(c) + " over the seats toward the front",
-            detail: "It covers four rows in one second. They will not enjoy it.",
-            cost: 12,
-            run(S, c) {
-                const p = c.p;
-                const nx = Math.max(cabin.FWD_CROSS_X, p.x - 5);
-                p.x = nx; p.y = cabin.AISLE_Y;
-                p.burns += 2;
-                p.trust -= 25;
-                p.panic = Math.min(100, p.panic + 30);
-                if (cabin.isSafeZone(nx, cabin.AISLE_Y)) {
-                    p.state = "secured";
-                    p.securedAt = S.clock.elapsed;
-                    S.stats.carriesCompleted++;
-                    st.reindex(S);
-                    return { text: "You throw " + p.name + " five rows up the cabin and they land " +
-                        "in the forward cross-aisle, on a person, alive and accounted for. The " +
-                        "cabin has never been quieter.", kind: "great" };
-                }
-                p.state = P.looseState(p);
-                st.reindex(S);
-                return { text: "You throw " + p.name + " five rows up the cabin. They land badly, " +
-                    "in the aisle, at row " + (cabin.rowAt(nx) || "?") + ", and they are five " +
-                    "rows better off and furious.", kind: "bad" };
-            },
-        },
-
-        {
-            id: "people.pass_forward", deck: "people", tags: ["carry", "social"], danger: "good",
-            targets: (S) => reach(S).filter((c) => c.p.state !== "secured" && c.p.state !== "carried"),
-            when: (S, c) => (st.helperCount(S) >= 2 || S.credibility > 55) &&
-                            (c.p.state === "down" || P.worthAsking(S, c.p, 15)),
-            label: (S, c) => "Pass " + who(c) + " forward, hand to hand",
-            detail: "Down the aisle over the heads of everybody who is still sitting down.",
-            cost: 26,
-            run(S, c) {
-                const p = c.p;
-                const roll = P.convince(S, p, 15);
-                if (!roll.ok && p.state !== "down") {
-                    return { text: p.name + " will not go and the four people you needed to pass " +
-                        "them to have gone back to looking out of the window.", kind: "bad" };
-                }
-                p.x = cabin.FWD_CROSS_X; p.y = cabin.AISLE_Y;
-                p.state = "secured";
-                p.securedAt = S.clock.elapsed;
-                S.stats.carriesCompleted++;
-                st.reindex(S);
-                PRS.audio.play("secure");
-                return { text: p.name + " goes forward over eleven rows of raised hands and " +
-                    "arrives at the forward galley in nineteen seconds. That is four times faster " +
-                    "than you can walk it. " + st.securedCount(S) + " of 61.", kind: "great" };
-            },
-        },
-
         // ---------------------------------------------------------------------- recruitment ---
         {
             id: "people.recruit", deck: "people", tags: ["social"], danger: "good",
@@ -269,32 +204,6 @@
                 P.recruit(S, p, "They are going to work the cabin until this ends.");
                 return { text: p.name + " unbuckles, stands up, and asks who is next. " +
                     st.helperCount(S) + " people are now doing this instead of one.", kind: "great" };
-            },
-        },
-
-        {
-            id: "people.recruit_row", deck: "people", tags: ["social"], danger: "good",
-            when: (S) => st.hasPerk(S, "flock") && cabin.rowAt(S.player.x) !== null &&
-                         S.pax.some((p) => p.row === cabin.rowAt(S.player.x) && !p.helper &&
-                             p.state !== "down" && p.state !== "secured" && p.state !== "dead" &&
-                             P.worthAsking(S, p, 10)),
-            label: (S) => "Ask the whole of row " + cabin.rowAt(S.player.x) + " to help",
-            detail: "Six people at once. This is what the perk is for.",
-            cost: 34,
-            run(S) {
-                const row = cabin.rowAt(S.player.x);
-                const here = S.pax.filter((p) => p.row === row && !p.helper &&
-                    p.state !== "down" && p.state !== "secured" && p.state !== "dead");
-                let n = 0;
-                for (const p of here) {
-                    const roll = P.convince(S, p, 10);
-                    if (roll.ok) { P.recruit(S, p); n++; }
-                }
-                if (!n) return { text: "Row " + row + " looks at you. Row " + row + " looks away.",
-                                 kind: "bad" };
-                return { text: n + " of row " + row + " get up at the same time. There is a moment " +
-                    "where the whole row moves together and it is the first time this aeroplane " +
-                    "has done anything as a group.", kind: "great" };
             },
         },
 
@@ -382,45 +291,6 @@
             },
         },
 
-        {
-            id: "people.badge", deck: "people", tags: ["social"], danger: "good",
-            targets: reachAwake,
-            when: (S) => st.hasPerk(S, "authority"),
-            label: (S, c) => "Show " + who(c) + " the badge",
-            detail: "Ends the conversation. That is what it is for.",
-            cost: 6,
-            run(S, c) {
-                c.p.trust = 80;
-                c.p.belted = false;
-                c.p.state = P.looseState(c.p);
-                c.p.awareness = Math.min(100, c.p.awareness + 30);
-                S.credibility = Math.min(100, S.credibility + 5);
-                return { text: c.p.name + " reads the badge, goes very slightly grey, and does " +
-                    "exactly what you say for the rest of the flight.", kind: "good" };
-            },
-        },
-
-        {
-            id: "people.restrain", deck: "people", tags: ["social"], danger: "neutral",
-            targets: (S) => reachAwake(S).filter((c) => c.p.state === "aisle" ||
-                                                        c.p.traits.indexOf("hostile") >= 0),
-            when: (S) => st.hasPerk(S, "restrain"),
-            label: (S, c) => "Restrain " + who(c),
-            detail: "They are in the aisle and the aisle is the whole game.",
-            cost: 18,
-            run(S, c) {
-                const p = c.p;
-                p.state = "seated";
-                p.x = p.homeX; p.y = p.homeY;
-                p.belted = true;
-                p.trust = -40;
-                delete S.cabinFlags.aisleBlocked[p.homeX];
-                st.reindex(S);
-                return { text: "You put " + p.name + " back in " + p.seat + " with a wrist lock " +
-                    "and a cable tie. The aisle at row " + p.row + " is clear.", kind: "good" };
-            },
-        },
-
         // ------------------------------------------------------------------------- the body ---
 
         {
@@ -432,28 +302,6 @@
                 c.p.state = "seated";
                 c.p.awareness = Math.min(100, c.p.awareness + 40);
                 return c.p.name + " comes up out of it badly. " + c.p.refuse;
-            },
-        },
-
-        {
-            id: "people.revive", deck: "people", tags: ["hands"], danger: "good",
-            targets: (S) => reachDown(S),
-            when: (S) => st.hasPerk(S, "triage"),
-            label: (S, c) => "Bring " + who(c) + " round",
-            detail: "Airway, oxygen, and a great deal of shouting.",
-            cost: 30,
-            run(S, c) {
-                const p = c.p;
-                p.smokeDose = Math.max(0, p.smokeDose - 26);
-                if (p.smokeDose < P.DOWN_AT) {
-                    p.state = P.looseState(p);
-                    S.stats.revives++;
-                    PRS.audio.play("good");
-                    return { text: p.name + " comes back. Coughing, grey, appalled, and upright. " +
-                        "This is a thing almost nobody on this aeroplane can do.", kind: "great" };
-                }
-                return { text: "You get some air into " + p.name + " and they do not come round. " +
-                    "They are better off than they were.", kind: "plain" };
             },
         },
 
@@ -591,56 +439,6 @@
                 return { text: p.name + " gets up and walks to " + cabin.safeZoneName(p.x) +
                     " without being carried, which took eleven seconds instead of fifty. " +
                     st.securedCount(S) + " of 61.", kind: "great" };
-            },
-        },
-
-        {
-            id: "people.chain", deck: "people", tags: ["social"], danger: "good",
-            when: (S) => cabin.rowAt(S.player.x) !== null && S.credibility > 48 &&
-                         S.pax.some((p) => p.row === cabin.rowAt(S.player.x) &&
-                             p.state !== "secured" && p.state !== "dead" &&
-                             !P.needsCarrying(p) && P.worthAsking(S, p, 14)),
-            label: (S) => "Get row " + cabin.rowAt(S.player.x) + " to hold onto each other and go",
-            detail: "Hands on shoulders. A line. It is how you move a whole row at once.",
-            cost: 62,
-            run(S) {
-                const row = cabin.rowAt(S.player.x);
-                const here = S.pax.filter((p) => p.row === row && p.state !== "secured" &&
-                    p.state !== "dead" && !P.needsCarrying(p));
-                let n = 0;
-                for (const p of here) {
-                    const roll = P.convince(S, p, 14);
-                    if (!roll.ok) continue;
-                    p.x = P.nearestSafeX(p.x); p.y = cabin.AISLE_Y;
-                    p.state = "secured";
-                    p.securedAt = S.clock.elapsed;
-                    S.stats.carriesCompleted++;
-                    n++;
-                }
-                st.reindex(S);
-                if (!n) return { text: "Nobody in row " + row + " takes anybody's shoulder.",
-                                 kind: "bad" };
-                PRS.audio.play("secure");
-                return { text: n + " people leave row " + row + " in a line, each with their hands " +
-                    "on the shoulders of the one in front, in forty seconds. " +
-                    st.securedCount(S) + " of 61.", kind: "great" };
-            },
-        },
-
-        {
-            id: "people.count_rows", deck: "people", tags: ["social"], danger: "good",
-            targets: reachAwake,
-            when: (S) => st.hasPerk(S, "counted_the_rows"),
-            label: (S, c) => "Tell " + who(c) + " how many rows to the exit",
-            detail: "You counted them before the doors closed. Everybody should. Nobody does.",
-            cost: 9,
-            run(S, c) {
-                c.p.trust = Math.min(100, c.p.trust + 30);
-                c.p.panic = Math.max(0, c.p.panic - 24);
-                c.p.knowsRows = true;
-                return { text: "“Four rows forward, then it's on your left. Four. Say it.” " +
-                    c.p.name + " says it. In smoke you cannot see through, that is the difference " +
-                    "between a person who gets out and a person who does not.", kind: "good" };
             },
         },
     ]);

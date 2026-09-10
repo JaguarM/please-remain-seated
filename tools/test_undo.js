@@ -166,7 +166,7 @@ for (let run = 0; run < 14; run++) {
 }
 
 // The bots do not go looking in bins, so the reveal rule is checked deliberately.
-for (const id of ["fire.open_bin", "loot.scan_row", "loot.galley_drawer", "extra.head_count"]) {
+for (const id of ["fire.open_bin", "loot.ask_carrying", "loot.galley_drawer", "extra.chip"]) {
     const S = fresh(9100, "kip");
     const def = PRS.actions.byId(id);
     if (!def) { problems.push("no such action: " + id); continue; }

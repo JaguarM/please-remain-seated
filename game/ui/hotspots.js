@@ -42,16 +42,15 @@
     // it costs, and folded under "more", because a card with nineteen rows on it is the list
     // again with a border round it.
     const FIRST = {};
-    ["people.put_down", "people.stop_drag", "people.carry", "people.drag", "items.strap_drag",
-     "items.carrier_child", "extra.child_carry_pair", "extra.pet", "people.follow",
-     "people.recruit", "people.pass_forward", "people.show_photo", "people.direct_helper",
-     "people.revive", "loot.ask_carrying", "loot.ask_for", "loot.take_down",
+    ["people.put_down", "people.stop_drag", "people.carry", "people.drag",
+     "extra.child_carry_pair", "people.follow", "people.recruit", "people.show_photo",
+     "people.direct_helper", "loot.ask_carrying", "loot.ask_for", "loot.take_down",
      "fire.douse", "fire.smother", "fire.close_bin", "fire.tape_bin", "fire.photograph",
      "fire.halon", "fire.water_ext", "fire.case_to_lav", "fire.case_in_sink",
      "crew.show_photo", "crew.show_burn", "crew.lead", "crew.tell", "crew.move_trolley",
      "cabin.fill_bottle", "cabin.wet_blanket", "cabin.trigger_detector",
      "cabin.stow_trolley", "cabin.galley_drawer",
-     "self.hood", "self.gloves", "self.goggles",
+     "self.hood", "self.gloves",
     ].forEach((id) => { FIRST[id] = true; });
 
     function rank(e) {

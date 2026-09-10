@@ -10,7 +10,6 @@
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
-    const F = PRS.fire;
 
     function atLav(S) { return cabin.kindAt(S.player.x, S.player.y) === "lav"; }
     function atGalley(S) {
@@ -18,7 +17,6 @@
         return (S.player.x === cabin.FWD_GALLEY_X || S.player.x === cabin.AFT_GALLEY_X) &&
                (kind === "galley" || kind === "aisle");
     }
-    function atExit(S) { return cabin.kindAt(S.player.x, S.player.y) === "exit"; }
     function inRow(S) { return cabin.rowAt(S.player.x) !== null; }
     function slot(S, id) { return st.slotOf(S, id); }
 
@@ -109,29 +107,6 @@
           } },
 
         // -------------------------------------------------------------------- bins and masks ---
-
-        { id: "cabin.blankets", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Get the spare blankets out of the bin", cost: 14,
-          when: (S) => inRow(S) && !S.flags.haveBlankets,
-          run(S) {
-              st.setFlag(S, "haveBlankets", 4);
-              return { text: "Four airline blankets in plastic. They are thin, they are " +
-                  "flammable, and wet they are four more chances to put over somebody's face.",
-                  kind: "good" };
-          } },
-
-        { id: "cabin.hand_blanket", deck: "cabin", tags: ["hands"],
-          targets: (S) => st.reachable(S).filter((p) => !p.masked).map((p) => ({ key: p.id, p: p })),
-          when: (S) => (S.flags.haveBlankets || 0) > 0,
-          label: (S, c) => "Give " + c.p.name + " a blanket for their face",
-          cost: 8,
-          run(S, c) {
-              st.setFlag(S, "haveBlankets", S.flags.haveBlankets - 1);
-              c.p.masked = true;
-              c.p.trust = Math.min(100, c.p.trust + 10);
-              return c.p.name + " has something over their mouth. It is dry, so it is worth about " +
-                  "a third of a wet one, and a third is not nothing.";
-          } },
 
         { id: "cabin.masks_manual", item: (S) => { const s = st.inventoryHas(S, "tool") || st.inventoryHas(S, "cut"); return s ? s.id : null; }, deck: "cabin", tags: ["hands", "fiddly"], danger: "good",
           label: "Force the oxygen mask panel open", cost: 18,

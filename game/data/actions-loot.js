@@ -67,26 +67,6 @@
             },
         },
 
-        {
-            id: "loot.scan_row", deck: "people", tags: ["reveal", "look"], danger: "good",
-            label: "Look at what people around you are holding",
-            detail: "Everybody within a couple of rows, at once, instead of one at a time.",
-            when: (S) => st.withinEarshot(S, 2).some((p) => p.carries && !p.revealed),
-            cost: 14,
-            run(S) {
-                const found = [];
-                for (const p of st.withinEarshot(S, 2)) {
-                    if (!p.carries || p.revealed) continue;
-                    reveal(S, p);
-                    found.push(p.name + " (" + p.seat + "): " +
-                               D().byId(p.carries).name.toLowerCase());
-                }
-                if (!found.length) return "Nothing anybody near you is holding is any use.";
-                return { text: "Fourteen seconds of actually looking at people instead of past " +
-                    "them: " + found.join("; ") + ".", kind: "great" };
-            },
-        },
-
         // ---------------------------------------------------------------- getting hold of it ---
         {
             id: "loot.ask_for", deck: "people", tags: ["reveal", "social"], danger: "good",
