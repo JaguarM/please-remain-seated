@@ -1,9 +1,6 @@
-// The sprite atlas: pixelmap.js's drawSprite, plus the cache the cabin needs to draw two hundred
-// and seventy tiles sixty times a second without repainting a thousand fillRects each frame.
-//
-// The maps come from two places and neither knows about the other:
-//   window.PRS_ART.cabin    make_cabin_textures.py     seats, people, fire, the loadout
-//   window.PRS_ART.nauvis   pixel-workshop/sprites.json  the modpack's item icons, reused
+// The sprite atlas: draws an ASCII map with a palette, plus the cache the cabin needs to draw
+// two hundred and seventy tiles sixty times a second without repainting a thousand fillRects
+// each frame. The maps are `window.PRS_ART.cabin`, written by make_cabin_textures.py.
 //
 // A passenger is one map and a palette override, so `key(name, override)` has to be cheap and
 // stable: it is the sprite name and the overridden colours in key order, and every distinct
@@ -24,7 +21,6 @@
     }
 
     function boot() {
-        register(global.PRS_ART && global.PRS_ART.nauvis);
         register(global.PRS_ART && global.PRS_ART.cabin);
         return Object.keys(sheets).length;
     }
@@ -41,7 +37,7 @@
         return Object.keys(sheets).sort();
     }
 
-    /** Straight to a context, the way pixelmap.js does it. For one-offs and for the editor. */
+    /** Straight to a context. For one-offs. */
     function draw(ctx, name, x, y, scale, override) {
         const sprite = sheets[name];
         if (!sprite) return false;

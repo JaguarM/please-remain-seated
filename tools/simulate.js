@@ -62,7 +62,6 @@ function makeSandbox() {
 // The dependency order from index.html. Kept here rather than parsed out of the HTML so that a
 // breakage in one is not silently papered over by the other.
 const FILES = [
-    "game/art/nauvis-sprites.js",
     "game/art/cabin-sprites.js",
     "game/engine/core.js",
     "game/engine/atlas.js",

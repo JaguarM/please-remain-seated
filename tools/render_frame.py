@@ -27,15 +27,12 @@ ROOT = os.path.join(HERE, os.pardir)
 
 
 def load_sprites():
-    """The two generated sprite bundles, read back out of the classic scripts they ship as."""
-    sprites = {}
-    for name in ("nauvis-sprites.js", "cabin-sprites.js"):
-        path = os.path.join(ROOT, "game", "art", name)
-        text = io.open(path, encoding="utf-8").read()
-        start = text.index("= ", text.index("window.PRS_ART.")) + 2
-        end = text.rindex(";")
-        sprites.update(json.loads(text[start:end]))
-    return sprites
+    """The generated sprite bundle, read back out of the classic script it ships as."""
+    path = os.path.join(ROOT, "game", "art", "cabin-sprites.js")
+    text = io.open(path, encoding="utf-8").read()
+    start = text.index("= ", text.index("window.PRS_ART.")) + 2
+    end = text.rindex(";")
+    return json.loads(text[start:end])
 
 
 def blit(img, sprites, name, ox, oy, scale, palette_override=None, alpha=1.0):

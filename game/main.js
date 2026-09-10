@@ -29,8 +29,7 @@
             box.appendChild(ul);
             const hint = document.createElement("p");
             hint.textContent = "If you have just regenerated the art, run " +
-                "`python pixel-workshop/make_cabin_textures.py` and " +
-                "`python tools/bundle_nauvis_sprites.py` and reload.";
+                "`python pixel-workshop/make_cabin_textures.py` and reload.";
             box.appendChild(hint);
             host.appendChild(box);
             return;

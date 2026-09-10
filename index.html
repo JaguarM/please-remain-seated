@@ -22,12 +22,10 @@ clock only moves when you do.">
 <!--
   Classic scripts, in order, on purpose. The game has to run from a double-clicked index.html and
   a file:// page may not load an ES module or fetch a sibling JSON, so every file assigns to one
-  global and the order below is the dependency graph. The two art files are generated:
+  global and the order below is the dependency graph. The art file is generated:
       python pixel-workshop/make_cabin_textures.py
-      python tools/bundle_nauvis_sprites.py
 -->
 
-<script src="game/art/nauvis-sprites.js"></script>
 <script src="game/art/cabin-sprites.js"></script>
 
 <script src="game/engine/core.js"></script>
