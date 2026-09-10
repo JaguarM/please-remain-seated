@@ -155,8 +155,11 @@
     // -------------------------------------------------------------------------------- halo ---
     //
     // The light round the thing under the pointer is the thing's own shape: every transparent
-    // pixel that touches an opaque one, one pixel deep, going round the corners. It is worked
-    // out from the map once per sprite and colour and kept, like any other stamp.
+    // pixel that shares an edge with an opaque one, one pixel deep. Edges only - a pixel that
+    // only touches at a corner stays dark - because that is the outline a pixel artist draws by
+    // hand, and taking the diagonals too makes the ring chunky. It is worked out from the map
+    // once per sprite and colour and kept, like any other stamp, at the same whole-pixel scale
+    // as the art, so it is part of the picture rather than a line drawn over it.
 
     const halos = new Map();
 
@@ -177,18 +180,18 @@
         for (let y = -1; y <= h; y++) {
             for (let x = -1; x <= w; x++) {
                 if (solid(x, y)) continue;
-                let near = false;
-                for (let dy = -1; dy <= 1 && !near; dy++) {
-                    for (let dx = -1; dx <= 1; dx++) {
-                        if ((dx || dy) && solid(x + dx, y + dy)) { near = true; break; }
-                    }
+                if (solid(x - 1, y) || solid(x + 1, y) || solid(x, y - 1) || solid(x, y + 1)) {
+                    cx.fillRect((x + 1) * scale, (y + 1) * scale, scale, scale);
                 }
-                if (near) cx.fillRect((x + 1) * scale, (y + 1) * scale, scale, scale);
             }
         }
         halos.set(key, canvas);
         return canvas;
     }
+
+    // How much of the halo shows. Translucent, and steady: a one-pixel line that fades in and
+    // out shimmers, and a solid white one is a wall round the thing rather than a light on it.
+    const HALO_ALPHA = { person: 0.55, fire: 0.62 };
 
     /** A one-pixel halo round a sprite drawn at (px, py), in a colour, at an alpha. */
     function halo(ctx, name, px, py, scale, colour, alpha) {
@@ -693,12 +696,12 @@
         }
         if (!opts.hover || !cabin.inBounds(opts.hover.x, opts.hover.y)) return;
         const hx = opts.hover.x * T, hy = opts.hover.y * T;
-        const beat = 0.72 + 0.28 * Math.abs(Math.sin((t || 0) * 0.005));
 
         if (tg && tg.fig) {
             // A body: one pixel of light all the way round it, in its own shape.
             const f = tg.fig;
-            halo(ctx, f.sprite, hx + f.dx * scale, hy + f.dy * scale, scale, "#ffffff", beat);
+            halo(ctx, f.sprite, hx + f.dx * scale, hy + f.dy * scale, scale, "#ffffff",
+                 HALO_ALPHA.person);
             return;
         }
         if (tg && tg.kind === "fire") {
@@ -706,13 +709,13 @@
             // too sparse to have a shape, so they get the tile.
             const name = fireSpriteAt(S, opts.hover.x, opts.hover.y);
             if (name && name !== "ember") {
-                halo(ctx, name, hx, hy, scale, "#fff4b0", beat);
+                halo(ctx, name, hx, hy, scale, "#fff4b0", HALO_ALPHA.fire);
             } else {
                 ctx.save();
                 ctx.strokeStyle = "#fff4b0";
-                ctx.globalAlpha = beat;
+                ctx.globalAlpha = HALO_ALPHA.fire;
                 ctx.lineWidth = Math.max(1, scale);
-                ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
+                ctx.strokeRect(hx + scale * 0.5, hy + scale * 0.5, T - scale, T - scale);
                 ctx.restore();
             }
             return;
