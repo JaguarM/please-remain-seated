@@ -36,13 +36,18 @@
         return DRAW_SCALE;
     }
 
-    /** Which tile the mouse is over, or null. Works at any CSS size the canvas ends up. */
+    /**
+     * Which tile the mouse is over, or null, and where in the tile: `fx` and `fy` run 0..1
+     * across it, so a click can tell the person in a burning seat from the fire round them.
+     * Works at any CSS size the canvas ends up.
+     */
     function tileAt(canvas, scale, clientX, clientY) {
         const r = canvas.getBoundingClientRect();
-        const x = Math.floor((clientX - r.left) / (r.width / cabin.W));
-        const y = Math.floor((clientY - r.top) / (r.height / cabin.H));
+        const tw = r.width / cabin.W, th = r.height / cabin.H;
+        const px = (clientX - r.left) / tw, py = (clientY - r.top) / th;
+        const x = Math.floor(px), y = Math.floor(py);
         if (!cabin.inBounds(x, y)) return null;
-        return { x: x, y: y };
+        return { x: x, y: y, fx: px - x, fy: py - y };
     }
 
     // ------------------------------------------------------------------------------- faces ---
@@ -64,6 +69,75 @@
         if (fear > 62) return "pax_afraid";
         if (fear > 27) return "pax_worried";
         return "pax";
+    }
+
+    // ----------------------------------------------------------------------------- figures ---
+    //
+    // A person no longer fills their cell. The body stops three pixels short of the edge on every
+    // side, so the fire a person is sitting in shows all the way round them, and a click on the
+    // person is not a click on the fire. Where exactly the body is comes from the art itself -
+    // the bounding box of the sprite's opaque pixels - so if the maps change, this follows.
+
+    const boxes = {};
+
+    /** The opaque extent of a sprite, in sprite pixels: [left, top, right, bottom), cached. */
+    function spriteBox(name) {
+        let b = boxes[name];
+        if (b) return b;
+        const sp = atlas.get(name);
+        let x0 = 16, y0 = 16, x1 = 0, y1 = 0;
+        if (sp) {
+            sp.rows.forEach((row, y) => {
+                for (let x = 0; x < row.length; x++) {
+                    if (row[x] === ".") continue;
+                    if (x < x0) x0 = x; if (x + 1 > x1) x1 = x + 1;
+                    if (y < y0) y0 = y; if (y + 1 > y1) y1 = y + 1;
+                }
+            });
+        }
+        if (x1 <= x0) { x0 = 0; y0 = 0; x1 = TILE; y1 = TILE; }
+        b = boxes[name] = [x0, y0, x1, y1];
+        return b;
+    }
+
+    /**
+     * Everybody drawn on a tile, in the order they are drawn, each with where their body is in
+     * sprite pixels. The stack fans out exactly as draw() fans it, so the box under the pointer
+     * is the box on the screen. `kind` is person, crew or you.
+     */
+    function figures(S, x, y) {
+        const out = [];
+        let n = 0;
+        for (const p of S.pax) {
+            if (p.state === "gone" || p.state === "carried") continue;
+            if (p.x !== x || p.y !== y) continue;
+            const [dx, dy] = FAN[Math.min(FAN.length - 1, n++)];
+            out.push({ kind: "person", id: p.id, who: p, box: shift(spriteBox(faceOf(p)), dx, dy) });
+        }
+        for (const c of S.crew) {
+            if (c.x !== x || c.y !== y) continue;
+            out.push({ kind: "crew", id: c.id, who: c, box: spriteBox("pax") });
+        }
+        if (S.player.x === x && S.player.y === y) {
+            out.push({ kind: "you", id: "you", who: S.player, box: spriteBox(playerFace(S)) });
+        }
+        return out;
+    }
+
+    function shift(box, dx, dy) {
+        return [box[0] + dx, box[1] + dy, box[2] + dx, box[3] + dy];
+    }
+
+    /** The topmost figure under a point in a tile, or null if the point is on the tile itself. */
+    function figureAt(S, x, y, fx, fy) {
+        const list = figures(S, x, y);
+        const px = fx * TILE, py = fy * TILE;
+        // A pixel of grace all round, because a body outline is a hard thing to land on.
+        for (let i = list.length - 1; i >= 0; i--) {
+            const b = list[i].box;
+            if (px >= b[0] - 1 && px < b[2] + 1 && py >= b[1] - 1 && py < b[3] + 1) return list[i];
+        }
+        return null;
     }
 
     // ---------------------------------------------------------------------------------- fx ---
@@ -192,6 +266,22 @@
             atlas.blit(ctx, "drink_cart", S.cabinFlags.cartX * T, cabin.AISLE_Y * T, scale);
         }
 
+        // ---- fire, under the people ---------------------------------------------------------
+        // A burning tile burns edge to edge from the first stage, and a seat that is on fire is
+        // drawn as a seat that is on fire rather than a fire on top of a seat. It goes under the
+        // people, because the people are what you click, and a person you cannot see for the
+        // flames is a person you cannot click. Every tile flickers on its own phase, so the
+        // cabin never pulses as one.
+        for (let x = 0; x < cabin.W; x++) {
+            for (let y = 0; y < cabin.H; y++) {
+                const i = cabin.idx(x, y);
+                const name = fireSpriteAt(S, x, y);
+                if (!name) continue;
+                const flick = 0.84 + 0.16 * Math.sin(t * 0.011 + i * 1.7);
+                atlas.blitAlpha(ctx, name, x * T, y * T, scale, flick);
+            }
+        }
+
         // ---- everything you could put a hand on without moving ------------------------------
         // Arm's reach is a rule the player is subject to on every single turn and could not see
         // until now. It is drawn under the people so it never gets in the way of a face.
@@ -240,7 +330,7 @@
                 ctx.save();
                 ctx.globalAlpha = 0.75;
                 ctx.fillStyle = "#5fd67a";
-                ctx.fillRect(px + 2 * scale, py + T - 3 * scale, T - 4 * scale, 2 * scale);
+                ctx.fillRect(px + 3 * scale, py + T - 2 * scale, T - 6 * scale, 2 * scale);
                 ctx.restore();
             }
         }
@@ -291,21 +381,6 @@
                                    paletteOf(q));
         }
 
-        // ---- fire ----------------------------------------------------------------------------
-        for (let x = 0; x < cabin.W; x++) {
-            for (let y = 0; y < cabin.H; y++) {
-                const i = cabin.idx(x, y);
-                const v = f.intensity[i];
-                if (v <= 0.5) continue;
-                const name = PRS.fire.fireSprite(v);
-                if (!name) continue;
-                // Every tile flickers on its own phase, so the cabin never pulses as one.
-                const flick = 0.78 + 0.22 * Math.sin(t * 0.011 + i * 1.7);
-                const wob = Math.round(Math.sin(t * 0.013 + i) * 0.5) * scale;
-                atlas.blitAlpha(ctx, name, x * T + wob, y * T, scale, flick);
-            }
-        }
-
         // ---- smoke, over everything, because that is what it does ---------------------------
         for (let x = 0; x < cabin.W; x++) {
             for (let y = 0; y < cabin.H; y++) {
@@ -325,11 +400,10 @@
         for (let x = 0; x < cabin.W; x++) {
             for (let y = 0; y < cabin.H; y++) {
                 const i = cabin.idx(x, y);
-                const v = f.intensity[i];
-                if (v <= 4) continue;
+                if (f.intensity[i] <= 4) continue;
                 const behind = clamp01(f.smoke[i] / 70);
                 if (behind < 0.15) continue;
-                const name = PRS.fire.fireSprite(v);
+                const name = fireSpriteAt(S, x, y);
                 if (!name) continue;
                 atlas.blitAlpha(ctx, name, x * T, y * T, scale,
                                 behind * (0.4 + 0.2 * Math.sin(t * 0.009 + i)));
@@ -362,16 +436,35 @@
 
         drawPlan(ctx, S, opts, T, scale, t);
         // The thing the card is open on. Steady and white, so it reads as "selected" rather than
-        // as one more thing the pointer is proposing.
+        // as one more thing the pointer is proposing. A person gets the brackets round their
+        // body; the fire gets them round the tile, because the fire is the tile.
         if (opts.selected && cabin.inBounds(opts.selected.x, opts.selected.y)) {
-            bracket(ctx, opts.selected.x, opts.selected.y, T, scale, "#ffffff", 0.9);
+            if (opts.selected.box) {
+                boxBracket(ctx, opts.selected.x, opts.selected.y, opts.selected.box, T, scale,
+                           "#ffffff", 0.9);
+            } else {
+                bracket(ctx, opts.selected.x, opts.selected.y, T, scale, "#ffffff", 0.9);
+            }
         }
-        drawHover(ctx, S, opts, T, scale);
+        drawHover(ctx, S, opts, T, scale, t);
         drawLabels(ctx, S, T, scale, opts);
         drawFx(ctx, T, scale, t);
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         drawVeil(ctx, S, t);
+    }
+
+    /**
+     * What a burning tile is drawn with. A seat that is alight is `seat_fire_N`, a seat with the
+     * fire in it; anything else is `fire_N`, in one of two orientations by tile so a row of them
+     * is not a row of stamps. Embers are embers. tools/render_frame.py follows the same rule.
+     */
+    function fireSpriteAt(S, x, y) {
+        const base = PRS.fire.fireSprite(S.fire.intensity[cabin.idx(x, y)]);
+        if (!base) return null;
+        if (base.indexOf("fire_") !== 0) return base;
+        if (cabin.kindAt(x, y) === "seat") return "seat_" + base;
+        return base + (((x + y) & 1) ? "b" : "");
     }
 
     // ------------------------------------------------------------------------------- zones ---
@@ -470,7 +563,19 @@
 
     /** Four corner brackets around a tile. A box would hide the thing it is pointing at. */
     function bracket(ctx, x, y, T, scale, colour, alpha) {
-        const px = x * T, py = y * T, n = Math.round(T * 0.24);
+        corners(ctx, x * T, y * T, T, T, scale, colour, alpha);
+    }
+
+    /** The same brackets, round a body rather than a tile: `box` is in sprite pixels. */
+    function boxBracket(ctx, x, y, box, T, scale, colour, alpha) {
+        const pad = scale;
+        corners(ctx, x * T + box[0] * scale - pad, y * T + box[1] * scale - pad,
+                (box[2] - box[0]) * scale + 2 * pad, (box[3] - box[1]) * scale + 2 * pad,
+                scale, colour, alpha);
+    }
+
+    function corners(ctx, px, py, w, h, scale, colour, alpha) {
+        const n = Math.round(Math.min(w, h) * 0.24);
         ctx.save();
         ctx.globalAlpha = alpha;
         ctx.strokeStyle = colour;
@@ -478,9 +583,9 @@
         const o = scale * 0.5;
         ctx.beginPath();
         ctx.moveTo(px + o, py + n);       ctx.lineTo(px + o, py + o);      ctx.lineTo(px + n, py + o);
-        ctx.moveTo(px + T - n, py + o);   ctx.lineTo(px + T - o, py + o);  ctx.lineTo(px + T - o, py + n);
-        ctx.moveTo(px + T - o, py + T - n); ctx.lineTo(px + T - o, py + T - o); ctx.lineTo(px + T - n, py + T - o);
-        ctx.moveTo(px + n, py + T - o);   ctx.lineTo(px + o, py + T - o);  ctx.lineTo(px + o, py + T - n);
+        ctx.moveTo(px + w - n, py + o);   ctx.lineTo(px + w - o, py + o);  ctx.lineTo(px + w - o, py + n);
+        ctx.moveTo(px + w - o, py + h - n); ctx.lineTo(px + w - o, py + h - o); ctx.lineTo(px + w - n, py + h - o);
+        ctx.moveTo(px + n, py + h - o);   ctx.lineTo(px + o, py + h - o);  ctx.lineTo(px + o, py + h - n);
         ctx.stroke();
         ctx.restore();
     }
@@ -507,9 +612,17 @@
 
     // ------------------------------------------------------------------------------- hover ---
 
-    function drawHover(ctx, S, opts, T, scale) {
+    /**
+     * What is under the pointer, lit. There are three things you can click - a person, the fire,
+     * yourself - and the light says which one this click would be: a person is lit round their
+     * body, the fire round its tile, and the floor gets the walk drawn on it with the price.
+     * `opts.target` is the thing hotspots.js says the click would open, so the light and the
+     * click cannot disagree.
+     */
+    function drawHover(ctx, S, opts, T, scale, t) {
         const hr = opts.hoverRoute;
-        if (hr && hr.path.length) {
+        const tg = opts.target;
+        if (hr && hr.path.length && (!tg || tg.kind === "walk")) {
             ctx.save();
             ctx.strokeStyle = "rgba(255,213,74,0.75)";
             ctx.lineWidth = Math.max(1, scale);
@@ -520,15 +633,46 @@
             ctx.stroke();
             ctx.restore();
         }
-        if (opts.hover && cabin.inBounds(opts.hover.x, opts.hover.y)) {
-            const hx = opts.hover.x * T, hy = opts.hover.y * T;
+        if (!opts.hover || !cabin.inBounds(opts.hover.x, opts.hover.y)) return;
+        const hx = opts.hover.x * T, hy = opts.hover.y * T;
+        const beat = 0.7 + 0.3 * Math.abs(Math.sin((t || 0) * 0.005));
+
+        if (tg && tg.box) {
+            // A body: a soft light behind it and a line round it, so the person under the
+            // pointer is the brightest thing on the aeroplane.
+            const b = tg.box, pad = scale;
+            const bx = hx + b[0] * scale - pad, by = hy + b[1] * scale - pad;
+            const bw = (b[2] - b[0]) * scale + 2 * pad, bh = (b[3] - b[1]) * scale + 2 * pad;
             ctx.save();
-            ctx.strokeStyle = "#ffd54a";
+            ctx.fillStyle = "rgba(255,255,255,0.16)";
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.strokeStyle = "#ffffff";
+            ctx.globalAlpha = beat;
+            ctx.lineWidth = Math.max(1, scale);
+            ctx.strokeRect(bx + 0.5, by + 0.5, bw - 1, bh - 1);
+            ctx.restore();
+            return;
+        }
+        if (tg && tg.kind === "fire") {
+            // The fire is the tile, so the whole tile lights.
+            ctx.save();
+            ctx.fillStyle = "rgba(255,240,200,0.14)";
+            ctx.fillRect(hx, hy, T, T);
+            ctx.strokeStyle = "#fff4b0";
+            ctx.globalAlpha = beat;
             ctx.lineWidth = Math.max(1, scale);
             ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
             ctx.restore();
-            if (hr) priceTag(ctx, opts.hover.x, opts.hover.y, T, scale, hr.cost + "s", "#ffd54a");
+            return;
         }
+        if (tg && tg.kind === "none") return;
+        // The floor: the tile, and the price of walking to it.
+        ctx.save();
+        ctx.strokeStyle = "#ffd54a";
+        ctx.lineWidth = Math.max(1, scale);
+        ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
+        ctx.restore();
+        if (hr) priceTag(ctx, opts.hover.x, opts.hover.y, T, scale, hr.cost + "s", "#ffd54a");
     }
 
     // ------------------------------------------------------------------------------ labels ---
@@ -690,7 +834,8 @@
 
     PRS.render = {
         TILE, fit, tileAt, draw, drawSummary,
-        paletteOf, faceOf, zoneAir,
+        paletteOf, faceOf, zoneAir, fireSpriteAt,
+        spriteBox, figures, figureAt,
         fx: { say, pulse, flash: flashOver, shake, clear: clearFx },
     };
 })(window);

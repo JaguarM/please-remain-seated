@@ -7,7 +7,7 @@
 
 This is the screenshot in the README, and it is not a screenshot: it is the game's own sprite
 maps and the game's own simulation, drawn by the same rules the canvas renderer follows, in the
-same order - floor, aeroplane, people, fire, smoke, and then the player again over the top of the
+same order - floor, aeroplane, fire, people, smoke, and then the player again over the top of the
 smoke because otherwise you cannot find them.
 
 Keeping it in Python rather than screenshotting a browser means the picture can be regenerated
@@ -83,6 +83,17 @@ def fire_sprite(v):
     return "fire_4"
 
 
+def fire_sprite_at(tile, x, y):
+    """The same rule as PRS.render.fireSpriteAt: a burning seat is a seat on fire, anything else
+    is the fire tile in one of two orientations, and embers are embers."""
+    base = fire_sprite(tile["fire"])
+    if not base or not base.startswith("fire_"):
+        return base
+    if tile["kind"] == "seat":
+        return "seat_" + base
+    return base + ("b" if (x + y) & 1 else "")
+
+
 def smoke_sprite(v):
     if v < 6:
         return None
@@ -150,6 +161,13 @@ def render(frame, sprites, scale):
     if frame.get("cart"):
         blit(img, sprites, "drink_cart", frame["cart"]["x"] * T, frame["cart"]["y"] * T, scale)
 
+    # ---- fire, under the people, because the people are what you click -----------------------
+    for y in range(H):
+        for x in range(W):
+            name = fire_sprite_at(frame["tiles"][y][x], x, y)
+            if name:
+                blit(img, sprites, name, x * T, y * T, scale, alpha=0.92)
+
     # ---- people ------------------------------------------------------------------------------
     # Every sprite name and every palette was decided by game/sim/pax.js and written into the
     # frame, so there is nothing to get wrong here: who looks frightened is not this file's call.
@@ -178,12 +196,7 @@ def render(frame, sprites, scale):
     blit(img, sprites, "player_ring", P["x"] * T, P["y"] * T, scale)
     blit(img, sprites, P["sprite"], P["x"] * T, P["y"] * T, scale, P["palette"])
 
-    # ---- fire, then smoke over everything, then the fire glowing back through it --------------
-    for y in range(H):
-        for x in range(W):
-            name = fire_sprite(frame["tiles"][y][x]["fire"])
-            if name:
-                blit(img, sprites, name, x * T, y * T, scale, alpha=0.92)
+    # ---- smoke over everything, then the fire glowing back through it ------------------------
     for y in range(H):
         for x in range(W):
             v = frame["tiles"][y][x]["smoke"]
@@ -195,7 +208,7 @@ def render(frame, sprites, scale):
             t = frame["tiles"][y][x]
             if t["fire"] <= 4 or t["smoke"] < 10:
                 continue
-            name = fire_sprite(t["fire"])
+            name = fire_sprite_at(t, x, y)
             if name:
                 blit(img, sprites, name, x * T, y * T, scale,
                      alpha=min(1.0, t["smoke"] / 70) * 0.5)

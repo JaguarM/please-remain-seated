@@ -92,16 +92,17 @@
                     "other six are aboard already: two in the galley drawers, and four in other " +
                     "passengers' laps. Asking somebody what they have got costs seven seconds " +
                     "and is the same conversation that turns them into a helper."),
-                para("The aeroplane is the menu.", "Click a person, the fire, a door, a galley " +
-                    "or the lavatory and a card opens with the handful of things you could do " +
-                    "about it, each with its price in seconds. Out of reach is not a dead " +
-                    "click: the card says how long the walk is and what you could do once you " +
-                    "got there, and one click does both. Click the floor to just walk; arrow " +
-                    "keys or WASD step one tile."),
-                para("Your bag is buttons.", "The things on you are at the top right. Click " +
-                    "the bottle and the card says what it can do from where you are standing, " +
-                    "who you could give it to, and where it would be worth carrying - the " +
-                    "lavatory tap, or the fire."),
+                para("The aeroplane is the menu, and there are three things on it.", "A person, " +
+                    "the fire, and you. Click one and a card opens with the handful of things " +
+                    "you could do about it, each with its price in seconds. Out of reach is not " +
+                    "a dead click: the card says how long the walk is and what you could do " +
+                    "once you got there, and one click does both. Everything else is floor, " +
+                    "and clicking floor walks you there; arrow keys or WASD step one tile."),
+                para("You are the biggest card.", "Click yourself for everything about the " +
+                    "place you are standing in - the tap, the galley drawer, the trolley, the " +
+                    "lockers - and for the things on you: the hood goes on from here, the " +
+                    "bottle gets used on the fire or given to a person, and the card says where " +
+                    "each thing in your bag would be worth carrying."),
                 para("You can change your mind.", "Backspace undoes your last action and " +
                     "gives you the seconds back; a run of the same action undoes as one. " +
                     "What it will not undo is anything that told you something you did not " +
@@ -109,11 +110,10 @@
                     "you cannot un-see that. And repeating an action after an undo gives " +
                     "exactly the same result, down to the sentence: you can change your " +
                     "mind, you cannot change your luck."),
-                para("Three things are always suggested.", "Under the bag, with the reason for " +
-                    "each. They are what is in front of you, not the answer - the game does " +
-                    "not have one. Press 1–9 for the rows of whatever is open. The full list " +
-                    "of everything possible from where you stand is folded up underneath, for " +
-                    "anybody who wants to read all of it; Tab opens it."),
+                para("Pointing costs nothing.", "Whatever is under the pointer lights up - the " +
+                    "person, the fire, or the tile you would walk to, with the price on it - so " +
+                    "you can see what a click would be before it is one. Press 1–9 for the " +
+                    "rows of an open card."),
                 el("div", { class: "title-buttons" }, [
                     el("button", { class: "big", text: "All right", onclick: characters }),
                     el("button", { text: "Back", onclick: title }),

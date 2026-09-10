@@ -118,32 +118,35 @@ What is in it
 Controls
 --------
 
-**The aeroplane is the menu.** Click a person, the fire, a door, a galley or the lavatory and a
-card opens on it with the handful of things you could do about it, each priced in seconds. Out of
-reach is not a dead click: the card says how long the walk is and what you could do once you got
-there, and one click on any of those does both. Click the floor to just walk; **arrow keys** or
-**WASD** step one tile. When one tile has several things on it — Chip Vanterpool and the fire in
-the locker above him — the card gets a tab for each.
+**The aeroplane is the menu, and there are three things on it.** A person, the fire, and you.
+Click one and a card opens on it with the handful of things you could do about it, each priced in
+seconds. Out of reach is not a dead click: the card says how long the walk is and what you could
+do once you got there, and one click on any of those does both. Everything else on the picture is
+floor, and clicking floor walks you there; **arrow keys** or **WASD** step one tile. There is no
+list of actions anywhere on the screen. There used to be, and then there were three suggestions,
+and now the aeroplane is the whole interface.
 
-**Your bag is buttons.** The things on you are at the top right. Click the bottle and the card
-says what it can do from where you are standing, who you could give it to, and where it would be
-worth carrying — the lavatory tap when it is empty, the fire when it is not.
+**You are the biggest card.** Click yourself for everything about the place you are standing in
+— the tap, the galley drawer, the trolley, the lockers — and for the things in your bag: the hood
+goes on from here, and the card says where the bottle would be worth carrying, to the lavatory
+tap when it is empty and to the fire when it is not. Walk into the lavatory or a galley and your
+card opens by itself, because that is what you went there for. Things used *on* somebody — give
+her the water — are on their card, not yours.
 
-**Three things are always suggested**, under the bag, with the reason for each. They are what is
-in front of you, not the answer; a player who follows them every turn will do fine and no better.
-**1–9** picks a row of whatever is open. **Backspace** undoes. **M** turns the sound off. **?**
-brings the four-line briefing back.
+**A person is the thing in the middle of the tile, and the fire is the tile.** Nobody fills their
+seat any more; a burning tile burns edge to edge from the first stage, and a seat that is on fire
+is drawn as a seat that is on fire. So on a burning seat with somebody in it, the body is the
+person and the flames round it are the fire, and the card gets a tab for the other one.
 
-**The list is still there, folded.** Everything possible from where you stand, grouped by deck and
-sorted by cost, under a toggle at the bottom of the right-hand column; **Tab** opens it and cycles
-the decks, **/** focuses its filter. Nothing in it is ever impossible, and nothing possible is ever
-missing from it.
+**Pointing costs nothing, and it shows.** Whatever is under the pointer lights up: a person round
+their body, the fire round its tile, the floor with the price of walking to it. Hover somebody and
+you get their name, their weight and what state they are in. Hover a row on a card and the person
+it would happen to is bracketed on the cabin, wherever they are, with the price on their tile.
+Neither direction moves the clock. A plan costs nothing until it is a decision, which is the one
+mercy in this game that is free.
 
-**Pointing costs nothing.** Hover a row and the person it would happen to is bracketed on the
-cabin, wherever they are, with the price on their tile. Hover somebody on the cabin and you get
-their name, their weight, what state they are in, the cheapest things you could do about them,
-and what a click would open. Neither direction moves the clock. A plan costs nothing until it is
-a decision, which is the one mercy in this game that is free.
+**1–9** picks a row of the open card. **Backspace** undoes, from the button under the clock. **M**
+turns the sound off. **?** brings the five-line briefing back.
 
 How it is built
 ---------------
