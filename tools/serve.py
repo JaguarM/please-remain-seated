@@ -2,6 +2,7 @@
 
     python tools/serve.py            # http://localhost:8731
     python tools/serve.py 9000
+    python tools/serve.py 9000 dist/web   # the build that goes to itch, not the working tree
 
 It sends `Cache-Control: no-store`, because the game is thirty classic scripts and a browser will
 happily keep serving yesterday's copy of one of them from its heuristic cache while you wonder why
@@ -35,7 +36,8 @@ class NoCache(http.server.SimpleHTTPRequestHandler):
 
 def main():
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 8731
-    handler = functools.partial(NoCache, directory=ROOT)
+    root = os.path.join(ROOT, sys.argv[2]) if len(sys.argv) > 2 else ROOT
+    handler = functools.partial(NoCache, directory=root)
     http.server.ThreadingHTTPServer.allow_reuse_address = True
     with http.server.ThreadingHTTPServer(("", port), handler) as httpd:
         print("Please Remain Seated on http://localhost:%d  (no-store; ctrl-c to stop)" % port)

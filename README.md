@@ -183,6 +183,35 @@ what you were trying to do. "Save recorded flights" writes them to a file, and `
 replays every one exactly and flies the same seed with the idle, douse, good and blend bots, so
 a flight a person played can be read against the table.
 
+Publishing it
+-------------
+
+The game is on itch.io at <https://jaguarm.itch.io/please-remain-seated>, and it goes there with
+
+    python tools/publish_itch.py              # builds, then pushes with butler
+    python tools/publish_itch.py --dry-run    # builds and stops
+    python tools/serve.py 8745 dist/web       # play the build, not the working tree
+
+`tools/build_web.py` reads index.html and copies exactly the files index.html loads into
+`dist/web`, which is thirty-eight files and 580 kB. That is not tidiness. itch.io refuses an
+HTML5 upload with more than a thousand files in it, and this folder zipped whole is twelve
+hundred: nine hundred of them are git objects, and the rest are the sprite generator, the frame
+renderer, `__pycache__` and a README with a picture in it. None of that is the aeroplane.
+
+Because the list comes out of index.html rather than being written down twice, a script added to
+the page is in the next build and a script taken off it is not. If the page asks for a file that
+is not on disk the build stops instead of shipping without it.
+
+The channel is `html5` and the name is load-bearing: itch treats a build as playable in the
+browser when the channel name contains "html", so `web` would upload a download. The build is
+stamped with the git commit it came from, which is how you tell later which one is on the page.
+butler sends only changed blocks, so a typo fix is a twenty-kilobyte upload.
+
+The page settings live on itch and are set by hand once: kind "HTML", the html5 upload ticked as
+played in the browser, and a viewport of about 1280x900 with the fullscreen button on. The
+layout is `100vh` with a breakpoint at 1000px, so anything narrower than that gets the stacked
+version in a small box, which is not the game.
+
 Text
 ----
 

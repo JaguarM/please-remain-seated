@@ -5,3 +5,7 @@ pixel-workshop/cabin-preview.png
 
 # Python leaves these behind when tools/ is imported as a module.
 __pycache__/
+
+# What goes to itch.io. tools/build_web.py rebuilds it from index.html in a second, and a copy of
+# the game checked in beside the game is a copy that goes stale.
+dist/
