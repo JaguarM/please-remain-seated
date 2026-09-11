@@ -265,7 +265,7 @@
 
     function pickStander(S) {
         const options = S.pax.filter((p) => (p.state === "standing" || p.state === "aisle") &&
-                                            !p.helper && p.state !== "secured");
+                                            !p.helper);
         if (!options.length) return null;
         return S.rng.pick(options);
     }
@@ -275,7 +275,8 @@
         // out, and they have a cabin to secure, so this happens rarely and it happens slowly.
         if (c.id === "purser" || S.crewPhase < 4) return;
         if ((S.stats.crewSaves || 0) >= 4) return;
-        const candidates = S.pax.filter((p) => (p.state === "down") && !p.carriedBy);
+        const candidates = S.pax.filter((p) => p.state === "down" && !p.carriedBy &&
+                                               !cabin.byTheDoors(p.x));
         if (!candidates.length) return;
         let best = candidates[0], bestD = 1e9;
         for (const p of candidates) {
@@ -286,9 +287,8 @@
         if (Math.abs(c.x - best.x) <= 1 && Math.abs(c.y - best.y) <= 1) {
             c.busy = 96;
             S.stats.crewSaves = (S.stats.crewSaves || 0) + 1;
-            best.state = "secured";
-            best.securedAt = S.clock.elapsed;
-            best.x = c.home; best.y = cabin.AISLE_Y;
+            const r = PRS.pax.refuge(S, c.home);
+            PRS.pax.shelter(S, best, r ? r.x : c.home, r ? r.y : cabin.AISLE_Y);
             PRS.state.reindex(S);
             PRS.state.log(S, c.name + " carries " + best.name + " forward. That is one you " +
                              "did not have to do.", "good");

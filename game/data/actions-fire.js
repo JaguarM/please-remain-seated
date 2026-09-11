@@ -1,9 +1,11 @@
 // Deck: THE FIRE. Every way to attack a fire, and not one of them puts it out.
 //
-// This deck is the trap the game is built around. It is the most satisfying, the most obviously
-// correct, and if you spend the flight in it you will finish with two souls secured and an
-// incident report that uses the word "obstructive". Everything here buys seconds. The people deck
-// spends them.
+// This deck is the half of the game that looks like the whole of it. It is the most satisfying and
+// the most obviously correct, and it does real good: every point of fire held down is smoke that
+// nobody breathes and an aisle somebody can still walk down when the doors open. Spend the whole
+// flight in it and you will have soaked the people you were protecting, moved nobody, and an
+// incident report will use the word "obstructive". Everything here buys time. The people deck
+// spends it.
 //
 // The ones that are not a trap, in case anybody ever reads this file instead of playing: closing
 // or taping the bin, getting the case into a sink, and pre-wetting the row the fire is about to
@@ -45,6 +47,7 @@
         const amount = opts.amount === undefined ? 1 : opts.amount;
         const r = F.apply(S.fire, target.x, target.y, agentName, amount, opts.spread || 0.35);
         S.stats.agentsUsed++;
+        if (r.agent.knock >= 0) PRS.douse.witness(S, r.knocked, opts.soak === undefined ? 1 : opts.soak);
         PRS.audio.play(opts.sound || (r.agent.knock < 0 ? "flare" : "pour"));
         const after = S.fire.intensity[cabin.idx(target.x, target.y)];
 
@@ -154,7 +157,7 @@
         { id: "fire.case_to_lav", deck: "fire", tags: ["fire", "carry"], danger: "good",
           label: "Carry the case to the lavatory", cost: 34,
           detail: "There is a sink in there. A sink is a bucket you cannot knock over.",
-          when: (S) => S.flags.holdingCase,
+          when: (S) => S.flags.holdingCase && !S.flags.caseInLav,
           run(S) {
               const r = A.route(S, cabin.AFT_GALLEY_X, 7);
               if (r) A.travel(S, r);
@@ -205,6 +208,7 @@
           detail: "The real thing. It works. It works on the flame, which is not the fire.",
           when: (S) => nearFire(S) && haveCharged(S, "halon_bottle"),
           run: (S) => pour(S, "halon_bottle", "halon", { amount: 1.2, spread: 0.8, sound: "halon",
+                soak: 0.6,
                 text: "You pull the pin and put the whole bottle into the locker. Everything " +
                       "orange in a three metre radius stops being orange at once." }) },
 
@@ -212,12 +216,12 @@
           label: "Water extinguisher from the galley", cost: 15,
           when: (S) => nearFire(S) && haveCharged(S, "water_ext"),
           run: (S) => pour(S, "water_ext", "water", { amount: 2.0, spread: 0.6, sound: "spray",
-                text: "Nine litres under pressure, straight in." }) },
+                soak: 1.4, text: "Nine litres under pressure, straight in." }) },
 
         // ---------------------------------------------------------- firebreaks and prevention ---
         { id: "fire.firebreak", item: "water_big", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Wet the row the fire is going to reach next", cost: 16,
-          detail: "Not the fire. The seats beside it. This is the second best action in the deck.",
+          detail: "Not the fire. The seats beside it, and the people in them.",
           when: (S) => haveCharged(S, "water_big") && nearFire(S),
           run(S) {
               st.useCharge(S, slot(S, "water_big"));
@@ -229,11 +233,12 @@
                   for (const y of [t.y - 1, t.y, t.y + 1]) {
                       if (!cabin.inBounds(x, y)) continue;
                       const i = cabin.idx(x, y);
-                      S.fire.suppress[i] = Math.min(100, S.fire.suppress[i] + 40);
+                      S.fire.suppress[i] = Math.min(100, S.fire.suppress[i] + 32);
                       n++;
                   }
               }
               S.stats.agentsUsed++;
+              PRS.pax.annoy(S, 0.7);
               PRS.audio.play("pour");
               return { text: "You put the water on " + n + " tiles of seat that are not burning " +
                        "yet. Nothing visible happens, which is how you know it was the right " +

@@ -1,7 +1,7 @@
 // The log book: what carries over between flights, and the only thing that does.
 //
-// Kept in the browser: how many flights you have flown, how many souls you have secured across
-// all of them, every medal you have ever been awarded, and the last sixty flights one line each.
+// Kept in the browser: how many flights you have flown, how many souls got off alive across all
+// of them, every medal you have ever been awarded, and the last sixty flights one line each.
 //
 // Two kinds of thing unlock from it. A character unlocks when a particular medal is in the book,
 // and the locked card says which - open the locker and look, get a child forward, be told to sit
@@ -69,12 +69,12 @@
         for (const id in S.medals) if (!medals[id]) medals[id] = before.flights + 1;
         const after = {
             flights: before.flights + 1,
-            souls: before.souls + (result.secured || 0),
+            souls: before.souls + (result.survivors || 0),
             medals: medals,
             history: [{
                 at: Date.now(), seed: S.seed, character: S.character.id,
                 outfit: S.outfit ? S.outfit.id : null,
-                secured: result.secured, lost: result.lost, grade: result.grade.key,
+                survived: result.survivors, lost: result.lost, grade: result.grade.key,
                 ending: result.ending.title,
             }].concat(before.history).slice(0, KEEP),
         };

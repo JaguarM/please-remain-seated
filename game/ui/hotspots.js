@@ -253,10 +253,6 @@
             if (!p || p.state === "gone") return null;
             thing.x = p.x; thing.y = p.y;
             R.header = personHeader(S, p);
-            if (p.state === "secured") {
-                R.empty = p.name + " is at " + cabin.safeZoneName(p.x) + ", accounted for.";
-                return R;
-            }
             if (p.state === "dead") {
                 R.empty = "There is nothing more to be done for " + p.name + ".";
                 return R;

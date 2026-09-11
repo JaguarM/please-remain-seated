@@ -20,13 +20,11 @@
     /** Reachable passengers with a given trait who are not already working. */
     function withTrait(trait) {
         return (S) => st.reachable(S)
-            .filter((p) => p.traits.indexOf(trait) >= 0 && p.state !== "secured" &&
-                           p.state !== "dead" && !p.helper)
+            .filter((p) => p.traits.indexOf(trait) >= 0 && p.state !== "dead" && !p.helper)
             .map((p) => ({ key: p.id, p: p }));
     }
     function named(name) {
-        return (S) => S.pax.filter((p) => p.name === name && p.state !== "secured" &&
-                                          p.state !== "dead")
+        return (S) => S.pax.filter((p) => p.name === name && p.state !== "dead")
                             .filter((p) => Math.abs(p.x - S.player.x) <= 1 &&
                                            Math.abs(p.y - S.player.y) <= 1)
                             .map((p) => ({ key: p.id, p: p }));
@@ -91,7 +89,7 @@
           } },
 
         { id: "extra.child_carry_pair", deck: "people", tags: ["carry"], danger: "good",
-          targets: (S) => st.reachable(S).filter((p) => P.isChild(p) && p.state !== "secured" &&
+          targets: (S) => st.reachable(S).filter((p) => P.isChild(p) && p.state !== "dead" &&
                                                         p.state !== "carried")
                                           .map((p) => ({ key: p.id, p: p })),
           when: (S) => S.player.carrying.length < 2 &&
@@ -149,13 +147,15 @@
         // -------------------------------------------------------------------- more of the fire ---
         { id: "extra.cool_bin", item: "water_big", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: "Keep pouring water on the same spot", cost: 30,
-          detail: "Not to put it out. To keep the case below the temperature the next cell needs.",
+          detail: "Not to put it out. To keep the case below the temperature the next cell needs, " +
+                  "and everybody in the row is going to get wet.",
           when: (S) => Math.abs(S.player.x - S.fire.core.x) <= 1 &&
                        have(S, "water_big") && slot(S, "water_big").uses > 0,
           run(S) {
               st.useCharge(S, slot(S, "water_big"));
               S.fire.core.heat = Math.max(0, S.fire.core.heat - 42);
               S.stats.agentsUsed++;
+              P.annoy(S, 1);
               PRS.audio.play("pour");
               return { text: "Thirty seconds of pouring the same bottle onto the same seam. " +
                   "Nothing looks different. The next cell is now " +

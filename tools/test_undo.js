@@ -52,6 +52,7 @@ function digest(S) {
     }
     for (const p of S.pax) {
         parts.push([p.id, p.x, p.y, p.state, p.helper, p.carries, p.revealed, p.masked, p.belted,
+                    p.braced, p.moved, (p.annoyed || 0).toFixed(3), p.claimedBy,
                     p.smokeDose.toFixed(3), p.panic.toFixed(3), p.trust.toFixed(3),
                     p.awareness.toFixed(3), (p.taskLeft || 0).toFixed(2)].join(","));
     }

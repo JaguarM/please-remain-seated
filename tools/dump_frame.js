@@ -61,7 +61,7 @@ for (let y = 0; y < cabin.H; y++) {
             bin: cabin.rowAt(x) !== null,
             binOpenL: !!S.cabinFlags.binsOpen[cabin.binKey(x, "left")],
             binOpenR: !!S.cabinFlags.binsOpen[cabin.binKey(x, "right")],
-            safe: cabin.isSafeZone(x, y),
+            door: cabin.byTheDoors(x),
         });
     }
     tiles.push(row);
@@ -72,7 +72,7 @@ const frame = {
         seed: S.seed, character: S.character.name, bot: opt("bot", "good"),
         elapsed: Math.round(S.clock.elapsed), remaining: Math.round(S.clock.remaining),
         clock: PRS.util.mmss(S.clock.remaining),
-        secured: PRS.state.securedCount(S), helping: PRS.state.helperCount(S),
+        moved: PRS.state.movedCount(S), helping: PRS.state.helperCount(S),
         down: PRS.state.downCount(S),
         credibility: Math.round(S.credibility),
         crewPhase: PRS.crew.PHASES[S.crewPhase].name,
@@ -98,12 +98,11 @@ const frame = {
         x: p.x, y: p.y,
         sprite: PRS.pax.face(p),
         palette: PRS.pax.palette(p, p.state === "dead"),
-        dead: p.state === "dead", secured: p.state === "secured", helper: !!p.helper,
+        dead: p.state === "dead", moved: !!p.moved, helper: !!p.helper,
         masked: !!p.masked,
     })),
-    // The two ends. The overwing row is not a zone, so it is not one of these.
-    zones: [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.AFT_CROSS_X,
-            cabin.AFT_GALLEY_X].map((zx) => {
+    // The floor by the doors at each end, tinted by the air on it.
+    zones: cabin.DOOR_ENDS.map((zx) => {
         let smoke = 0, fire = 0;
         for (let y = 1; y < cabin.H - 1; y++) {
             const i = cabin.idx(zx, y);
@@ -118,4 +117,4 @@ const frame = {
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, JSON.stringify(frame, null, 1));
 console.log("wrote " + path.relative(process.cwd(), out) + " — " + frame.meta.clock +
-            " to touchdown, " + frame.meta.secured + " secured, fire " + frame.meta.worstFire);
+            " to touchdown, " + frame.meta.moved + " moved, fire " + frame.meta.worstFire);

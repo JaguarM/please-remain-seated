@@ -124,8 +124,9 @@
             stats: { strength: 1, speed: 9, lungs: 8, nerve: 5, voice: 3 },
             lean: "Eight years old. Fast and low, cannot lift an adult, and nobody believes a " +
                   "word she says.",
-            kit: [], bag: ["phone"], seat: "3C",
-            unlock: { medal: "child_secured", text: "Get a child forward to a safe zone." },
+            kit: [], bag: ["phone", "goggles", "blanket"], seat: "3C",
+            unlock: { medal: "child_secured",
+                      text: "Get a child out of the rows and down on the floor by a door." },
             hair: "#1d1712", longHair: true, skin: "#e5b791", shirt: "#b8617f",
             open: "The lady said she would come back and check on you. That was a long time ago.",
         },
@@ -139,7 +140,8 @@
             lean: "Knows the aeroplane, the kit and how little time there is. Boards with a " +
                   "hood and the tool that opens the mask panels, in row 1.",
             kit: ["hood", "multitool"], bag: ["hood", "multitool", "water_big"], seat: "1B",
-            unlock: { medal: "twentytwo_souls", text: "Secure twenty-two souls in one flight." },
+            unlock: { medal: "twentytwo_souls",
+                      text: "Get fifty-two people off alive in one flight." },
             hair: "#dfe3e6", longHair: true, skin: "#c08a5e", shirt: "#c9c0aa",
             open: "You know where everything is. You know it will not be enough.",
         },
@@ -155,10 +157,12 @@
         return {
             stats: s,
             // A step in the aisle for a 6-speed character is one second flat.
-            moveMul: 1.55 - s.speed * 0.09,
+            // Ten is a quarter faster than that and three a fifth slower; speed was worth more
+            // than every other number put together until it was pulled in at both ends.
+            moveMul: 1.39 - s.speed * 0.065,
             // A carry for a 6-strength character is about a second a kilo over twelve rows.
             carryMul: 1.75 - s.strength * 0.115,
-            actionMul: 1.30 - s.speed * 0.05,
+            actionMul: 1.18 - s.speed * 0.03,
             smokeMul: 1.60 - s.lungs * 0.11,
             panicMul: 1.70 - s.nerve * 0.13,
             voiceMul: 0.40 + s.voice * 0.10,

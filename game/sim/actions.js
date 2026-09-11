@@ -79,6 +79,9 @@
         if (S.player.panic > 70 && tags.indexOf("fiddly") >= 0) c *= 1.3;
         if (S.player.burns > 30 && tags.indexOf("hands") >= 0) c *= 1.35;
         if (S.player.carrying.length) c *= 1 + 0.28 * S.player.carrying.length;
+        // Somebody you have soaked has hold of your arm. Everything you do to the fire with them
+        // there is done around them, until somebody calms them down.
+        if (tags.indexOf("fire") >= 0 && PRS.pax.obstructor(S)) c *= 1.6;
 
         return Math.max(1, Math.round(c));
     }
@@ -178,7 +181,10 @@
         }
 
         S.counts[def.id] = (S.counts[def.id] || 0) + 1;
-        S.actions.push({ id: def.id, t: S.clock.elapsed, cost: cost, label: entry.label });
+        // The key is what the recorder keeps: the definition and the target, which is enough to
+        // find the same entry again on a replay of the same seed.
+        S.actions.push({ id: def.id, key: entry.key, t: S.clock.elapsed, cost: cost,
+                         label: entry.label });
 
         if (text) st.log(S, text, kind);
         if (cost > 0) spend(S, cost, def);
@@ -220,10 +226,16 @@
             playerTick(S, step);
             PRS.events.tick(S, step);
             left -= step;
-            if (S.player.alive === false) break;
         }
 
         PRS.audio.setRoar(clamp01(PRS.fire.worst(S.fire) / 90));
+
+        // You went down. Nobody on this aeroplane is going to do anything on your behalf, so the
+        // rest of the flight happens without you in it, and then it lands.
+        if (S.player.alive === false && !S.clock.landed && S.clock.remaining > 0.001) {
+            spend(S, S.clock.remaining, null);
+            return;
+        }
 
         if (S.clock.remaining <= 0.001 && !S.clock.landed) {
             S.clock.remaining = 0;
@@ -259,7 +271,8 @@
         if (st.wearing(S, "goggles")) fear *= 0.7;   // you can see, which is most of it
         p.panic = clamp(p.panic + fear * dt * 0.11 - dt * 0.035, 0, 100);
 
-        if (p.smokeDose > 92 && p.alive) {
+        // Smoke puts you on the floor, and so, a little more slowly, do your hands.
+        if (p.smokeDose + p.burns * 0.35 > 92 && p.alive) {
             p.alive = false;
             p.downedAt = S.clock.elapsed;
             st.log(S, "You go down in the aisle. You do not get up.", "bad");

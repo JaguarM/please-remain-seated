@@ -3,15 +3,16 @@
 // cabin through here, so the layout can change without the fire or the passengers noticing.
 //
 //   x=0   flight deck bulkhead, and the locked door at the aisle
-//   x=1   forward galley. A safe zone, because it is steel and it is furthest from the fire.
-//   x=2   the forward cross-aisle, doors L1 and R1. Safe.
+//   x=1   forward galley: steel, and the furthest floor in the aeroplane from the fire.
+//   x=2   the forward cross-aisle, doors L1 and R1.
 //   x=3..14   rows 1 to 12
-//   x=15  the overwing exit row, doors L3 and R3. Not a zone: it is a clear column of floor two
-//         rows from the locker that is burning, and somebody put down in it has been put down
-//         in the aisle.
+//   x=15  the overwing exit row, doors L3 and R3: a clear column of floor two rows from the
+//         locker that is burning.
 //   x=16..26  rows 13 to 23
-//   x=27  the aft cross-aisle, doors L2 and R2. Safe.
-//   x=28  the aft galley and the two lavatories. Safe, and it has a sink, which matters.
+//   x=27  the aft cross-aisle, doors L2 and R2.
+//   x=28  the aft galley and the two lavatories, and a sink, which matters.
+//
+// None of it is safe. Some of it has better air in it than the rest, for a while.
 //   x=29  the tail bulkhead
 //
 // Fuel is per-tile and it is what the fire eats: a seat is upholstery and foam and burns for a
@@ -136,17 +137,21 @@
         return "the cabin";
     }
 
-    // The zones: the two ends, and nothing in between. A passenger left in one at touchdown is
-    // out of the seats, low, next to a door and next to a member of crew, which is as good as
-    // this day is going to get for them. The overwing exit row is not one: it is two rows from
-    // the locker that is burning, and somebody put down there has been put down in the aisle.
-    function isSafeZone(x, y) {
-        if (kindAt(x, y) === "wall" || kindAt(x, y) === "bulkhead") return false;
-        return x <= FWD_CROSS_X || x >= AFT_CROSS_X;
+    // There are no safe zones. There are doors, and the floor in front of them: the galley and
+    // the cross-aisle at each end, which is where anybody moving people puts them down because
+    // the door is right there and the fire is not. Whether the air there is any good by the time
+    // the gear comes down is the fire's business, and scoring.js asks the fire, not this list.
+    // The overwing exits are doors too, two rows from the locker that is burning, so they count
+    // for how far a door is and nobody is put down in front of them.
+    const DOOR_ENDS = [FWD_GALLEY_X, FWD_CROSS_X, AFT_CROSS_X, AFT_GALLEY_X];
+
+    function byTheDoors(x) {
+        return DOOR_ENDS.indexOf(x) >= 0;
     }
 
-    function safeZoneName(x) {
-        return x <= FWD_CROSS_X ? "the forward galley" : "the aft galley";
+    /** Columns from here to the nearest door at either end of the cabin. */
+    function doorDistance(x) {
+        return Math.min(Math.abs(x - FWD_CROSS_X), Math.abs(x - AFT_CROSS_X));
     }
 
     function solid(x, y) {
@@ -218,7 +223,7 @@
         FWD_ROWS, AFT_ROWS, OVERWING_X, FWD_CROSS_X, AFT_CROSS_X, FWD_GALLEY_X, AFT_GALLEY_X,
         ORIGIN, originTile,
         rowAt, xOfRow, seatLetter, yOfLetter, seatName, kindAt, placeName,
-        isSafeZone, safeZoneName, solid, inBounds, baseFuel, baseWalk, eachSeat, neighbours,
+        DOOR_ENDS, byTheDoors, doorDistance, solid, inBounds, baseFuel, baseWalk, eachSeat, neighbours,
         idx, xOf, yOf, binOf, binKey,
     };
 })(window);

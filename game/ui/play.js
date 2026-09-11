@@ -300,9 +300,10 @@
         }
         if (!out.focus && e.tags.indexOf("fire") >= 0) out.focus = nearestFire();
         if (!out.focus) out.focus = { x: S.player.x, y: S.player.y };
+        // A carry is drawn with the bit of floor a helper would put them down on.
         if (e.tags.indexOf("carry") >= 0) {
-            const zx = PRS.pax.nearestSafeX(S.player.x);
-            if (zx !== S.player.x) out.tiles.push([zx, cabin.AISLE_Y]);
+            const r = PRS.pax.refuge(S, S.player.x);
+            if (r && r.x !== S.player.x) out.tiles.push([r.x, r.y]);
         }
         return out;
     }
@@ -435,8 +436,10 @@
 
     function paintMeters() {
         const box = clear($("#meters", root));
-        box.appendChild(meter("SOULS SECURED", st.securedCount(S), 61, "m-good",
-                              st.securedCount(S) + " / 61"));
+        // Not the score. The score is who is alive when the doors open, and nobody knows that
+        // yet; this is how many people are off their seats and on the floor because of you.
+        box.appendChild(meter("OUT OF THEIR SEATS", st.movedCount(S), 60, "m-good",
+                              st.movedCount(S) + " / 60"));
         box.appendChild(meter("HELPING", st.helperCount(S), 10, "m-good",
                               String(st.helperCount(S))));
         box.appendChild(meter("THEY BELIEVE YOU", S.credibility, 100, "m-cred"));
@@ -892,7 +895,7 @@
         const fx = PRS.render.fx;
         const focus = planFor(entry).focus;
         const before = {
-            secured: st.securedCount(S), helpers: st.helperCount(S),
+            moved: st.movedCount(S), helpers: st.helperCount(S),
             burns: S.player.burns, dose: S.player.smokeDose,
             fire: PRS.fire.worst(S.fire), cred: S.credibility,
             sounds: PRS.audio.count(),
@@ -913,9 +916,9 @@
                  res && res.kind === "bad" ? "#d4483a"
                  : res && (res.kind === "good" || res.kind === "great") ? "#5fd67a" : "#ffd54a");
 
-        const gained = st.securedCount(S) - before.secured;
+        const gained = st.movedCount(S) - before.moved;
         if (gained > 0) {
-            fx.say(S.player.x, S.player.y, "+" + gained + " ACCOUNTED FOR", "#8ae8a0",
+            fx.say(S.player.x, S.player.y, "+" + gained + " MOVED", "#8ae8a0",
                    { ms: 1900, rise: 22, size: 0.32 });
             fx.flash("#5fd67a", 0.1);
         }

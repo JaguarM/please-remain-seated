@@ -360,11 +360,10 @@
 
         // ---- people --------------------------------------------------------------------------
         //
-        // Several people end up on one tile all the time - a safe zone is one square of carpet
-        // and twelve souls secured is twelve people standing on it - so a stack fans out rather
-        // than hiding under itself, and anything over two says how many.
+        // Several people end up on one tile all the time - the floor in front of a door is one
+        // square of carpet and a busy flight puts a dozen people on it - so a stack fans out
+        // rather than hiding under itself, and anything over two says how many.
         const stacks = {};
-        const ticked = {};
         for (const p of S.pax) {
             if (p.state === "gone" || p.state === "carried") continue;   // carried ride on you
             const key = p.x + "," + p.y;
@@ -379,12 +378,6 @@
             atlas.blitAlpha(ctx, faceOf(p), px + jitter, py, scale, dead ? 0.72 : 1, pal);
             if (p.masked) atlas.blitAlpha(ctx, "mask_on", px + jitter, py, scale, 0.95);
             if (dead) atlas.blitAlpha(ctx, "mark_lost", px, py, scale, 0.5);
-            // One tick per tile, not one per person: a safe zone with nine people in it wants to
-            // read as a tile that is ticked, and nine ticks on one square is a green scribble.
-            if (p.state === "secured" && !ticked[key]) {
-                ticked[key] = true;
-                atlas.blitAlpha(ctx, "mark_saved", p.x * T, p.y * T, scale, 0.85);
-            }
             if (p.helper) {
                 // A green bar under the feet of everybody who is working with you. Helpers are
                 // the only thing in this game that scales and the only thing worth counting.
@@ -489,11 +482,6 @@
             ctx.fill();
             ctx.restore();
         }
-        // Anybody secured keeps their tick over the smoke too, because the tick is the score.
-        for (const key in ticked) {
-            const [sx, sy] = key.split(",");
-            atlas.blitAlpha(ctx, "mark_saved", sx * T, sy * T, scale, 0.95);
-        }
 
         drawPlan(ctx, S, opts, T, scale, t);
         // The thing the card is open on. Steady and white, so it reads as "selected" rather than
@@ -531,12 +519,11 @@
     // ------------------------------------------------------------------------------- zones ---
 
     /**
-     * The two places worth carrying somebody to, and how true that still is.
+     * The floor by the doors at each end, and what the air on it is like right now.
      *
-     * Both zones are galleys: steel, doors, crew, and the furthest points in the aeroplane from
-     * the seat of the fire. Neither is painted with a promise. Every zone is tinted by what is
-     * actually in it right now - green while the air is clean, amber as the smoke arrives, red
-     * once the fire is in it - and the label changes with it.
+     * It is where people get put down, because the door is there and the fire is not, and it is
+     * not safe. It is tinted by what is actually in it - green while the air is clean, amber as
+     * the smoke arrives, red once the fire is in it - and the label changes with it.
      */
     function zoneAir(S, zx) {
         let smoke = 0, fire = 0;
@@ -761,16 +748,15 @@
         label("LAV", cabin.AFT_GALLEY_X, 1);
         label("LAV", cabin.AFT_GALLEY_X, 7);
 
-        // The two galley ends say SAFE, and stop saying anything reassuring once the smoke
-        // arrives. The overwing row says nothing: it is a pair of doors two rows from the locker
-        // that is burning, and it is not a zone.
+        // The floor by the doors at each end says what the air is like on it, and nothing more.
+        // It is not a promise and it stops being good news the moment the smoke gets there.
         for (const zx of [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X]) {
             const air = zoneAir(S, zx);
             const tier = air.bad > 0.62 ? 2 : air.bad > 0.24 ? 1 : 0;
             ctx.fillStyle = ["rgba(120,214,140,0.95)", "rgba(232,197,58,0.95)",
                              "rgba(212,72,58,1)"][tier];
-            label(["SAFE", "SMOKE", "GONE"][tier], zx, 2);
-            label(["SAFE", "SMOKE", "GONE"][tier], zx, 6);
+            label(["CLEAR", "SMOKE", "GONE"][tier], zx, 2);
+            label(["CLEAR", "SMOKE", "GONE"][tier], zx, 6);
         }
         ctx.restore();
 

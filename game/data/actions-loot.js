@@ -27,7 +27,7 @@
      * B, C, D and E a question, and the window seats still mean climbing in.
      */
     function nearby(S) {
-        return st.withinEarshot(S, 1).filter((p) => p.state !== "dead" && p.state !== "secured");
+        return st.withinEarshot(S, 1).filter((p) => p.state !== "dead");
     }
 
     /** Anybody in talking distance who has something and has not told you about it. */

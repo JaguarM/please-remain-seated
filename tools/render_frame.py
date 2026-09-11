@@ -170,7 +170,7 @@ def render(frame, sprites, scale):
     # frame, so there is nothing to get wrong here: who looks frightened is not this file's call.
     # Several people on one tile fan out the way they do in the browser.
     FAN = [(0, 0), (3, -2), (-3, 2), (4, 3), (-4, -2), (2, 4), (-2, -4)]
-    stacks, ticked = {}, set()
+    stacks = {}
     for p in frame["pax"]:
         key = (p["x"], p["y"])
         stacks[key] = stacks.get(key, 0) + 1
@@ -182,9 +182,6 @@ def render(frame, sprites, scale):
             blit(img, sprites, "mask_on", ox, oy, scale, alpha=0.95)
         if p.get("dead"):
             blit(img, sprites, "mark_lost", p["x"] * T, p["y"] * T, scale, alpha=0.5)
-        if p["secured"] and key not in ticked:
-            ticked.add(key)
-            blit(img, sprites, "mark_saved", p["x"] * T, p["y"] * T, scale, alpha=0.85)
 
     for c in frame["crew"]:
         blit(img, sprites, c["sprite"], c["x"] * T, c["y"] * T, scale, c["palette"])
@@ -213,8 +210,6 @@ def render(frame, sprites, scale):
     # ---- you, again, over the smoke ----------------------------------------------------------
     blit(img, sprites, "player_ring", P["x"] * T, P["y"] * T, scale)
     blit(img, sprites, P["sprite"], P["x"] * T, P["y"] * T, scale, P["palette"], alpha=0.9)
-    for x, y in ticked:
-        blit(img, sprites, "mark_saved", x * T, y * T, scale, alpha=0.95)
 
     return img
 
@@ -241,8 +236,8 @@ def main():
 
     m = frame["meta"]
     print("%s  %dx%d" % (os.path.relpath(out, ROOT), img.width, img.height))
-    print("  %s to touchdown · %d secured · %d helping · fire %d · smoke %s · crew: %s"
-          % (m["clock"], m["secured"], m["helping"], m["worstFire"], m["smoke"], m["crewPhase"]))
+    print("  %s to touchdown · %d moved · %d helping · fire %d · smoke %s · crew: %s"
+          % (m["clock"], m["moved"], m["helping"], m["worstFire"], m["smoke"], m["crewPhase"]))
     return 0
 
 

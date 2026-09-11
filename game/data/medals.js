@@ -1,14 +1,22 @@
-// The things you can be found to have done, checked after every action and printed at the
-// bottom of the incident report under the heading OTHER OBSERVATIONS.
+// The things you can be found to have done, checked after every action and once more at
+// touchdown, and printed at the bottom of the incident report under the heading OTHER
+// OBSERVATIONS.
 //
 // They are not achievements in the sense of being good. They are the only place the game says
 // out loud what it thinks of a strategy, so each one is a sentence about the arithmetic. Seven of
 // them are also what turns a character's card over in the log book, and the first time one of
 // those is awarded the line says who has become available.
+//
+// A few ids are older than what they now measure. Log books written when the game counted
+// "secured" souls have `ten_souls` and `twentytwo_souls` in them, and the cards those turned over
+// should stay turned over, so the ids stayed and the sentences changed.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
-    const st = PRS.state;
+
+    /** The manifest, once there is one. Medals about how it ended wait for it. */
+    const landed = (S) => S.result || null;
+    const outOfTheRows = (S, trait) => S.pax.filter((p) => p.traits.indexOf(trait) >= 0);
 
     const MEDALS = [
         // ------------------------------------------------------------------------ the fire ---
@@ -27,10 +35,14 @@
         { id: "seen_it", name: "Looked at it",
           text: "Actually opened the bin and looked at the thing that is doing all this.",
           when: (S) => S.fire.core.exposed },
+        { id: "grabbed", name: "Held back",
+          text: "Somebody you had soaked got hold of your arm. They were sitting under the fire " +
+                "too.",
+          when: (S) => (S.stats.grabbed || 0) >= 1 },
 
         // ------------------------------------------------------------------------- carrying ---
         { id: "first_carry", name: "One",
-          text: "Carried one person to safety, which is one more than anybody else did.",
+          text: "Carried one person out of the rows, which is one more than anybody else did.",
           when: (S) => S.stats.carriesCompleted >= 1 },
         { id: "five_carry", name: "Five",
           text: "Five. On your own. In a corridor full of people telling you to stop.",
@@ -39,16 +51,16 @@
           text: "Twelve carries. That is the physical limit and you found it.",
           when: (S) => S.stats.carriesCompleted >= 12 },
         { id: "immobile", name: "The ones who could not walk",
-          text: "Both wheelchair users were secured. Neither could have done anything alone.",
-          when: (S) => S.pax.filter((p) => p.traits.indexOf("immobile") >= 0)
-                             .every((p) => p.state === "secured") },
+          text: "Both wheelchair users were moved out of their rows, and both of them got off.",
+          when: (S) => landed(S) && outOfTheRows(S, "immobile")
+                             .every((p) => p.moved && p.outcome !== "lost") },
         { id: "child_secured", name: "A child, forward",
-          text: "Got one of the children to a safe zone.",
-          when: (S) => S.pax.some((p) => PRS.pax.isChild(p) && p.state === "secured") },
+          text: "Got one of the children out of the rows and down on the floor by a door.",
+          when: (S) => S.pax.some((p) => PRS.pax.isChild(p) && p.moved && p.state !== "dead") },
         { id: "dog", name: "Bruno",
           text: "The dog got out. This was not free and you knew that.",
-          when: (S) => S.pax.filter((p) => p.traits.indexOf("pet") >= 0)
-                             .every((p) => p.state === "secured") },
+          when: (S) => landed(S) && outOfTheRows(S, "pet")
+                             .every((p) => p.moved && p.outcome !== "lost") },
 
         // -------------------------------------------------------------------------- helpers ---
         { id: "first_helper", name: "The multiplier",
@@ -61,7 +73,7 @@
           text: "Eight helpers. This is the actual answer to the puzzle and you found it.",
           when: (S) => S.stats.helpersRecruited >= 8 },
         { id: "helper_carries", name: "Delegation",
-          text: "Other people carried more passengers than you did.",
+          text: "Other people moved more passengers than you did.",
           when: (S) => (S.stats.helperSaves || 0) > S.stats.carriesCompleted &&
                         S.stats.carriesCompleted > 0 },
         { id: "converted_hostile", name: "Turned the worst one round",
@@ -91,18 +103,18 @@
           when: (S) => S.player.burns > 20 },
 
         // ------------------------------------------------------------------------ the score ---
-        { id: "ten_souls", name: "Ten souls",
-          text: "Ten people were forward and low when it landed because of you.",
-          when: (S) => st.securedCount(S) >= 10 },
-        { id: "eighteen_souls", name: "Eighteen souls",
-          text: "Eighteen. This is a very good run and you should know that.",
-          when: (S) => st.securedCount(S) >= 18 },
-        { id: "twentytwo_souls", name: "Twenty-two souls",
-          text: "Twenty-two. Almost nobody gets here.",
-          when: (S) => st.securedCount(S) >= 22 },
-        { id: "three_souls", name: "Three souls",
-          text: "Three. It was always going to be like this for somebody.",
-          when: (S) => S.clock.landed && st.securedCount(S) <= 3 },
+        { id: "ten_souls", name: "Forty",
+          text: "Forty people got off this aeroplane alive.",
+          when: (S) => landed(S) && S.result.survivors >= 40 },
+        { id: "eighteen_souls", name: "Forty-eight",
+          text: "Forty-eight. This is a very good flight and you should know that.",
+          when: (S) => landed(S) && S.result.survivors >= 48 },
+        { id: "twentytwo_souls", name: "Fifty-two",
+          text: "Fifty-two. Almost nobody gets here.",
+          when: (S) => landed(S) && S.result.survivors >= 52 },
+        { id: "three_souls", name: "Half",
+          text: "Half the cabin, or fewer. It was always going to be like this for somebody.",
+          when: (S) => landed(S) && S.result.survivors <= 30 },
     ];
 
     const BY_ID = {};

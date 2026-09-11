@@ -20,6 +20,7 @@
         const derived = PRS.data.characters.derive(ch, outfit);
         const seatRow = parseInt(ch.seat, 10);
         const seatY = cabin.yOfLetter(ch.seat.replace(/[0-9]/g, ""));
+        const items = (opts.items || ch.bag).slice();
 
         const S = {
             seed: seed,
@@ -27,6 +28,8 @@
             character: ch,
             outfit: outfit,
             derived: derived,
+            // Exactly what the flight was started with, so the recorder can start it again.
+            loadout: { characterId: ch.id, outfitId: outfit ? outfit.id : null, items: items },
 
             clock: {
                 total: FLIGHT_SECONDS,
@@ -53,7 +56,7 @@
                 downedAt: null,
             },
 
-            inventory: (opts.items || ch.bag).map(function (id) {
+            inventory: items.map(function (id) {
                 const item = PRS.data.items.byId(id);
                 return item ? { id: id, item: item, uses: item.uses, wet: false, spent: false } : null;
             }).filter(Boolean),
@@ -79,7 +82,7 @@
             crewPhase: 0,          // see crew.js
 
             log: [],
-            actions: [],           // every action id, in order, for the report
+            actions: [],           // every action id, in order, for the report and the recorder
             counts: {},            // action id -> how many times
             medals: {},
             flags: {},             // one-shot story flags
@@ -138,16 +141,17 @@
                 trust: traits.indexOf("sceptic") >= 0 ? -20
                      : traits.indexOf("helpful") >= 0 ? 25
                      : traits.indexOf("hostile") >= 0 ? -30 : 0,
+                annoyed: 0,                 // 0..100, how much of your firefighting has landed on them
                 smokeDose: 0,
                 burns: 0,
                 masked: false,
                 belted: true,
                 braced: false,
+                moved: false,               // out of their own seat, because somebody moved them
                 spokenTo: 0,
                 helper: false,
                 helperTarget: null,
                 carriedBy: null,
-                securedAt: null,
                 downAt: null,
                 lastLine: null,
                 note: null,
@@ -211,7 +215,7 @@
         for (const [x, y] of spots) {
             for (const p of paxAt(S, x, y)) {
                 if (seen[p.id]) continue;
-                if (p.state === "secured" || p.state === "gone") continue;
+                if (p.state === "gone") continue;
                 seen[p.id] = true;
                 out.push(p);
             }
@@ -224,7 +228,7 @@
         radius = radius || 2;
         const out = [];
         for (const p of S.pax) {
-            if (p.state === "secured" || p.state === "gone" || p.state === "carried") continue;
+            if (p.state === "gone" || p.state === "carried") continue;
             if (Math.abs(p.x - S.player.x) <= radius && Math.abs(p.y - S.player.y) <= radius + 1) {
                 out.push(p);
             }
@@ -263,10 +267,14 @@
 
     function wearing(S, itemId) { return !!S.player.wearing[itemId]; }
 
-    /** The number the report cares about, computed live so the HUD can show it. */
-    function securedCount(S) {
+    /**
+     * How many people are out of their own seats because somebody moved them, computed live so
+     * the HUD can show it. It is not the score. The score is who is alive at touchdown, and being
+     * moved is only worth what it changed about that.
+     */
+    function movedCount(S) {
         let n = 0;
-        for (const p of S.pax) if (p.state === "secured") n++;
+        for (const p of S.pax) if (p.moved && p.state !== "carried" && p.state !== "dead") n++;
         return n;
     }
 
@@ -313,6 +321,6 @@
         FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
         inventoryHas, inventoryAll, slotOf, useCharge, give, buildStash,
         has, setFlag, wearing,
-        securedCount, downCount, helperCount, log, line,
+        movedCount, downCount, helperCount, log, line,
     };
 })(window);

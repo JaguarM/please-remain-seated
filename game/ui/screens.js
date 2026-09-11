@@ -106,7 +106,7 @@
         const n = PRS.logbook.counts(book);
         const next = PRS.logbook.nextOutfit(book);
         return PRS.util.plural(book.flights, "flight") + " · " +
-            PRS.util.plural(book.souls, "soul") + " secured · " +
+            PRS.util.plural(book.souls, "soul") + " off alive · " +
             n.people + " of " + n.ofPeople + " people and " + n.outfits + " of " + n.ofOutfits +
             " outfits" + (next ? " · next outfit at " + next.unlock + " souls." : ".");
     }
@@ -485,7 +485,8 @@
                     return el("div", { class: "hrow" }, [
                         PRS.atlas.icon("pax", 1, PRS.pax.palette(ch)),
                         el("b", { text: ch.short + (o ? ", " + o.name.toLowerCase() : "") }),
-                        el("span", { text: h.secured + " secured" }),
+                        el("span", { text: h.survived !== undefined ? h.survived + " survived"
+                                                                     : h.secured + " secured" }),
                         el("span", { text: h.lost + " lost" }),
                         el("span", { class: "grade-" + h.grade, text: h.grade }),
                         el("i", { text: h.ending }),
@@ -493,6 +494,10 @@
                 })),
                 el("div", { class: "title-buttons" }, [
                     el("button", { text: "Back", onclick: title }),
+                    PRS.recorder && PRS.recorder.all().length
+                        ? el("button", { text: "Save recorded flights (" +
+                              PRS.recorder.all().length + ")", onclick: saveFlights })
+                        : null,
                     el("button", { text: "Start the book again", onclick: function () {
                         if (window.confirm("Forget every flight, and lock everything the book " +
                                            "has unlocked?")) {
@@ -536,15 +541,45 @@
             inner.appendChild(el("div", { class: "grade grade-" + R.grade.key }, [
                 el("b", { text: R.grade.name }),
                 el("i", { text: R.grade.text }),
-                el("span", { text: R.secured + " secured · " + R.byYou + " carried by you · " +
-                    R.byHelpers + " carried by people you recruited" }),
+                el("span", { text: R.survivors + " of 60 survived · " + R.byYou + " moved by you · " +
+                    R.byHelpers + " moved by people you recruited" }),
             ]));
+
+            // The flight recorder. A replay can work out everything about this flight except what
+            // you were trying to do, so there is a box for that.
+            if (R.recording && PRS.recorder) {
+                const seed = R.recording.seed;
+                const done = el("span", { class: "done" });
+                const note = el("textarea", { placeholder: "What were you trying to do, and when " +
+                    "did you notice it was or was not working? (optional)" });
+                note.value = R.recording.note || "";
+                note.addEventListener("input", () => { PRS.recorder.note(seed, note.value); });
+                // Typing is not a keyboard shortcut.
+                note.addEventListener("keydown", (ev) => ev.stopPropagation());
+                inner.appendChild(el("div", { class: "rec" }, [
+                    el("b", { text: "Flight recorder" }),
+                    el("i", { text: "This flight is kept with your last " +
+                        PRS.util.plural(PRS.recorder.all().length, "flight") + ". Save them to a " +
+                        "file to send them in for balancing." }),
+                    note,
+                    el("div", { class: "title-buttons" }, [
+                        el("button", { text: "Save recorded flights", onclick: () => {
+                            saveFlights();
+                            done.textContent = "saved to your downloads";
+                        } }),
+                        el("button", { text: "Copy this flight", onclick: () => copyText(
+                            PRS.recorder.exportText(PRS.recorder.all().filter((r) => r.seed === seed)),
+                            done) }),
+                        done,
+                    ]),
+                ]));
+            }
 
             // The log book, and anything it turned over.
             if (R.logbook) {
                 const L = R.logbook;
                 inner.appendChild(el("div", { class: "book" }, [
-                    el("b", { text: "+" + PRS.util.plural(R.secured, "soul") + " in the log book" }),
+                    el("b", { text: "+" + PRS.util.plural(R.survivors, "soul") + " in the log book" }),
                     el("i", { text: logLine(L.after) }),
                     L.unlocked.length
                         ? el("span", { class: "unlocked", text: "Unlocked: " +
@@ -580,7 +615,8 @@
                     el("span", { class: "man-seat", text: p.seat }),
                     el("span", { class: "man-name", text: p.name }),
                     el("span", { class: "man-state", text:
-                        p.state === "secured" ? "secured forward" +
+                        p.moved && p.state !== "carried" ? "moved to " +
+                            PRS.cabin.placeName(p.x, p.y) +
                             (p.carriedBy && p.carriedBy !== "player" ? " by " +
                              (PRS.state.paxById(S, p.carriedBy) || {}).name : "") :
                         p.helper ? "was helping" : PRS.pax.displayState(p) }),
@@ -635,6 +671,36 @@
 
             root.appendChild(inner);
         });
+    }
+
+    /** Every recorded flight, as a file in Downloads that tools/replay.js reads. */
+    function saveFlights() {
+        const blob = new Blob([PRS.recorder.exportText()], { type: "application/json" });
+        const a = el("a", {
+            href: URL.createObjectURL(blob),
+            download: "please-remain-seated-flights-" + new Date().toISOString().slice(0, 10) + ".json",
+        });
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 0);
+    }
+
+    /** Onto the clipboard, including from a double-clicked file, where the clipboard API is not. */
+    function copyText(text, done) {
+        const ok = () => { if (done) done.textContent = "copied"; };
+        const fallback = () => {
+            const t = el("textarea", { style: { position: "fixed", opacity: "0" } });
+            t.value = text;
+            document.body.appendChild(t);
+            t.select();
+            try { if (document.execCommand("copy")) ok(); } catch (e) { /* nothing to do */ }
+            t.remove();
+        };
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(ok, fallback);
+        } else {
+            fallback();
+        }
     }
 
     function outcomeWord(key) {

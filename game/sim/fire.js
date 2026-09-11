@@ -28,12 +28,18 @@
     // suppression it leaves behind, how fast that fades, and what it does to smoke.
     // `coolsCore` is the only column that matters in the long run: it is the fraction of the
     // agent that gets past the case and onto the cell.
+    //
+    // Everything a passenger can hold is a small dose that lands on one seat, not a row. The first
+    // playtest held the whole fire down for fifteen minutes with a bottle, a towel and a blanket
+    // by standing where one pour reached three burning tiles, so the doses are smaller, water
+    // turns into steam over whoever is sitting under it, and what makes fighting it worth doing
+    // is what it does to the air everybody else is breathing, not the flame.
     const AGENTS = {
-        water:     { knock: 26, hold: 34, decay: 0.020, smoke: +14, coolsCore: 0.55, name: "water" },
+        water:     { knock: 20, hold: 28, decay: 0.020, smoke: +20, coolsCore: 0.55, name: "water" },
         halon:     { knock: 74, hold: 82, decay: 0.014, smoke: -8,  coolsCore: 0.10, name: "halon" },
-        smother:   { knock: 30, hold: 46, decay: 0.016, smoke: -14, coolsCore: 0.12, name: "smothering" },
-        wetcloth:  { knock: 38, hold: 56, decay: 0.013, smoke: -10, coolsCore: 0.34, name: "a wet cloth" },
-        beat:      { knock: 16, hold: 8,  decay: 0.060, smoke: +22, coolsCore: 0.02, name: "beating" },
+        smother:   { knock: 20, hold: 34, decay: 0.016, smoke: -8,  coolsCore: 0.12, name: "smothering" },
+        wetcloth:  { knock: 28, hold: 42, decay: 0.013, smoke: +4,  coolsCore: 0.30, name: "a wet cloth" },
+        beat:      { knock: 10, hold: 6,  decay: 0.060, smoke: +22, coolsCore: 0.02, name: "beating" },
         // Opening the bin is an agent too, and it is in the same table so the code cannot pretend
         // it did not know that it makes things worse.
         air:       { knock: -22, hold: 0, decay: 0.10, smoke: +8,  coolsCore: 0.00, name: "air" },
@@ -187,9 +193,10 @@
         // so holding the fire in is something you keep doing rather than something you did.
         f.core.contained = Math.max(0, f.core.contained - 0.006 * dt);
 
-        // The core climbs. Nothing in the cabin stops this; things only slow it.
+        // The core climbs. Nothing in the cabin stops this; things only slow it. A sink slows it
+        // by about half, which is the most anything on this aeroplane can do.
         const coreRate = f.core.rate
-            * (f.core.inSink ? 0.30 : 1)
+            * (f.core.inSink ? 0.55 : 1)
             * (1 - 0.35 * f.core.contained)
             * (1 + 0.10 * f.core.vented);          // each vented cell heats its neighbours
         f.core.heat += coreRate * dt * 0.55;
@@ -304,7 +311,7 @@
      */
     function advanceSmoke(f, dt, S) {
         const next = new Float32Array(N);
-        const drift = 0.09;   // fore-aft airflow from the packs
+        const drift = 0.05;   // fore-aft airflow from the packs: aft is worse, not a grave
         const rate = clamp01(dt * 0.16);
         for (let x = 0; x < cabin.W; x++) {
             for (let y = 0; y < cabin.H; y++) {
@@ -375,7 +382,7 @@
 
     /** Seconds until the next cell vents, at the current rate. The lawyer can see this. */
     function ventEta(f) {
-        const rate = f.core.rate * (f.core.inSink ? 0.30 : 1) * (1 - 0.35 * f.core.contained)
+        const rate = f.core.rate * (f.core.inSink ? 0.55 : 1) * (1 - 0.35 * f.core.contained)
                    * (1 + 0.10 * f.core.vented) * 0.55;
         if (rate <= 0.0001) return Infinity;
         return (100 - f.core.heat) / rate;

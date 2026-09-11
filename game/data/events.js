@@ -90,7 +90,7 @@
           when: (S) => S.credibility > 45 && PRS.state.helperCount(S) < 6,
           run(S) {
               const options = S.pax.filter((p) => !p.helper && p.state !== "down" &&
-                  p.state !== "secured" && p.traits.indexOf("helpful") >= 0);
+                  p.state !== "dead" && p.traits.indexOf("helpful") >= 0);
               if (!options.length) return null;
               const p = S.rng.pick(options);
               p.trust = Math.min(100, p.trust + 30);
@@ -102,7 +102,7 @@
           when: (S) => S.crewPhase < 4 && S.credibility < 55,
           run(S) {
               const p = S.rng.pick(S.pax.filter((q) => q.traits.indexOf("hostile") >= 0 &&
-                                                        q.state !== "down" && q.state !== "secured"));
+                                                        q.state !== "down" && q.state !== "dead"));
               if (!p) return null;
               S.player.panic = Math.min(100, S.player.panic + 4);
               (S.stats.sitDownBy = S.stats.sitDownBy || {})[p.id] = true;

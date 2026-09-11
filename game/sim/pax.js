@@ -1,12 +1,16 @@
 // Sixty-one people, and what they do while you are busy.
 //
-// The important thing about this file is the helpers. You can carry about one passenger a minute
+// The important thing about this file is the helpers. You can move about one passenger a minute
 // and there are sixty of them, so on your own the ceiling is thirteen or fourteen people and no
-// amount of clever play moves it. A recruited helper carries at about two thirds your rate and
-// keeps doing it for the rest of the flight without being told, so the fourth helper you recruit
-// is worth more than every bottle of water in the aeroplane.
+// amount of clever play moves it. A recruited helper moves people at about two thirds your rate
+// and keeps doing it for the rest of the flight without being told, so the fourth helper you
+// recruit is worth more than every bottle of water in the aeroplane.
 //
-// The game never says this. It is in the numbers, and the numbers are in `helperTick`.
+// There is no safe zone. Nobody is "secured": a person is wherever they are when the doors open,
+// and what happens to them is the smoke they have already breathed, the air in the place they
+// are lying in, how low they are and how far the door is. `exposure()` is that sum, worked out
+// the way scoring.js works it out at touchdown, and it is what a helper reads to decide who needs
+// moving and where to. The game never says any of this out loud. It is in the numbers.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -14,6 +18,8 @@
     const { clamp, clamp01 } = PRS.util;
 
     const DOWN_AT = 52;      // smoke dose at which a person stops being able to help themselves
+    const GRAB_AT = 50;      // how fed up somebody has to be before they put a hand on your arm
+    const MOVE_WORTH = 6;    // how much better off somebody has to be before a helper bothers
 
     function isChild(p) { return p.traits.indexOf("child") >= 0 || p.traits.indexOf("infant") >= 0; }
     function isPet(p) { return p.traits.indexOf("pet") >= 0; }
@@ -25,8 +31,12 @@
         return !canWalk(p) || p.state === "down" || p.traits.indexOf("elderly") >= 0;
     }
 
-    /** What "no longer held, not yet safe" means for this person: on their feet, or not. */
+    /**
+     * What "no longer held" means for this person. Somebody put down away from their seat is on
+     * the floor; somebody who never left it is on their feet, or not.
+     */
     function looseState(p) {
+        if (p.moved) return "sheltering";
         return canStandUp(p) ? "standing" : "seated";
     }
 
@@ -39,8 +49,7 @@
     /** Anybody who could be asked to carry other people: an adult, upright, not already doing it. */
     function canHelp(p) {
         return canStandUp(p) && !isChild(p) && !p.helper &&
-               p.state !== "down" && p.state !== "dead" && p.state !== "secured" &&
-               p.state !== "carried";
+               p.state !== "down" && p.state !== "dead" && p.state !== "carried";
     }
 
     function displayState(p) {
@@ -51,7 +60,7 @@
             case "aisle": return "in the aisle";
             case "carried": return "in your arms";
             case "helping": return "helping";
-            case "secured": return "secured";
+            case "sheltering": return "on the floor, out of the seats";
             case "down": return "unconscious";
             case "dead": return "not moving";
             default: return p.state;
@@ -79,7 +88,7 @@
         const fear = p.panic + p.smokeDose * 0.55;
         if (fear > 62) return base + "_afraid";
         if (fear > 27) return base + "_worried";
-        if (p.state === "secured" || p.helper) return base + "_relieved";
+        if (p.state === "sheltering" || p.helper) return base + "_relieved";
         return base;
     }
 
@@ -137,9 +146,142 @@
 
     /** Can the player physically pick this person up at all. */
     function canCarry(S, p) {
-        if (p.state === "secured" || p.state === "dead") return false;
+        if (p.state === "dead") return false;
         if (S.player.carrying.length >= S.derived.maxCarry) return false;
         return p.kg <= S.derived.carryCap;
+    }
+
+    // ---------------------------------------------------------------------------- where to be ---
+
+    /**
+     * What getting out costs somebody in column x once the doors open: the aisle between them and
+     * the nearer end door, and whatever smoke and fire is on it. Moving somebody shortens it, and
+     * holding the fire down keeps it walkable.
+     */
+    function evacuation(S, x) {
+        const f = S.fire;
+        let best = Infinity;
+        for (const doorX of [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X]) {
+            const step = doorX < x ? -1 : 1;
+            let cost = 0;
+            for (let cx = x; cx !== doorX; cx += step) {
+                const i = cabin.idx(cx, cabin.AISLE_Y);
+                cost += 1.0 + f.smoke[i] * 0.08 + f.intensity[i] * 0.5;
+            }
+            if (cost < best) best = cost;
+        }
+        return best;
+    }
+
+    /**
+     * How bad a place is to be left in, on the scale scoring.js uses at touchdown: the air in it
+     * now, the way out from it, and how close it is to the seat of the fire - closer still if it
+     * is downwind, because the packs push the smoke aft. It does not know the future, and neither
+     * does anybody choosing where to put somebody down.
+     */
+    function exposure(S, x, y) {
+        return spot(S, x, y) + evacuation(S, x);
+    }
+
+    /** The half of exposure() that belongs to the tile itself rather than to the way out. */
+    function spot(S, x, y) {
+        const f = S.fire;
+        const i = cabin.idx(x, y);
+        const c = f.core;
+        const gap = Math.abs(x - c.x) + Math.abs(y - c.y) * 0.5;
+        return f.smoke[i] * 0.7 + f.intensity[i] * 0.42 +
+               Math.max(0, 8 - gap) * 2.5 + (x > c.x ? Math.max(0, 14 - gap) * 1.5 : 0);
+    }
+
+    /**
+     * The best bit of floor by a door to put somebody down on, from where they are: the least
+     * exposed, and not the far end of the aeroplane if the near end will do, and not on top of
+     * somebody else if there is floor next to them. The ends are only candidates. Nothing about
+     * them is safe except what exposure() says.
+     */
+    function refuge(S, fromX) {
+        let best = null, bestScore = Infinity;
+        for (const x of cabin.DOOR_ENDS) {
+            // The way out is the same for every tile in a column, so it is worked out once.
+            const out = evacuation(S, x) + Math.abs(x - fromX) * 0.35;
+            for (let y = 1; y < cabin.H - 1; y++) {
+                if (cabin.solid(x, y)) continue;
+                const score = spot(S, x, y) + out + PRS.state.paxAt(S, x, y).length;
+                if (score < bestScore) { bestScore = score; best = { x: x, y: y, score: score }; }
+            }
+        }
+        return best;
+    }
+
+    /** What being where they are costs somebody on top of the air: upright, and stuck. */
+    function postureCost(p) {
+        let h = 0;
+        if (!p.braced) h += 3;
+        if (p.state === "aisle" || p.state === "standing") h += 7;
+        if (p.traits.indexOf("immobile") >= 0 && !p.moved) h += 20;
+        return h;
+    }
+
+    /** How much better off somebody would be on the floor by a door than where they are now. */
+    function moveGain(S, p) {
+        if (cabin.byTheDoors(p.x) && (p.braced || p.state === "down")) return 0;
+        const r = refuge(S, p.x);
+        if (!r) return 0;
+        return exposure(S, p.x, p.y) + postureCost(p) - r.score;
+    }
+
+    /** Somebody put down somewhere: on the floor, low, belt off, and not getting back up. */
+    function shelter(S, p, x, y) {
+        p.x = x; p.y = y;
+        p.belted = false;
+        p.braced = true;
+        p.moved = p.moved || x !== p.homeX || y !== p.homeY;
+        p.state = p.smokeDose > DOWN_AT ? "down" : looseState(p);
+    }
+
+    // ------------------------------------------------------------------ being in their way ---
+
+    /**
+     * Throwing water about in a full cabin is not free. Everybody awake within arm's reach who is
+     * not already working with you gets wet, or steamed, or has a blanket waved over their head,
+     * and they hold it against you: less trust, more fear, and past a point, a hand on your arm.
+     * `amount` is 1 for a bottle and more for the bigger things. Returns whoever just grabbed you.
+     */
+    function annoy(S, amount) {
+        amount = amount === undefined ? 1 : amount;
+        const px = S.player.x, py = S.player.y;
+        let grabbed = null;
+        for (const q of S.pax) {
+            if (q.helper || q.state === "down" || q.state === "dead" || q.state === "carried" ||
+                q.state === "asleep" || !canStandUp(q) || isChild(q)) continue;
+            if (Math.abs(q.x - px) > 1 || Math.abs(q.y - py) > 2) continue;
+            const was = q.annoyed || 0;
+            let add = 20 * amount;
+            if (q.traits.indexOf("hostile") >= 0 || q.traits.indexOf("sceptic") >= 0) add *= 1.6;
+            if (q.trust > 40) add *= 0.5;
+            q.annoyed = Math.min(100, was + add);
+            q.trust = clamp(q.trust - 5 * amount, -60, 100);
+            q.panic = Math.min(100, q.panic + 4 * amount);
+            if (was < GRAB_AT && q.annoyed >= GRAB_AT && !grabbed) grabbed = q;
+        }
+        if (grabbed) {
+            S.stats.grabbed = (S.stats.grabbed || 0) + 1;
+            PRS.state.log(S, grabbed.name + " has been soaked once too often and gets hold of " +
+                "your arm. “What is WRONG with you?” Everything you do to that fire is now done " +
+                "around them.", "bad");
+        }
+        return grabbed;
+    }
+
+    /** Whoever within reach has had enough of you and is in the way of your hands. */
+    function obstructor(S) {
+        for (const q of PRS.state.reachable(S)) {
+            if ((q.annoyed || 0) < GRAB_AT || q.trust >= 40 || q.helper) continue;
+            if (q.state === "down" || q.state === "dead" || q.state === "carried" ||
+                q.state === "asleep" || !canStandUp(q)) continue;
+            return q;
+        }
+        return null;
     }
 
     // ------------------------------------------------------------------------------ advance ---
@@ -147,7 +289,6 @@
     function advance(S, dt) {
         const f = S.fire;
         let awarenessSum = 0, panicSum = 0, alive = 0;
-        const smokeMean = PRS.fire.totalSmoke(f);
 
         for (const p of S.pax) {
             if (p.state === "dead" || p.state === "gone") continue;
@@ -159,24 +300,25 @@
             const heat = f.heat[i];
 
             // ---- what the smoke does, which is the thing that actually kills people ----------
-            if (p.state !== "secured") {
-                const maskFactor = p.masked ? 0.16 : 1;
-                const lowFactor = (p.state === "down" || p.braced) ? 0.72 : 1;  // smoke is high up
-                p.smokeDose += smoke * dt * 0.0031 * maskFactor * lowFactor;
-            } else {
-                // Forward, low, by a door, next to the crew. Not nothing, but much less.
-                p.smokeDose += smokeMean * dt * 0.0012 * (p.masked ? 0.2 : 1);
-            }
+            // The same for everybody, wherever they are. Low air is better air, and anything over
+            // the face halves it.
+            const maskFactor = p.masked ? 0.5 : 1;
+            const lowFactor = (p.state === "down" || p.braced) ? 0.6 : 1;   // smoke is high up
+            p.smokeDose += smoke * dt * 0.0031 * maskFactor * lowFactor;
             if (inten > 18) p.burns += (inten - 18) * dt * 0.0012;
             if (heat > 40) p.burns += (heat - 40) * dt * 0.0009;
 
-            if (p.state !== "down" && p.state !== "secured" && p.smokeDose > DOWN_AT) {
+            if (p.state !== "down" && p.smokeDose > DOWN_AT) {
                 p.state = "down";
                 p.downAt = S.clock.elapsed;
+                if (p.helper) release(S, p);
                 p.helper = false;
                 PRS.state.log(S, p.name + " (" + p.seat + ") stops coughing and goes quiet.", "bad");
                 PRS.audio.play("bad");
             }
+
+            // Being soaked wears off, slowly. Being calmed down wears it off faster.
+            if (p.annoyed) p.annoyed = Math.max(0, p.annoyed - dt * 0.10);
 
             // ---- noticing ---------------------------------------------------------------------
             let wake = smoke * 0.09 + (inten > 3 ? 6 : 0) + S.cabinAwareness * 0.010;
@@ -201,11 +343,13 @@
             if (p.traits.indexOf("sceptic") >= 0) fear *= 0.55;
             if (p.traits.indexOf("drunk") >= 0) fear *= 0.4;
             if (p.trust > 40) fear *= 0.7;
-            if (p.state === "secured") fear *= 0.5;
+            if (p.moved) fear *= 0.6;
             p.panic = clamp(p.panic + fear * dt * 0.1, 0, 100);
 
             // ---- standing up, and getting in the way -----------------------------------------
+            // Somebody who has been put on the floor by a door stays on the floor by the door.
             if (p.helper) { helperTick(S, p, dt); }
+            else if (p.moved) { /* staying down */ }
             else if (p.state === "seated" && p.panic > 58 && p.awareness > 45 &&
                        canStandUp(p)) {
                 if (S.rng.chance(clamp01(dt * 0.045))) {
@@ -255,12 +399,20 @@
 
     // ------------------------------------------------------------------------------ helpers ---
 
+    /** Let go of whoever this helper was on their way to, so somebody else can go instead. */
+    function release(S, p) {
+        if (!p.helperTarget) return;
+        const t = PRS.state.paxById(S, p.helperTarget);
+        if (t && t.claimedBy === p.id) t.claimedBy = null;
+        p.helperTarget = null;
+    }
+
     /**
      * A recruited passenger, working. Two phases and a timer, because a helper who pathfinds is a
      * helper who gets stuck behind the trolley and stops being funny.
      */
     function helperTick(S, p, dt) {
-        if (p.state === "down" || p.state === "dead") { p.helper = false; return; }
+        if (p.state === "down" || p.state === "dead") { release(S, p); p.helper = false; return; }
         p.state = "helping";
         spreadHelping(S, p, dt);
         p.taskLeft = (p.taskLeft || 0) - dt;
@@ -268,44 +420,42 @@
 
         if (p.helperPhase === "carry" && p.helperTarget) {
             const t = PRS.state.paxById(S, p.helperTarget);
-            if (t && t.state !== "secured" && t.state !== "dead") {
-                t.state = "secured";
-                t.securedAt = S.clock.elapsed;
-                t.carriedBy = p.id;
-                const zoneX = nearestSafeX(t.x);
-                t.x = zoneX; t.y = cabin.AISLE_Y;
-                p.x = zoneX; p.y = cabin.AISLE_Y;
-                S.stats.helperSaves = (S.stats.helperSaves || 0) + 1;
-                // A recruited doctor, nurse or vet has a look at the airway on the way, which is
-                // the difference between "treated" and "serious" on the manifest.
-                const medic = p.traits.indexOf("medical") >= 0;
-                if (medic) t.smokeDose = Math.max(0, t.smokeDose - 20);
-                PRS.state.log(S, p.name + " gets " + t.name + " to " +
-                    cabin.safeZoneName(zoneX) + (medic ? ", breathing better than they were."
-                                                       : ". You did not have to be there."), "good");
-                PRS.audio.play("secure");
+            release(S, p);
+            if (t && t.state !== "dead" && t.state !== "carried" && !t.helper) {
+                const r = refuge(S, t.x);
+                if (r) {
+                    // A recruited doctor, nurse or vet has a look at the airway on the way, which
+                    // is the difference between "treated" and "serious" on the manifest.
+                    const medic = p.traits.indexOf("medical") >= 0;
+                    if (medic) t.smokeDose = Math.max(0, t.smokeDose - 20);
+                    shelter(S, t, r.x, r.y);
+                    t.carriedBy = p.id;
+                    p.x = r.x; p.y = r.y;
+                    S.stats.helperSaves = (S.stats.helperSaves || 0) + 1;
+                    PRS.state.log(S, p.name + " gets " + t.name + " down on the floor at " +
+                        cabin.placeName(r.x, r.y) + (medic ? ", breathing better than they were."
+                                                           : ". You did not have to be there."), "good");
+                    PRS.audio.play("secure");
+                }
             }
-            p.helperTarget = null;
             p.helperPhase = "seek";
             p.taskLeft = 4;
             PRS.state.reindex(S);
             return;
         }
 
-        // Find somebody. Nearest first, unconscious before conscious, children before adults.
+        // Find somebody: whoever would gain most from being moved, nearest first.
         let best = null, bestScore = -1e9;
         for (const t of S.pax) {
             if (t === p || t.helper) continue;
-            if (t.state === "secured" || t.state === "dead" || t.state === "carried") continue;
+            if (t.state === "dead" || t.state === "carried") continue;
             if (t.claimedBy && t.claimedBy !== p.id) continue;
+            const gain = moveGain(S, t);
+            if (gain < MOVE_WORTH) continue;
             const d = Math.abs(t.x - p.x) + Math.abs(t.y - p.y);
-            let score = 60 - d * 2.2;
-            if (t.state === "down") score += 28;
-            if (isChild(t)) score += 16;
-            if (t.traits.indexOf("immobile") >= 0) score += 22;
-            if (t.traits.indexOf("elderly") >= 0) score += 12;
-            if (t.kg > 90) score -= 14;
-            score += S.fire.smoke[cabin.idx(t.x, t.y)] * 0.25;
+            let score = gain - d * 1.2;
+            if (isChild(t)) score += 8;
+            if (t.kg > 90) score -= 8;
             if (score > bestScore) { bestScore = score; best = t; }
         }
         if (!best) { p.taskLeft = 10; return; }
@@ -313,10 +463,11 @@
         best.claimedBy = p.id;
         p.helperTarget = best.id;
         p.helperPhase = "carry";
-        // Reach them, get them out of the seat, and carry them forward. Slower than you,
-        // and slower again in smoke, because they have no idea what they are doing.
+        // Reach them, get them out of the seat, and carry them to a door. Slower than you, and
+        // slower again in smoke, because they have no idea what they are doing.
+        const r = refuge(S, best.x);
         const dist = Math.abs(best.x - p.x) + Math.abs(best.y - p.y) +
-                     Math.abs(best.x - nearestSafeX(best.x));
+                     (r ? Math.abs(best.x - r.x) : 0);
         const fog = 1 + clamp01(S.fire.smoke[cabin.idx(best.x, best.y)] / 100) * 0.8;
         const fright = 1 + clamp01(p.panic / 100) * 0.5;
         // The aisle is fifty centimetres wide. A second pair of hands is worth almost a whole
@@ -324,16 +475,6 @@
         const congestion = 1 + 0.08 * Math.max(0, activeHelpers(S) - 1);
         p.taskLeft = (14 + best.kg * 0.2 + dist * 2.0) * fog * fright * congestion;
         p.x = best.x; p.y = best.y;
-    }
-
-    function nearestSafeX(x) {
-        const options = [cabin.FWD_CROSS_X, cabin.AFT_CROSS_X];
-        let best = options[0], bestD = 1e9;
-        for (const o of options) {
-            const d = Math.abs(o - x);
-            if (d < bestD) { bestD = d; best = o; }
-        }
-        return best;
     }
 
     /**
@@ -377,6 +518,7 @@
         p.taskLeft = 3;
         p.state = "helping";
         p.trust = Math.min(100, p.trust + 40);
+        p.annoyed = 0;
         p.belted = false;
         S.stats.helpersRecruited++;
         // Somebody getting up to help is the cabin seeing that something is worth helping with.
@@ -400,7 +542,11 @@
         r -= p.trust * 0.55;
         r -= p.awareness * 0.30;
         r -= S.credibility * 0.38;
-        r -= p.spokenTo * 4;
+        // Being told the same thing again wears most people down, for about three conversations.
+        // A sceptic is not worn down by talking at all: a sceptic needs to see it.
+        r -= Math.min(p.traits.indexOf("sceptic") >= 0 ? 0 : 3, p.spokenTo) * 4;
+        // Somebody you have soaked is not in a mood to do you favours.
+        r += (p.annoyed || 0) * 0.3;
         if (p.panic > 70) r += 18;              // too frightened to hear you
         if (p.panic > 30 && p.panic < 65) r -= 10;  // frightened enough to want a plan
         return clamp(r, 2, 140);
@@ -449,10 +595,9 @@
     }
 
     PRS.pax = {
-        DOWN_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying, displayState, condition,
-        carryOverhead, canCarry, advance, recruit, helperCap, resistance, persuasion, convince,
-        odds, worthAsking,
-        face, palette,
-        speak, nearestSafeX,
+        DOWN_AT, GRAB_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying,
+        displayState, condition, carryOverhead, canCarry, advance, recruit, helperCap, resistance,
+        persuasion, convince, odds, worthAsking, face, palette, speak,
+        evacuation, exposure, refuge, moveGain, shelter, annoy, obstructor,
     };
 })(window);

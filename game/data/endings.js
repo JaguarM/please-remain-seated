@@ -23,7 +23,7 @@
                     ".\n\nThe report will note that you were the first person on board to " +
                     "identify the source of the fire, and that you identified it eleven minutes " +
                     "before the crew did, and that this is in the transcript because " +
-                    (R.secured ? R.secured + " people are alive to say so" :
+                    (R.survivors ? R.survivors + " people are alive to say so" :
                      "the cabin interphone recorded you saying it") + ".\n\n" +
                     "It will not note that nobody listened, because the report does not have a " +
                     "field for that.";
@@ -40,10 +40,9 @@
                     "every one of them was still going to go. But a cell venting under nine " +
                     "centimetres of water is a noise and some steam, and a cell venting in an " +
                     "overhead locker is a cabin full of hydrogen fluoride.\n\n" +
-                    R.tally.unhurt + " people walked off this aeroplane. " + R.secured + " of " +
-                    "them were where they were because of you, and the other " +
-                    (R.tally.unhurt - Math.min(R.tally.unhurt, R.secured)) +
-                    " were where they were because of a tap.\n\n" +
+                    R.survivors + " people got off this aeroplane alive and " + R.tally.unhurt +
+                    " of them walked. Some of those are breathing because of where somebody put " +
+                    "them down, and some of them are breathing because of a tap.\n\n" +
                     "Nobody will ever know that you did this. It is not visible in any photograph " +
                     "of the aeroplane.";
             },
@@ -51,15 +50,16 @@
         {
             id: "delegated",
             title: "THE ONES WHO WALKED OFF",
-            when: (S, R) => R.byHelpers >= 6 && R.secured >= 14,
+            when: (S, R) => R.byHelpers >= 10 && R.survivors >= 44,
             text(S, R) {
                 return "You recruited " + S.stats.helpersRecruited + " people.\n\n" +
-                    "Between them they moved " + R.byHelpers + " passengers forward. You moved " +
-                    R.byYou + ". You spent most of the last four minutes not carrying anybody, " +
-                    "because you were pointing, and pointing turned out to be the highest-value " +
-                    "action available on this aeroplane.\n\n" + R.secured + " souls secured. " +
-                    R.tally.unhurt + " walked off. " + (R.lost ? R.lost + " did not." :
-                    "Everybody who was on this aeroplane got off this aeroplane.") + "\n\n" +
+                    "Between them they moved " + R.byHelpers + " passengers out of the rows. You " +
+                    "moved " + R.byYou + ". You spent most of the last four minutes not carrying " +
+                    "anybody, because you were pointing, and pointing turned out to be the " +
+                    "highest-value action available on this aeroplane.\n\n" + R.survivors +
+                    " of sixty got off alive. " + R.tally.unhurt + " walked. " +
+                    (R.lost ? R.lost + " did not." : "Everybody who was on this aeroplane got " +
+                    "off this aeroplane.") + "\n\n" +
                     "In eleven of the statements taken afterward, the passenger being interviewed " +
                     "describes themselves as the person who helped, and not one of them mentions " +
                     "you. This is the correct outcome and you would not change it.";
@@ -68,14 +68,14 @@
         {
             id: "nobody",
             title: "PLEASE REMAIN SEATED",
-            when: (S, R) => R.secured === 0,
+            when: (S, R) => R.moved === 0,
             text(S, R) {
                 return "You did not move one person.\n\n" + S.actions.length + " actions. " +
                     "Nine hundred seconds. " + S.stats.agentsUsed + " things poured on a fire " +
                     "that was never going to go out, and " + Math.round(S.stats.timeArguing) +
                     " seconds spent explaining to people who did not want to be explained to.\n\n" +
-                    R.tally.unhurt + " walked off, " + R.tally.treated + " went to hospital, and " +
-                    R.lost + " did not.\n\n" +
+                    R.tally.unhurt + " walked off, " + R.tally.treated + " went to hospital, " +
+                    R.tally.serious + " stayed there, and " + R.lost + " did not.\n\n" +
                     "The cabin crew's report describes you as “obstructive”. It is going to be " +
                     "eight months before anybody reads the maintenance log and works out what " +
                     "was in the bin, and by then everybody will have agreed on a version of this " +
@@ -93,7 +93,7 @@
                     Math.round(S.player.smokeDose) + " on the other one.\n\n" +
                     "It is a physical limit and you found it. There was no arrangement of those " +
                     "nine hundred seconds in which your arms got to " + (R.byYou + 1) + ".\n\n" +
-                    R.secured + " secured, " + R.tally.unhurt + " walked off, " + R.lost +
+                    R.survivors + " got off alive, " + R.tally.unhurt + " walked, " + R.lost +
                     " not accounted for.\n\n" +
                     "The thing you will think about, for years, is that four rows behind the " +
                     "last person you carried there were eleven people who would have walked if " +
@@ -106,10 +106,10 @@
             when: () => true,
             text(S, R) {
                 return "The aeroplane landed. It always lands. That was never the question.\n\n" +
-                    R.secured + " souls were secured forward and low. " + R.tally.unhurt +
-                    " walked off unaided, " + R.tally.treated + " were taken to hospital and " +
-                    "released, " + R.tally.serious + " were taken to hospital and kept, and " +
-                    R.lost + " were not accounted for.\n\n" +
+                    R.moved + " people were out of their seats and on the floor when it did. " +
+                    R.tally.unhurt + " walked off unaided, " + R.tally.treated + " were taken " +
+                    "to hospital and released, " + R.tally.serious + " were taken to hospital " +
+                    "and kept, and " + R.lost + " were not accounted for.\n\n" +
                     "The fire vented " + R.fire.vented + " cells of a pack of nine. There were " +
                     R.fire.cellsLeft + " left when the doors opened, and they went in the " +
                     "aircraft rescue foam nine minutes later, one at a time, popping, while " +

@@ -9,11 +9,11 @@ who has noticed. The plane lands in fifteen minutes, and the clock only moves wh
 
 ![The cabin four minutes out](docs/cabin.png)
 
-*Four minutes to touchdown. The fire has the left bank of lockers from row 10 to row 17, the
-seats under it are burnt through, twenty souls are forward in the aisle by the doors, seven
-people are helping, and the flight deck has declared. Drawn by `tools/render_frame.py` from the
-game's own simulation and sprite maps, so `--seed=606 --at=540` gives you this picture and not
-one like it.*
+*Four and a half minutes to touchdown. The fire has most of the left bank of seats from row 7 to
+row 22, the aisle is full of people who stood up, thirteen have been put on the floor by the
+doors, seven people are helping, and the flight deck has declared. Drawn by
+`tools/render_frame.py` from the game's own simulation and sprite maps, so `--seed=606 --at=540`
+gives you this picture and not one like it.*
 
 The rules
 ---------
@@ -22,15 +22,20 @@ The rules
   thing that moves the fire, the smoke, the passengers and the crew. Nine hundred seconds.
 - **You cannot put the fire out.** It is a lithium cell in a vape in a hard case in a closed
   locker. Water cools it, halon smothers the flame, nothing reaches the cell. Nine cells, and
-  every one of them is going to go.
+  every one of them is going to go. Fighting it still matters: it keeps the smoke down and the
+  aisle walkable, and it comes down on the people sitting under it, who remember.
 - **Smoke is what kills.** It moves four times faster than the fire and fills from the ceiling
   down. A person on the floor is in different air from a person standing up.
+- **Nowhere is safe.** When the doors open, every passenger is judged where they are: the smoke
+  they have breathed, the air where they are lying, whether they are low, whether anything is
+  over their face, and the aisle between them and a door. The score is how many of the sixty get
+  off alive.
 - **Nobody believes you, and they are right not to.** Credibility rises with evidence: a
   photograph, an open bin, a burn on your hand, the lavatory smoke detector, somebody getting up
   to help. Every social action is gated on it.
-- **You cannot save everybody.** Alone you can carry about twenty people in fifteen minutes. A
-  recruited helper carries for the rest of the flight without being told, and the cabin has room
-  for seven of them. The game never says out loud that this is the whole answer.
+- **You cannot save everybody.** Alone you can carry a handful of people the length of the
+  cabin. A recruited helper moves people for the rest of the flight without being told, and the
+  cabin has room for seven of them. Fifty-four is very hard, and sixty is not on offer.
 - **You can change your mind, not your luck.** Backspace undoes the last action and gives the
   seconds back, dice included, so a refusal cannot be re-rolled. Anything that told you something
   new stays done.
@@ -61,25 +66,25 @@ them free. Gordy Mach carries two at a time and nobody listens to him. Each of t
 locked behind something you do on the aeroplane, printed on the card, and each one makes you play
 a different way to earn it: open the locker and look inside, recruit four helpers, carry five
 people yourself, get the flight deck to declare inside five minutes, be told to sit down by three
-different passengers, get a child forward, secure twenty-two souls.
+different passengers, get a child out of the rows, get fifty-two people off alive.
 
 There are no perks. Each person is five numbers, one to ten, and every number is a multiplier on
 something you feel inside a minute: strength (how long a carry takes, who can be carried at all,
 and at ten, two at once), speed, lungs, nerve, voice. What else makes them different is data the
 game already understands: what is on them when they board, and which row they are sitting in.
 Six outfits move the five numbers by a point or two; they unlock as the souls total in the log
-book climbs, ten for the first and two hundred and forty for the last.
+book climbs, fifty for the first and a thousand for the last.
 
-**The log book** is the only thing that carries over between flights: flights flown, souls
-secured across all of them, every medal ever awarded, and the last sixty flights one line each.
-Nothing is bought. Everything else in the aeroplane, from the galley drawers to what other
+**The log book** is the only thing that carries over between flights: flights flown, souls who
+got off alive across all of them, every medal ever awarded, and the last sixty flights one line
+each. Nothing is bought. Everything else in the aeroplane, from the galley drawers to what other
 passengers have in their laps, is found in flight, and asking somebody what they have is the same
 conversation that recruits them.
 
 What is in it
 -------------
 
-- **81 actions** across seven decks, each with a cost, a condition and a line of text. Every one
+- **82 actions** across seven decks, each with a cost, a condition and a line of text. Every one
   changes a number the score depends on. The ones that did not are in git history.
 - **Nine characters, six outfits and a bag of three from a pool of nine.** Two characters are
   free; the rest are earned by playing a particular way. The outfits open with the souls total.
@@ -89,9 +94,10 @@ What is in it
 - A **fire, smoke and heat simulation** over a 30×9 grid, with a core that suppression cannot
   reach.
 - Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
-- Seven events, 21 medals that each say one thing about the arithmetic, six endings, and an
+- Seven events, 26 medals that each say one thing about the arithmetic, six endings, and an
   **incident report** in the flat voice of an air accident investigator: every soul by seat,
   your own actions quoted back in order, and where the fifteen minutes went.
+- A **flight recorder** on the report, which keeps your last thirty flights and plays them back.
 - 31 synthesised sounds and no audio files.
 
 How it is built
@@ -102,13 +108,14 @@ How it is built
       art/                cabin-sprites.js, generated by pixel-workshop/make_cabin_textures.py
       engine/             seeded RNG and DOM sugar, sprite atlas, synthesised audio, renderer
       sim/                cabin geometry, fire, passengers, crew, the action engine, undo,
-                          scoring, and the log book that carries over between flights
+                          scoring, the log book that carries over between flights, and the
+                          flight recorder
       data/               characters, outfits, items, the roster, events, medals, endings, the
                           action decks
       ui/                 hotspots (what a click means), the play screen, the other screens
       style.css
     pixel-workshop/       the art generator: every sprite is an ASCII map plus a palette
-    tools/                the play-testers, the frame renderer, a no-cache dev server
+    tools/                the play-testers, replay and harm, the frame renderer, a dev server
 
 Everything assigns to one global, `window.PRS`, because the game has to run from a double-clicked
 file and `file://` will not load an ES module. `game/sim/actions.js` has the only function that
@@ -127,27 +134,35 @@ not be a dearer copy of something already on the card.
 Testing it
 ----------
 
-    node tools/simulate.js 300 --char=ansel   # six bots, the balance table, any crash
-    node tools/simulate.js 100 --char=yuki --strategy=good --outfit=gym
+    node tools/simulate.js 360 --char=ansel   # the bots, the balance table, any crash
+    node tools/simulate.js 100 --char=yuki --strategy=good,blend --outfit=gym
+    node tools/harm.js 60 --strategy=idle     # where the harm at touchdown comes from, by part
+    node tools/replay.js flights.json         # play recorded flights back against the bots
     node tools/coverage.js                    # every action performed at least once
     node tools/test_undo.js                   # undo is exact and cannot buy a better roll
     node tools/dump_frame.js --at=540 --seed=606 && python tools/render_frame.py --out=docs/cabin.png
     python tools/trim_actions.py --list       # every action id; pass ids to remove them cleanly
 
 The bots are deliberately stupid in different directions, and the table they print is what the
-design aims at. Souls secured of 60, three hundred flights each:
+design aims at. Survivors of 60 as Priya, sixty flights each:
 
-| bot | what it does | Priya | Gordy |
+| bot | what it does | survived | best |
 |---|---|---|---|
-| fire | only fights the fire | 1 | 1 |
-| idle | never leaves the seat | 4 | 4 |
-| random | anything | 9 | 6 |
-| carry | carries and drags, one trip at a time | 20 | 22 |
-| good | recruits early, then carries | 38 | 32 |
+| idle | never leaves the seat | 26 | 50 |
+| fire | only the fire deck: the bin, the case, the sink | 31 | 56 |
+| douse | the first playtest: pours from where one pour reaches the most fire, refills at the tap | 32 | 48 |
+| carry | carries whoever is worst off to the best floor by a door | 31 | 48 |
+| good | recruits early, then carries | 33 | 51 |
+| blend | two or three minutes at the fire while it is small, then recruits and carries | 40 | 54 |
 
-The fire bot has the fewest casualties of the five and secures almost nobody, because holding a
-fire down keeps a cabin breathable and moves no one. If it ever scores well, the game has stopped
-being about the thing it is about.
+No bot that does one thing is far ahead of the others, and the one that does two is ahead of all
+of them. If the fire bot or the douse bot ever leads the table, fighting the fire has become the
+whole game again; if either falls to the idle line, it has stopped being worth doing.
+
+**Playtesting.** The report has a flight recorder: the last thirty flights, each with a box for
+what you were trying to do. "Save recorded flights" writes them to a file, and `tools/replay.js`
+replays every one exactly and flies the same seed with the idle, douse, good and blend bots, so
+a flight a person played can be read against the table.
 
 Text
 ----
