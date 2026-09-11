@@ -11,7 +11,10 @@
 // thing in your bag the action uses (an id, or a function of the state), which is how clicking
 // the bottle finds everything the bottle can do.
 //
-// `spend()` at the bottom is the whole game. Nothing else in the codebase moves the clock.
+// `passage()` at the bottom is the whole game: the twelve-second sub-steps an action's seconds
+// are made of, handed out one at a time. `spend()` takes them all at once, which is what the bots
+// and the replays do, and the play screen takes them frame by frame so the cabin can be watched
+// while they go by. Nothing else in the codebase moves the clock.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -154,13 +157,17 @@
 
     // -------------------------------------------------------------------------------- doing ---
 
-    /** Run an action and pay for it. The only entry point the UI has. */
-    function perform(S, entry) {
+    /**
+     * Run an action and pay for it. The only entry point the UI has.
+     *
+     * The seconds are all gone by the time this returns, unless `opts.paced` is set: then the
+     * result carries the `passage` still to be played, and whoever asked for it steps through it.
+     */
+    function perform(S, entry, opts) {
         if (S.clock.landed) return null;
         const def = entry.def;
         // Everything the world is, before anything happens, including which dice have been used.
-        PRS.undo.push(S, def);
-        S.undoStack[S.undoStack.length - 1].label = entry.label;
+        PRS.undo.push(S, entry);
         let cost = entry.cost;
         let text = null, kind = def.danger === "bad" ? "bad" : def.danger === "good" ? "good" : "plain";
 
@@ -187,9 +194,17 @@
                          label: entry.label });
 
         if (text) st.log(S, text, kind);
-        if (cost > 0) spend(S, cost, def);
-        PRS.medals.check(S);
-        return { text: text, cost: cost, kind: kind };
+        const done = { text: text, cost: cost, kind: kind, passage: null };
+        // Medals are looked at once the seconds have gone by, whenever that turns out to be.
+        const check = () => PRS.medals.check(S);
+        if (cost <= 0) {
+            check();
+            return done;
+        }
+        const time = passage(S, cost, def, check);
+        if (opts && opts.paced) done.passage = time;
+        else while (time.step()) { /* all of it, now */ }
+        return done;
     }
 
     // -------------------------------------------------------------------------------- time ---
@@ -197,61 +212,115 @@
     /**
      * Move the world on. Nothing else in this codebase may call fire.advance, pax.advance or
      * crew.advance, so there is exactly one place where a second of this flight goes by.
+     *
+     * It goes by in sub-steps, so a ninety-second action does not let the fire teleport, and a
+     * passage hands them out one at a time: `step()` moves the world on by one of them and says
+     * whether it did. spend() takes them all at once, which is what the bots, the replays and the
+     * report's "without you" do; the play screen takes them as the frames go by, which is the
+     * same world arriving at the same place slowly enough to watch it get there.
+     *
+     * The clock is paid up front, as it always was, so everything that happens during an action
+     * happens at the time the action ends. `owed()` is what has been paid and not yet played.
      */
-    function spend(S, seconds, def) {
-        if (S.clock.landed || seconds <= 0) return;
-        const dt = Math.min(seconds, Math.max(0, S.clock.remaining));
-        const overshoot = seconds - dt;
+    function passage(S, seconds, def, then) {
+        const p = { seconds: seconds, done: 0, finished: false, step: step, owed: owed };
+        let next = { seconds: seconds, def: def };     // the spend waiting to start
+        let now = null;                              // the one playing: { def, left, overshoot }
 
-        S.clock.remaining -= dt;
-        S.clock.elapsed += dt;
+        function owed() { return now ? now.left : 0; }
 
-        // Bookkeeping for the report, which is going to be read out at an inquiry.
-        if (def) {
-            const tags = def.tags || [];
-            if (tags.indexOf("carry") >= 0) S.stats.timeCarrying += dt;
-            else if (tags.indexOf("social") >= 0) S.stats.timeArguing += dt;
-            else if (tags.indexOf("fire") >= 0) S.stats.timeFighting += dt;
-            else if (tags.indexOf("waste") >= 0) S.stats.timeWasted += dt;
-        }
+        /** Pay for a spend, or say there is nothing to pay for. */
+        function begin(n) {
+            if (!n || S.clock.landed || n.seconds <= 0) return null;
+            const dt = Math.min(n.seconds, Math.max(0, S.clock.remaining));
+            S.clock.remaining -= dt;
+            S.clock.elapsed += dt;
 
-        // Sub-stepping, so a ninety-second action does not let the fire teleport. Twelve seconds
-        // is small enough that spread and smoke behave, and large enough to stay cheap.
-        let left = dt;
-        while (left > 0.001) {
-            const step = Math.min(12, left);
-            PRS.fire.advance(S.fire, step, S);
-            PRS.pax.advance(S, step);
-            PRS.crew.advance(S, step);
-            playerTick(S, step);
-            PRS.events.tick(S, step);
-            left -= step;
-            // The flight deck can take ninety seconds off the descent in the middle of a long
-            // action. The clock was paid in full up front, so what is really left is the clock
-            // plus what this action has not spent yet; when that runs out, the wheels are down.
-            if (S.clock.remaining + left <= 0.001) {
-                S.clock.elapsed -= left;
-                left = 0;
+            // Bookkeeping for the report, which is going to be read out at an inquiry.
+            if (n.def) {
+                const tags = n.def.tags || [];
+                if (tags.indexOf("carry") >= 0) S.stats.timeCarrying += dt;
+                else if (tags.indexOf("social") >= 0) S.stats.timeArguing += dt;
+                else if (tags.indexOf("fire") >= 0) S.stats.timeFighting += dt;
+                else if (tags.indexOf("waste") >= 0) S.stats.timeWasted += dt;
             }
+            return { def: n.def, left: dt, overshoot: n.seconds - dt };
         }
 
-        PRS.audio.setRoar(clamp01(PRS.fire.worst(S.fire) / 90));
+        /** A spend has run out of sub-steps: what that means, and the spend after it, if any. */
+        function close() {
+            const s = now;
+            now = null;
+            next = null;
+            PRS.audio.setRoar(clamp01(PRS.fire.worst(S.fire) / 90));
 
-        // You went down. Nobody on this aeroplane is going to do anything on your behalf, so the
-        // rest of the flight happens without you in it, and then it lands.
-        if (S.player.alive === false && !S.clock.landed && S.clock.remaining > 0.001) {
-            spend(S, S.clock.remaining, null);
-            return;
+            if (S.player.alive === false && !S.clock.landed && S.clock.remaining > 0.001) {
+                // You went down. Nobody on this aeroplane is going to do anything on your behalf,
+                // so the rest of the flight happens without you in it, and then it lands.
+                next = { seconds: S.clock.remaining, def: null };
+            } else {
+                if (S.clock.remaining <= 0.001 && !S.clock.landed) {
+                    S.clock.remaining = 0;
+                    land(S);
+                }
+                if (s.overshoot > 0 && !S.clock.landed) {
+                    // Only possible if something raised the clock mid-action; harmless, but honest.
+                    next = { seconds: s.overshoot, def: s.def };
+                }
+            }
+            if (!next) finish();
         }
 
-        if (S.clock.remaining <= 0.001 && !S.clock.landed) {
-            S.clock.remaining = 0;
-            land(S);
+        function finish() {
+            p.finished = true;
+            if (then) then();
         }
-        if (overshoot > 0 && !S.clock.landed) {
-            // Only possible if something raised the clock mid-action; harmless, but honest.
-            spend(S, overshoot, def);
+
+        /** One sub-step of the world, and true; or false, once there is nothing left to play. */
+        function step() {
+            while (!p.finished) {
+                if (!now) {
+                    now = begin(next);
+                    next = null;
+                    if (!now) { finish(); break; }
+                }
+                if (now.left <= 0.001) { close(); continue; }
+
+                // Twelve seconds is small enough that spread and smoke behave, and large enough
+                // to stay cheap.
+                const dt = Math.min(12, now.left);
+                tick(S, dt);
+                now.left -= dt;
+                p.done += dt;
+                // The flight deck can take ninety seconds off the descent in the middle of a long
+                // action. The clock was paid in full up front, so what is really left is the clock
+                // plus what this action has not spent yet; when that runs out, the wheels are down.
+                if (S.clock.remaining + now.left <= 0.001) {
+                    S.clock.elapsed -= now.left;
+                    now.left = 0;
+                }
+                if (now.left <= 0.001) close();
+                return true;
+            }
+            return false;
         }
+
+        return p;
+    }
+
+    /** A sub-step: everything on the aeroplane that is not you deciding something. */
+    function tick(S, dt) {
+        PRS.fire.advance(S.fire, dt, S);
+        PRS.pax.advance(S, dt);
+        PRS.crew.advance(S, dt);
+        playerTick(S, dt);
+        PRS.events.tick(S, dt);
+    }
+
+    /** A whole passage, at once. */
+    function spend(S, seconds, def) {
+        const time = passage(S, seconds, def);
+        while (time.step()) { /* all of it, now */ }
     }
 
     /** What the fire is doing to you while you do all this. */
@@ -354,7 +423,7 @@
 
     PRS.actions = {
         DECKS, register, count, all, byId, deckCounts, costOf, available, availableByDeck,
-        perform, spend, stepCost, moveTo, land, resolve,
+        perform, passage, spend, stepCost, moveTo, land, resolve,
         // Ask one definition whether it is possible right now, without evaluating the other
         // three hundred. tools/coverage.js walks the whole registry with this.
         entriesFor,

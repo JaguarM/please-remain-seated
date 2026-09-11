@@ -1,16 +1,22 @@
-// Prove that undo puts the world back exactly, and that it cannot be used to reroll.
+// Prove that undo puts the world back exactly, that it cannot be used to reroll, and that time
+// paid for slowly is the same time.
 //
 //   node tools/test_undo.js
 //
-// Three properties, checked over a few hundred real turns:
+// Six properties, checked over a few hundred real turns:
 //
 //   1. exact       undo then redo the same action, and the world is bit-for-bit where it would
 //                  have been if you had never hesitated. Fire fields, passengers, clock, all of it.
 //   2. no reroll   a social action that failed, undone and repeated, fails again in the same
 //                  words. This is the one that matters: without it, persuasion is free.
-//   3. no scouting an action tagged `reveal` refuses to be undone.
-//   4. no detour    the same ask, with and without ten seconds of something else first, meets
+//   3. the trail   a walk undoes on its own, every tile on the trail is exactly the world you
+//                  walked away from, and the trail ends at the last thing that was not a walk.
+//   4. no scouting an action tagged `reveal` refuses to be undone.
+//   5. no detour   the same ask, with and without ten seconds of something else first, meets
 //                  the same dice. A shared random stream cannot give you this; named dice can.
+//   6. paced       an action whose passage is played a sub-step at a time, the way the play
+//                  screen plays it, lands exactly where spend() lands. Without this the game in
+//                  the browser is not the game the bots and the replays measure.
 //
 // The comparison is a canonical digest of the whole simulation state, so anything a snapshot
 // forgets to copy shows up here rather than as a strange bug three sessions later.
@@ -34,11 +40,11 @@ const BOTS = mod.exports.BOTS;
 function digest(S) {
     const parts = [
         S._eventTurn || 0,
-        S.clock.remaining.toFixed(4), S.clock.elapsed.toFixed(4), S.clock.total,
+        S.clock.remaining.toFixed(4), S.clock.elapsed.toFixed(4), S.clock.total, S.clock.landed,
         S.credibility.toFixed(4), S.cabinAwareness.toFixed(4), S.cabinPanic.toFixed(4),
         S.crewPhase, S.crewPhaseAt,
         S.player.x, S.player.y, S.player.panic.toFixed(4), S.player.smokeDose.toFixed(4),
-        S.player.burns.toFixed(4), S.player.carrying.join("|"), S.player.dragging,
+        S.player.burns.toFixed(4), S.player.carrying.join("|"), S.player.dragging, S.player.alive,
         Object.keys(S.player.wearing).sort().join("|"),
         S.inventory.map((s) => s.id + ":" + s.uses + ":" + s.spent + ":" + s.wet).join("|"),
         S.fire.core.heat.toFixed(4), S.fire.core.cells, S.fire.core.contained.toFixed(4),
@@ -55,7 +61,7 @@ function digest(S) {
     }
     for (const p of S.pax) {
         parts.push([p.id, p.x, p.y, p.state, p.helper, p.carries, p.revealed, p.masked, p.belted,
-                    p.braced, p.moved, (p.annoyed || 0).toFixed(3), p.claimedBy,
+                    p.braced, p.moved, (p.annoyed || 0).toFixed(3), p.claimedBy, p.outcome,
                     p.smokeDose.toFixed(3), p.panic.toFixed(3), p.trust.toFixed(3),
                     p.awareness.toFixed(3), (p.taskLeft || 0).toFixed(2), p.mood.toFixed(3),
                     p.standN || 0, (p.standAcc || 0).toFixed(4), p.spreadN || 0,
@@ -72,7 +78,6 @@ function fresh(seed, charId) {
     return PRS.state.create({ characterId: charId, seed: seed });
 }
 
-let collapseOk = false;
 let checked = 0, exactFails = 0, rerollChecked = 0, rerollFails = 0, revealChecked = 0,
     revealFails = 0, undone = 0;
 const problems = [];
@@ -91,7 +96,6 @@ for (let run = 0; run < 14; run++) {
         // What the world looks like if we simply do it.
         const before = digest(S);
         const logBefore = S.log.length;
-        const straight = fresh(seed, charId);   // not used; kept cheap by only digesting S
 
         const result = PRS.actions.perform(S, entry);
         const after = digest(S);
@@ -103,9 +107,7 @@ for (let run = 0; run < 14; run++) {
                 revealFails++;
                 problems.push("reveal action was undoable: " + entry.id);
             }
-        } else if (plan.ok && plan.count === 1 && !S.clock.landed && turn % 3 === 0) {
-            // count === 1 only: a run of the same action collapses into one change of mind, and
-            // that case is checked on its own below.
+        } else if (plan.ok && !S.clock.landed && turn % 3 === 0) {
             // 1. Undo, and check we are back where we started.
             PRS.undo.undo(S);
             undone++;
@@ -143,29 +145,48 @@ for (let run = 0; run < 14; run++) {
     }
 }
 
-// A run of the same action undoes as one decision, which is what "go back" means to somebody who
-// has just walked three times in the wrong direction.
+// The trail: a walk comes back on its own, every tile on it is exactly the world you walked away
+// from, and the whole wander comes back in one go from the far end of it. That is what a player
+// stepping back the way they came is asking for, and none of it is an approximation of a rewind.
+let trailOk = false;
 {
     const S = fresh(9200, "gordy");
-    const start = digest(S);
-    let walks = 0;
+    const worlds = [];                 // the world before each walk, oldest first
     for (let i = 0; i < 3; i++) {
         const step = PRS.actions.available(S, true)
             .filter((e) => e.id === "move.walk" && Math.abs(e.ctx.x - S.player.x) +
                                                    Math.abs(e.ctx.y - S.player.y) === 1)[0];
         if (!step) break;
+        worlds.push({ digest: digest(S), x: S.player.x, y: S.player.y });
         PRS.actions.perform(S, step);
-        walks++;
     }
+    const trail = PRS.undo.trail(S);
     const plan = PRS.undo.peek(S);
-    if (walks !== 3) problems.push("could not set up the collapse test");
-    else if (!plan.ok || plan.count !== 3) {
-        problems.push("a run of three walks did not collapse (count " +
-                      (plan.ok ? plan.count : "blocked") + ")");
+    if (worlds.length !== 3) {
+        problems.push("could not set up the trail test");
+    } else if (trail.length !== 3 ||
+               trail.some((s, k) => s.x !== worlds[2 - k].x || s.y !== worlds[2 - k].y)) {
+        problems.push("the trail is not the tiles the walks started from (" + trail.length +
+                      " stops)");
+    } else if (!plan.ok || plan.count !== 1) {
+        problems.push("undo took back more than the last walk (" +
+                      (plan.ok ? plan.count : plan.why) + ")");
     } else {
         PRS.undo.undo(S);
-        if (digest(S) !== start) problems.push("collapsed undo did not restore the start");
-        else collapseOk = true;
+        const one = digest(S) === worlds[2].digest;
+        const back = PRS.undo.trail(S);
+        PRS.undo.undo(S, back[back.length - 1].index);
+        const all = digest(S) === worlds[0].digest;
+        // And anything that is not a walk ends the trail, because walking back past it would be
+        // taking that back as well.
+        const crawl = PRS.actions.available(S, true).filter((e) => e.id === "move.crawl")[0];
+        if (crawl) PRS.actions.perform(S, crawl);
+        const ended = !PRS.undo.trail(S).length;
+        if (!one) problems.push("a step back along the trail did not restore the last walk");
+        else if (!all) problems.push("walking back to the start of the trail did not restore it");
+        else if (!crawl) problems.push("could not check what ends a trail");
+        else if (!ended) problems.push("the trail ran on past something that was not a walk");
+        else trailOk = true;
     }
 }
 
@@ -212,19 +233,69 @@ for (const seed of [606, 7, 42, 1999, 31]) {
     }
 }
 
+// Time paid for slowly. The play screen does not spend an action's seconds in one go: it takes
+// the passage a sub-step at a time and draws the cabin in between, and reads the world while it
+// is half way through. Two flights, the same actions, one spent and one played, and they have to
+// end up on the same aeroplane - including the flight that goes on without you after you go down,
+// and the landing at the end of it.
+let pacedChecked = 0, pacedFails = 0, pacedLanded = 0;
+for (const seed of [606, 7, 4242]) {
+    const straight = fresh(seed, "ansel");
+    const paced = fresh(seed, "ansel");
+    for (let turn = 0; turn < 400 && !straight.clock.landed; turn++) {
+        const entry = BOTS.blend(PRS, straight, PRS.actions.available(straight, true));
+        if (!entry) break;
+        const twin = PRS.actions.available(paced, true).filter((e) => e.key === entry.key)[0];
+        if (!twin) {
+            pacedFails++;
+            problems.push("the paced flight could not take " + entry.key + " on seed " + seed);
+            break;
+        }
+        // A third of the way in, you go down in both of them, so the passage has to play out the
+        // rest of the flight without you and put the aeroplane on the ground.
+        if (turn === 30) { straight.player.smokeDose = 99; paced.player.smokeDose = 99; }
+
+        PRS.actions.perform(straight, entry);
+        const out = PRS.actions.perform(paced, twin, { paced: true });
+        let n = 0;
+        while (out.passage && !out.passage.finished) {
+            out.passage.step();
+            // Everything the screen asks the world between sub-steps, in case asking changes it.
+            PRS.undo.trail(paced);
+            PRS.undo.peek(paced);
+            PRS.state.movedCount(paced);
+            PRS.fire.worst(paced.fire);
+            if (++n > 5000) { problems.push("a passage never finished"); break; }
+        }
+        pacedChecked++;
+        if (digest(paced) !== digest(straight)) {
+            pacedFails++;
+            problems.push("a paced action landed somewhere else: " + entry.id + " on seed " + seed);
+            break;
+        }
+    }
+    if (straight.clock.landed && paced.clock.landed) pacedLanded++;
+    else if (!pacedFails) problems.push("the paced flight on seed " + seed + " never landed");
+}
+
 console.log(undone + " undos across " + checked + " undo-and-redo pairs");
 console.log("  state restored exactly:      " + (exactFails ? "FAIL (" + exactFails + ")" : "yes"));
 console.log("  social rolls not rerollable: " +
             (rerollFails ? "FAIL (" + rerollFails + ")" : "yes, " + rerollChecked + " checked"));
-console.log("  a run collapses to one:      " + (collapseOk ? "yes, three walks" : "FAIL"));
+console.log("  a step back is one walk:     " +
+            (trailOk ? "yes, three walks and a trail that ends" : "FAIL"));
 console.log("  reveals refuse to undo:      " +
             (revealFails ? "FAIL (" + revealFails + ")" : "yes, " + revealChecked + " checked"));
 console.log("  a detour is not a reroll:    " +
             (detourFails ? "FAIL (" + detourFails + ")" : "yes, " + detourChecked + " seeds"));
+console.log("  paced time is the same time: " +
+            (pacedFails ? "FAIL (" + pacedFails + ")" : "yes, " + pacedChecked + " actions, " +
+             pacedLanded + " landings"));
 
 if (problems.length) {
     console.log("\nPROBLEMS");
     for (const p of problems.slice(0, 12)) console.log("  " + p);
     process.exit(1);
 }
-console.log("\nUndo is exact, and it cannot buy you a better roll.");
+console.log("\nUndo is exact, it cannot buy you a better roll, and a second played slowly is the " +
+            "same second.");

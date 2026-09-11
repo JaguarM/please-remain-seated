@@ -20,13 +20,16 @@
 //     clock after looking would make scouting free;
 //   * anything after the aeroplane has landed.
 //
-// And a run of the same action collapses: three walks in a row undo as one decision, which is
-// what "go back" means to somebody who has just wandered.
+// Undo takes back one action at a time. Walks leave a trail - the tiles you stood on before each
+// walk since you last did anything else - and walking back onto one of those is every walk since
+// then undone at once, which is what "go back" means to somebody who has just wandered.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
 
     const LIMIT = 80;              // how many turns back the stack goes; nobody needs eighty
+    const TRAIL = 12;              // how many walks back the trail goes
+    const WALK = "move.walk";
     const SHARED = { item: true }; // keys that point at read-only data and must stay shared
 
     /**
@@ -110,40 +113,50 @@
     }
 
     /** Called by actions.perform before anything happens. */
-    function push(S, def) {
+    function push(S, entry) {
         if (!S.undoStack) S.undoStack = [];
+        const def = entry.def;
         S.undoStack.push({
             id: def.id,
-            label: null,                       // filled in by perform once it knows the label
+            label: entry.label,
             reveal: (def.tags || []).indexOf("reveal") >= 0,
+            // The tiles a walk goes through, which is the trail it leaves.
+            path: def.id === WALK && entry.ctx && entry.ctx.r ? entry.ctx.r.path : null,
             snap: snapshot(S),
         });
         while (S.undoStack.length > LIMIT) S.undoStack.shift();
     }
 
     /**
-     * What undo would do right now: the run of identical actions at the top of the stack, or a
-     * reason it cannot. The button prints this, so the rule is visible before it is hit.
+     * What undo would do right now: the last thing you did or, given an `index` into the stack,
+     * everything from there up; or a reason it cannot. The button prints this, so the rule is
+     * visible before it is hit.
      */
-    function peek(S) {
+    function peek(S, index) {
         const stack = S.undoStack || [];
         if (S.clock.landed) return { ok: false, why: "The aeroplane is on the ground." };
         if (!stack.length) return { ok: false, why: "You have not done anything yet." };
-
-        const top = stack[stack.length - 1];
-        if (top.reveal) {
-            return { ok: false, why: "You cannot un-see that. Anything that told you something " +
-                                     "new stays done." };
+        const i = index === undefined ? stack.length - 1 : index;
+        if (!(i >= 0 && i < stack.length)) {
+            return { ok: false, why: "That is further back than you can go." };
         }
-        // Collapse a run of the same action: three walks in a row are one change of mind.
-        let i = stack.length - 1;
-        while (i > 0 && stack[i - 1].id === top.id && !stack[i - 1].reveal) i--;
+
+        let walks = true;
+        for (let k = i; k < stack.length; k++) {
+            if (stack[k].reveal) {
+                return { ok: false, why: "You cannot un-see that. Anything that told you something " +
+                                         "new stays done." };
+            }
+            if (stack[k].id !== WALK) walks = false;
+        }
+        const top = stack[stack.length - 1];
         const first = stack[i];
         return {
             ok: true,
             index: i,
             count: stack.length - i,
             label: top.label || top.id,
+            walks: walks,
             seconds: Math.round(S.clock.remaining - first.snap.clock.remaining) * -1,
             // Where you were standing before all that, so the cabin can show you the tile you
             // would be putting yourself back on.
@@ -151,20 +164,44 @@
         };
     }
 
-    /** Put it back. Returns what was undone, or null. */
-    function undo(S) {
-        const plan = peek(S);
+    /** Put it back: the last thing, or everything from `index` up. Returns what was undone, or null. */
+    function undo(S, index) {
+        const plan = peek(S, index);
         if (!plan.ok) return null;
         const stack = S.undoStack;
         const entry = stack[plan.index];
         stack.length = plan.index;
         restore(S, entry.snap);
         S.stats.undos = (S.stats.undos || 0) + plan.count;
-        PRS.state.log(S, "You did not do that. " + plan.label +
-            (plan.count > 1 ? " (and the " + (plan.count - 1) + " before it)" : "") +
-            " is undone, and you have the " + Math.abs(plan.seconds) + " seconds back.", "undo");
+        const back = Math.abs(plan.seconds);
+        PRS.state.log(S, plan.walks
+            ? "You go back the way you came, to " + PRS.cabin.placeName(plan.at.x, plan.at.y) +
+              ", and you have " + PRS.util.plural(back, "second") + " back."
+            : "You did not do that. " + plan.label +
+              (plan.count > 1 ? " (and the " + (plan.count - 1) + " before it)" : "") +
+              " is undone, and you have the " + back + " seconds back.", "undo");
         return plan;
     }
 
-    PRS.undo = { snapshot, restore, push, peek, undo, LIMIT };
+    /**
+     * Where you have just walked from: the tile you stood on before each of the walks at the top
+     * of the stack, the most recent first, back as far as the last thing you did that was not a
+     * walk. Walking back onto one of them is those walks undone, which is why the trail ends at
+     * anything else: going back past a conversation would be taking the conversation back too.
+     * `path` is the tiles that walk went through, and `seconds` is what going back gives you.
+     */
+    function trail(S) {
+        const stack = S.undoStack || [];
+        const out = [];
+        if (S.clock.landed) return out;
+        for (let i = stack.length - 1; i >= 0 && out.length < TRAIL; i--) {
+            const e = stack[i];
+            if (e.id !== WALK || e.reveal) break;
+            out.push({ x: e.snap.player.x, y: e.snap.player.y, index: i, path: e.path || [],
+                       seconds: Math.abs(Math.round(S.clock.remaining - e.snap.clock.remaining)) });
+        }
+        return out;
+    }
+
+    PRS.undo = { snapshot, restore, push, peek, undo, trail, LIMIT, TRAIL };
 })(window);

@@ -201,6 +201,135 @@
         ctx.globalAlpha = prev;
     }
 
+    // ------------------------------------------------------------------------------ motion ---
+    //
+    // Where somebody is drawn is not where they are. The simulation moves people in jumps - a
+    // helper is in 21F and a moment later on the floor by the aft door, the trolley is across row
+    // 11 and then across row 10 - and the picture chases each jump the way a person would have to
+    // make it: out to the aisle, along it, and back in. A jump becomes something you watch happen,
+    // which is the whole difference between sixty people and sixty sprites.
+    //
+    // Nothing reads any of it back. The simulation, the hit test and the cards only ever know
+    // where people are, so somebody still on their way to a tile is already there as far as the
+    // game is concerned. Chases are short for that reason - a third of a second, whatever the
+    // distance - unless a figure is given a route and a time to walk it in, which is what happens
+    // to you when you walk somewhere and pay for it.
+
+    const CHASE = { speed: 10, within: 0.34 };   // tiles a second at least, and seconds at most
+    const moving = new Map();
+    let movedAt = 0;
+
+    /** A new flight: nobody is anywhere yet. */
+    function resetMotion() {
+        moving.clear();
+        movedAt = 0;
+    }
+
+    /** Seconds since the last frame. Asked once, at the top of a draw. */
+    function frameStep(t) {
+        const dt = movedAt ? Math.min(0.1, Math.max(0, t - movedAt) / 1000) : 0;
+        movedAt = t;
+        return dt;
+    }
+
+    /** The way a person crosses a cabin: out to the aisle and along it, unless it is next door. */
+    function aisleRoute(fx, fy, tx, ty) {
+        if (Math.abs(fx - tx) < 1 || Math.abs(fy - ty) < 1) return [[tx, ty]];
+        const out = Math.abs(fy - cabin.AISLE_Y) < 0.5 ? [] : [[fx, cabin.AISLE_Y]];
+        out.push([tx, cabin.AISLE_Y], [tx, ty]);
+        return out;
+    }
+
+    function routeLength(x, y, route) {
+        let d = 0;
+        for (const [wx, wy] of route) { d += Math.hypot(wx - x, wy - y); x = wx; y = wy; }
+        return d;
+    }
+
+    /**
+     * Walk a figure along a route of tiles - the first of them being where it sets off from -
+     * arriving in `ms`. Your own walks come through here, so the marker takes the route the price
+     * was quoted for and arrives exactly as the seconds run out.
+     */
+    function follow(key, tiles, ms) {
+        if (!tiles || !tiles.length) return;
+        let m = moving.get(key);
+        if (!m) {
+            m = { x: tiles[0][0], y: tiles[0][1], tx: 0, ty: 0, route: [], speed: 0 };
+            moving.set(key, m);
+        }
+        const last = tiles[tiles.length - 1];
+        m.tx = last[0];
+        m.ty = last[1];
+        m.route = tiles.map((t) => [t[0], t[1]]);
+        m.speed = ms > 0 ? Math.max(0.01, routeLength(m.x, m.y, m.route) / (ms / 1000)) : 1e6;
+    }
+
+    /** Where to draw somebody this frame, having moved them `dt` seconds toward where they are. */
+    function drawnAt(key, x, y, dt) {
+        let m = moving.get(key);
+        if (!m) {
+            m = { x: x, y: y, tx: x, ty: y, route: [], speed: 0 };
+            moving.set(key, m);
+            return m;
+        }
+        if (m.tx !== x || m.ty !== y || (!m.route.length && (m.x !== x || m.y !== y))) {
+            m.tx = x;
+            m.ty = y;
+            m.route = aisleRoute(m.x, m.y, x, y);
+            m.speed = Math.max(CHASE.speed, routeLength(m.x, m.y, m.route) / CHASE.within);
+        }
+        let go = m.speed * dt;
+        while (go > 0 && m.route.length) {
+            const [wx, wy] = m.route[0];
+            const d = Math.hypot(wx - m.x, wy - m.y);
+            if (d <= go) { m.x = wx; m.y = wy; go -= d; m.route.shift(); }
+            else { m.x += (wx - m.x) * go / d; m.y += (wy - m.y) * go / d; go = 0; }
+        }
+        return m;
+    }
+
+    /** Put a figure exactly where another one is: whoever is in your arms is wherever you are. */
+    function rideWith(key, at) {
+        const m = moving.get(key);
+        if (!m) { moving.set(key, { x: at.x, y: at.y, tx: at.x, ty: at.y, route: [], speed: 0 }); return; }
+        m.x = at.x;
+        m.y = at.y;
+        m.route.length = 0;
+    }
+
+    /** A drawn position in canvas pixels, snapped to whole sprite pixels so the art stays square. */
+    function pixels(v, scale) { return Math.round(v * TILE) * scale; }
+
+    // ------------------------------------------------------------------------------- trail ---
+    //
+    // Where you have just walked from, for as long as walking back is free. Every tile a walk went
+    // through gets a mark on the floor, and every tile you stood on between walks gets a square,
+    // because those are the ones a step back returns you to: the walks since are undone and their
+    // seconds come back. It ends at the last thing you did that was not a walk, which is exactly
+    // where undo stops giving them back. Drawn under the people, like the reach.
+
+    function drawTrail(ctx, trail, T, scale) {
+        if (!trail || !trail.length) return;
+        const dot = 2 * scale, box = 6 * scale;
+        ctx.save();
+        ctx.fillStyle = "#ffd54a";
+        ctx.strokeStyle = "#ffd54a";
+        ctx.lineWidth = scale;
+        trail.forEach(function (stop, k) {
+            const fade = 1 - k / (trail.length + 1);
+            ctx.globalAlpha = 0.12 + 0.3 * fade;
+            for (const i of stop.path || []) {
+                ctx.fillRect(cabin.xOf(i) * T + (T - dot) / 2, cabin.yOf(i) * T + (T - dot) / 2,
+                             dot, dot);
+            }
+            ctx.globalAlpha = 0.2 + 0.45 * fade;
+            ctx.strokeRect(stop.x * T + (T - box + scale) / 2, stop.y * T + (T - box + scale) / 2,
+                           box - scale, box - scale);
+        });
+        ctx.restore();
+    }
+
     // ---------------------------------------------------------------------------------- fx ---
     //
     // Everything the cabin says about an action after the action is over: the price floating off
@@ -258,6 +387,10 @@
         const t = opts.time || 0;
         const f = S.fire;
         const P = S.player;
+        // How far everybody gets to move this frame, and where you are drawn now. Asked once,
+        // here, because asking is what moves them.
+        const dt = frameStep(t);
+        const youAt = drawnAt("you", P.x, P.y, dt);
 
         ctx.imageSmoothingEnabled = false;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -323,8 +456,12 @@
         drawZones(ctx, S, T, t);
 
         // ---- the trolley --------------------------------------------------------------------
+        // Two hundred kilos of duty free, creeping aft one row at a time, and creeping is what it
+        // has to look like: it is the biggest thing in the aisle and the player is planning round
+        // where it will be.
         if (S.cabinFlags.cartOut) {
-            atlas.blit(ctx, "drink_cart", S.cabinFlags.cartX * T, cabin.AISLE_Y * T, scale);
+            const cart = drawnAt("cart", S.cabinFlags.cartX, cabin.AISLE_Y, dt);
+            atlas.blit(ctx, "drink_cart", pixels(cart.x, scale), pixels(cart.y, scale), scale);
         }
 
         // ---- fire, under the people ---------------------------------------------------------
@@ -358,18 +495,29 @@
             ctx.restore();
         }
 
+        // ---- the way you came ---------------------------------------------------------------
+        drawTrail(ctx, opts.trail, T, scale);
+
         // ---- people --------------------------------------------------------------------------
         //
         // Several people end up on one tile all the time - the floor in front of a door is one
         // square of carpet and a busy flight puts a dozen people on it - so a stack fans out
-        // rather than hiding under itself, and anything over two says how many.
+        // rather than hiding under itself, and anything over two says how many. Where somebody is
+        // drawn chases where they are, fan and all, so being moved looks like being moved.
         const stacks = {};
         for (const p of S.pax) {
-            if (p.state === "gone" || p.state === "carried") continue;   // carried ride on you
+            if (p.state === "gone") continue;
+            if (p.state === "carried") {
+                // In your arms: they go where you go, so that when they are put down they come
+                // out of your arms and not out of the seat you took them from.
+                rideWith("p:" + p.id, youAt);
+                continue;
+            }
             const key = p.x + "," + p.y;
             const n = stacks[key] = (stacks[key] || 0) + 1;
             const [dx, dy] = FAN[Math.min(FAN.length - 1, n - 1)];
-            const px = p.x * T + dx * scale, py = p.y * T + dy * scale;
+            const spot = drawnAt("p:" + p.id, p.x + dx / TILE, p.y + dy / TILE, dt);
+            const px = pixels(spot.x, scale), py = pixels(spot.y, scale);
             const dead = p.state === "dead";
             // Somebody in the aisle, or somebody frightened, does not hold still.
             const jitter = (!dead && (p.state === "aisle" || p.panic > 70))
@@ -409,12 +557,13 @@
         // being right.
         const crewFace = S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax";
         for (const c of S.crew) {
-            atlas.blit(ctx, crewFace, c.x * T, c.y * T, scale, paletteOf(c));
+            const spot = drawnAt("c:" + c.id, c.x, c.y, dt);
+            atlas.blit(ctx, crewFace, pixels(spot.x, scale), pixels(spot.y, scale), scale,
+                       paletteOf(c));
         }
 
         // ---- you ----------------------------------------------------------------------------
-        const at = opts.playerAt || P;
-        const ppx = at.x * T, ppy = at.y * T;
+        const ppx = pixels(youAt.x, scale), ppy = pixels(youAt.y, scale);
         const you = paletteOf(S.character);
         atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale,
                         0.55 + 0.45 * Math.abs(Math.sin(t * 0.004)));
@@ -666,13 +815,19 @@
      * person, a halo in the shape of the fire, and the floor gets the walk drawn on it with the
      * price. `opts.target` is the thing hotspots.js says the click would open, so the light and
      * the click cannot disagree.
+     *
+     * A walk you are proposing is gold and costs seconds. A walk back along your own trail is
+     * green and gives them back, and it is the same line drawn the other way, so the two can
+     * never be taken for one another.
      */
     function drawHover(ctx, S, opts, T, scale, t) {
         const hr = opts.hoverRoute;
         const tg = opts.target;
+        const back = !!(hr && hr.back);
+        const colour = back ? "#5fd67a" : "#ffd54a";
         if (hr && hr.path.length && (!tg || tg.kind === "walk")) {
             ctx.save();
-            ctx.strokeStyle = "rgba(255,213,74,0.75)";
+            ctx.strokeStyle = back ? "rgba(95,214,122,0.85)" : "rgba(255,213,74,0.75)";
             ctx.lineWidth = Math.max(1, scale);
             ctx.setLineDash([scale * 2, scale * 3]);
             ctx.beginPath();
@@ -708,13 +863,16 @@
             return;
         }
         if (tg && tg.kind === "none") return;
-        // The floor: the tile, and the price of walking to it.
+        // The floor: the tile, and the price of walking to it - or of having walked from it.
         ctx.save();
-        ctx.strokeStyle = "#ffd54a";
+        ctx.strokeStyle = colour;
         ctx.lineWidth = Math.max(1, scale);
         ctx.strokeRect(hx + 0.5, hy + 0.5, T - 1, T - 1);
         ctx.restore();
-        if (hr) priceTag(ctx, opts.hover.x, opts.hover.y, T, scale, hr.cost + "s", "#ffd54a");
+        if (hr) {
+            priceTag(ctx, opts.hover.x, opts.hover.y, T, scale,
+                     (back ? "+" : "") + hr.cost + "s", colour);
+        }
     }
 
     // ------------------------------------------------------------------------------ labels ---
@@ -878,5 +1036,8 @@
         paletteOf, faceOf, zoneAir, fireSpriteAt,
         spriteBox, figures, figureAt, halo,
         fx: { say, pulse, flash: flashOver, shake, clear: clearFx },
+        // Where everybody is drawn, which is not where they are. The play screen empties it at
+        // boarding and hands it your own walks; everybody else chases without being asked.
+        motion: { follow: follow, reset: resetMotion, route: aisleRoute },
     };
 })(window);

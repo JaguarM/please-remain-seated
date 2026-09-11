@@ -567,7 +567,8 @@
                     "Whatever is under the pointer lights up, with the price. Arrow keys step."),
                 helpLine(el("span", { class: "help-clock", text: "0:09" }),
                     "Time only moves when you act.",
-                    "Every click costs the seconds it says. Backspace takes the last one back."),
+                    "Every click costs the seconds it says, and you watch them go by. Backspace " +
+                    "takes the last one back, and so does walking back the way you came."),
                 el("div", { class: "title-buttons" }, [
                     el("button", { class: "big", text: "Got it", onclick: () => hideHelp(root) }),
                 ]),

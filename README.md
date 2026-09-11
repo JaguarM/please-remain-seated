@@ -20,7 +20,8 @@ The rules
 ---------
 
 - **Time only passes when you act.** Every action costs seconds, and paying them is the only
-  thing that moves the fire, the smoke, the passengers and the crew. Nine hundred seconds.
+  thing that moves the fire, the smoke, the passengers and the crew. Nine hundred seconds, and
+  each action's go by on the aeroplane in front of you before you get to take the next one.
 - **You cannot put the fire out.** It is a lithium cell in a vape in a hard case in a closed
   locker. Water cools it, halon smothers the flame, nothing reaches the cell. Nine cells, and
   every one of them is going to go. Fighting it still matters: it keeps the smoke down and the
@@ -39,9 +40,11 @@ The rules
   cabin has room for seven of them. Fifty-four is very hard, and sixty is not on offer.
 - **You can change your mind, not your luck.** Every die in the flight is cast at boarding, from
   the seed on the pass: what mood each passenger is in, when the fire jumps a row, what the cabin
-  does on its third turn. Backspace undoes the last action and gives the seconds back, and a
-  refusal undone is a refusal again, whatever you do first. Anything that told you something new
-  stays done.
+  does on its third turn. Backspace undoes the last action and gives the seconds back, one action
+  at a time, and so does walking back: every walk leaves the tile you left from marked on the
+  floor behind you, and stepping onto one of those is the walks since then undone. A refusal
+  undone is a refusal again, whatever you do first. Anything that told you something new stays
+  done.
 
 Controls
 --------
@@ -51,8 +54,8 @@ things you could do about it, each priced in seconds. Out of reach is not a dead
 prices the walk and lists what you could do once there, and one click does both. Everything else
 is floor, and clicking floor walks you there.
 
-Arrow keys or WASD step. 1–9 pick a row of the open card. Backspace undoes. M mutes. ? shows the
-help again.
+Arrow keys or WASD step, and a step back onto the trail behind you is a step back in time. 1–9
+pick a row of the open card. Backspace undoes. M mutes. ? shows the help again.
 
 Who you are
 -----------
@@ -130,7 +133,9 @@ How it is built
 
 Everything assigns to one global, `window.PRS`, because the game has to run from a double-clicked
 file and `file://` will not load an ES module. `game/sim/actions.js` has the only function that
-moves the clock; nothing else may call `fire.advance`, `pax.advance` or `crew.advance`.
+moves the clock: a passage of twelve-second sub-steps, which the bots and the replays take in one
+go and the play screen takes a frame at a time, so that an action's seconds can be watched going
+by. Nothing else may call `fire.advance`, `pax.advance` or `crew.advance`.
 
 An action is data:
 
@@ -151,7 +156,8 @@ Testing it
     node tools/harm.js 60 --strategy=idle     # where the harm at touchdown comes from, by part
     node tools/replay.js flights.json         # play recorded flights back against the bots
     node tools/coverage.js                    # every action performed at least once
-    node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll
+    node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll,
+                                              # and a second played slowly is the same second
     node tools/dump_frame.js --at=540 --seed=606 && python tools/render_frame.py --out=docs/cabin.png
     python tools/trim_actions.py --list       # every action id; pass ids to remove them cleanly
 

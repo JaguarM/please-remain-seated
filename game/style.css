@@ -587,3 +587,15 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .stat-track { height: 3px; background: #2f3540; border-radius: 2px; overflow: hidden; }
 .stat-fill { height: 100%; background: var(--blue); }
 
+/* ------------------------------------------------------------- the seconds going by ---
+
+   An action's seconds are played out on the aeroplane rather than jumped over, and while they
+   are going by the cabin is something you watch and not something you touch. The card stays
+   where it is, half lit, because it is about to be right again - and it only dims if the wait
+   is long enough to notice, so a single step does not make the screen blink. */
+.play.busy .card, .play.busy .undo, .play.busy .bag-item,
+.play.busy button.you-name, .play.busy button.carrying { pointer-events: none; }
+.card { transition: opacity .12s; }
+.play.busy .card { opacity: .6; transition: opacity .2s .12s; }
+.play.busy .undo { opacity: .45; }
+
