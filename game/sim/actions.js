@@ -226,6 +226,13 @@
             playerTick(S, step);
             PRS.events.tick(S, step);
             left -= step;
+            // The flight deck can take ninety seconds off the descent in the middle of a long
+            // action. The clock was paid in full up front, so what is really left is the clock
+            // plus what this action has not spent yet; when that runs out, the wheels are down.
+            if (S.clock.remaining + left <= 0.001) {
+                S.clock.elapsed -= left;
+                left = 0;
+            }
         }
 
         PRS.audio.setRoar(clamp01(PRS.fire.worst(S.fire) / 90));

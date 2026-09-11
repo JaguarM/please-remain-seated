@@ -641,6 +641,12 @@
     function report(S) {
         const R = S.result || PRS.scoring.settle(S);
         PRS.audio.stopRoar();
+        // The same aeroplane without you, flown now and in silence, before anything is drawn.
+        const heard = PRS.audio.isEnabled();
+        PRS.audio.setEnabled(false);
+        let without = null;
+        try { without = PRS.scoring.withoutYou(S); } catch (e) { without = null; }
+        PRS.audio.setEnabled(heard);
         PRS.audio.play("touchdown");
         show(function (root) {
             root.className = "screen report";
@@ -664,6 +670,20 @@
                 tallyBox(String(R.tally.serious), "serious", "t-serious"),
                 tallyBox(String(R.tally.lost), "not accounted for", "t-lost"),
             ]));
+            // What you changed, which is the only thing on this page that is about you.
+            if (without !== null) {
+                const diff = R.survivors - without;
+                inner.appendChild(el("div", { class: "versus" }, [
+                    el("span", {}, ["Without you:", el("b", { text: String(without) })]),
+                    el("span", { class: "you" }, ["With you:", el("b", { text: String(R.survivors) })]),
+                    el("span", { class: "delta", text: diff > 0
+                        ? PRS.util.plural(diff, "person", "people") + " alive who would not have been."
+                        : diff < 0
+                            ? "The cabin would have done " + PRS.util.plural(-diff, "life", "lives") +
+                              " better with you in your seat."
+                            : "Exactly what the cabin would have managed with you in your seat." }),
+                ]));
+            }
             inner.appendChild(el("div", { class: "grade grade-" + R.grade.key }, [
                 el("b", { text: R.grade.name }),
                 el("i", { text: R.grade.text }),

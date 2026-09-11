@@ -201,6 +201,12 @@ button.big:hover { background: #4b6191; }
 .grade b { display: block; font-size: 18px; }
 .grade i { display: block; font-style: normal; color: var(--ink-dim); margin: 4px 0; }
 .grade span { font: 11px var(--mono); color: var(--ink-faint); }
+
+.versus { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: baseline; margin-top: 16px;
+  font: 13px var(--mono); color: var(--ink-dim); }
+.versus b { font-size: 30px; margin-left: 8px; color: var(--ink-dim); }
+.versus .you b { color: var(--great); }
+.versus .delta { font: 13px system-ui, sans-serif; color: var(--ink-faint); }
 .grade-A { border-color: var(--great); } .grade-B { border-color: var(--good); }
 .grade-C { border-color: var(--warn); } .grade-D { border-color: #e08a2a; }
 .grade-E, .grade-F { border-color: var(--bad); }

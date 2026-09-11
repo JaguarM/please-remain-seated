@@ -136,6 +136,8 @@
         result.grade = gradeOf(result);
         S.result = result;
         S.ended = true;
+        // A flight flown only to see what would have happened keeps nothing and says nothing.
+        if (S.quiet) return result;
 
         // Some medals are about how it ended, so they are checked once the manifest exists, and
         // before the log book writes down which ones you have.
@@ -178,5 +180,25 @@
         return GRADES[GRADES.length - 1];
     }
 
-    PRS.scoring = { settle, outcomeFor, harmParts, band, gradeOf, GRADES, BANDS };
+    /**
+     * The same aeroplane with nobody doing anything: the same seed, the same person in the same
+     * seat with the same bag, the same luck, and fifteen minutes spent standing in the aisle.
+     * Thirty people off alive is a failure or a triumph depending entirely on this number, so the
+     * report puts it next to the real one.
+     */
+    function withoutYou(S) {
+        const L = S.loadout;
+        const B = st.create({ characterId: L.characterId, outfitId: L.outfitId, items: L.items,
+                              seed: S.seed, luck: S.luck });
+        B.quiet = true;
+        // In the steps a person would take, so an early descent shortens this flight as it would
+        // have shortened yours, instead of being flown straight through.
+        while (!B.clock.landed && B.clock.remaining > 0.001) {
+            PRS.actions.spend(B, Math.min(10, B.clock.remaining), null);
+        }
+        if (!B.clock.landed) PRS.actions.land(B);
+        return B.result.survivors;
+    }
+
+    PRS.scoring = { settle, outcomeFor, harmParts, band, gradeOf, withoutYou, GRADES, BANDS };
 })(window);
