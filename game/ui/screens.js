@@ -1,16 +1,39 @@
-// Every screen that is not the aeroplane: the title, the help overlay, and the incident report.
+// Every screen that is not the aeroplane: the title, the setup, the help, the previous flights,
+// and the incident report.
 //
-// The title boards you in one click, as either of the two people who could be in 9C. The report
-// is the point of the whole thing: it is written in the flat voice of an air accident
-// investigator, it lists every soul on board by seat with what happened to them, and it quotes
-// your own actions back at you in the order you took them, which is a much harder read than a
-// score. Then it boards you again, in one click, as the same person or the other one.
+// The title boards you in one click as whoever you were last time. The setup screen is for the
+// flights where you want to be somebody else or wear something else, and it shows what the log
+// book has not turned over yet, with the number that turns it. The report is the point of the
+// whole thing: it is written in the flat voice of an air accident investigator, it lists every
+// soul on board by seat with what happened to them, and it quotes your own actions back at you
+// in the order you took them. Then it writes the flight into the log book and boards you again.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
     const { el, $, clear, mmss, costLabel, store } = PRS.util;
 
     let host = null;
+
+    // Who the next flight is flown by, and in what. Boarding saves it.
+    const choice = { characterId: "ansel", outfitId: null };
+    let choiceLoaded = false;
+
+    /** The choice, made sane: a saved character or outfit can be locked in this browser. */
+    function ready() {
+        if (!choiceLoaded) {
+            choiceLoaded = true;
+            const saved = store.get("choice", null);
+            if (saved && typeof saved === "object") {
+                if (typeof saved.characterId === "string") choice.characterId = saved.characterId;
+                if (typeof saved.outfitId === "string") choice.outfitId = saved.outfitId;
+            }
+        }
+        const C = PRS.data.characters, O = PRS.data.outfits, L = PRS.logbook;
+        if (!L.isUnlocked(C.byId(choice.characterId))) choice.characterId = C.CHARACTERS[0].id;
+        const o = O.byId(choice.outfitId);
+        if (!o || !L.isUnlocked(o)) choice.outfitId = null;
+        return choice;
+    }
 
     function mount(node) { host = node; }
     function show(builder) {
@@ -20,18 +43,14 @@
         window.scrollTo(0, 0);
     }
 
-    /** Who flew last time, or the first of the two. */
-    function lastCharacter() {
-        return PRS.data.characters.byId(store.get("character", null));
-    }
-
     // --------------------------------------------------------------------------------- title ---
 
     function title() {
+        ready();
         show(function (root) {
             root.className = "screen title";
-            const last = lastCharacter();
-            const C = PRS.data.characters;
+            const book = PRS.logbook.load();
+            const ch = PRS.data.characters.byId(choice.characterId);
             root.appendChild(el("div", { class: "title-inner" }, [
                 el("div", { class: "kicker", text: "TRANSNATIONAL 447 · 31,000 FT · DESCENT" }),
                 el("h1", { text: "PLEASE REMAIN SEATED" }),
@@ -45,10 +64,16 @@
                     fact(String(PRS.actions.count()), "things you can do"),
                     fact("0", "ways to put it out"),
                 ]),
-                el("div", { class: "roster" }, C.CHARACTERS.map((c) => card(c, c.id === last.id))),
+                pass(),
+                // A first flight is one click. The roster and the previous flights appear once
+                // there is a log book to put them in.
                 el("div", { class: "title-buttons" }, [
-                    el("button", { text: "How to play", onclick: () => help(root, last) }),
+                    book.flights ? el("button", { text: "Change who you are", onclick: setup }) : null,
+                    el("button", { text: "How to play", onclick: () => help(root, ch) }),
+                    book.flights ? el("button", { text: "Previous flights (" + book.flights + ")",
+                                                  onclick: flights }) : null,
                 ]),
+                book.flights ? el("p", { class: "footnote logline", text: logLine(book) }) : null,
                 el("p", { class: "footnote", text:
                     "Nothing here can be won. Some of it can be done well." }),
             ]));
@@ -59,35 +84,179 @@
         return el("div", { class: "fact" }, [el("b", { text: n }), el("i", { text: label })]);
     }
 
-    /** One of the two people, with their face, their five numbers and the one sentence. */
-    function card(c, lit) {
-        return el("button", {
-            class: "boarding" + (lit ? " lit" : ""),
-            onclick: () => begin(c.id),
-        }, [
-            PRS.atlas.icon("pax", 4, PRS.pax.palette(c)),
-            el("div", { class: "boarding-who" }, [
-                el("b", { text: c.name }),
-                el("i", { text: c.age + " · " + c.title }),
-                el("div", { class: "char-stats" }, statBars(c)),
-                el("u", { text: c.lean }),
-                el("span", { class: "boarding-go", text: "Board as " + c.short }),
+    /** One sentence about the book: how far it has got, and what turns over next. */
+    function logLine(book) {
+        const next = PRS.logbook.next();
+        const so_far = book.flights
+            ? PRS.util.plural(book.flights, "flight") + " · " +
+              PRS.util.plural(book.souls, "soul") + " secured"
+            : "No flights in the log book yet";
+        if (!next) return so_far + " · everything is unlocked.";
+        return so_far + " · next: " + next.name + " at " + next.unlock + ".";
+    }
+
+    /**
+     * The boarding pass: who the one button puts on the aeroplane, with their face, their clothes
+     * and the three things on them. One click boards; the button under it changes any of it.
+     */
+    function pass() {
+        const ch = PRS.data.characters.byId(choice.characterId);
+        const outfit = PRS.data.outfits.byId(choice.outfitId);
+        const D = PRS.data.items;
+        return el("button", { class: "pass", title: "Board the aircraft", onclick: begin }, [
+            PRS.atlas.icon("pax", 3, PRS.pax.palette(ch)),
+            el("div", { class: "pass-who" }, [
+                el("b", { text: ch.name }),
+                el("i", { text: ch.title + " · seat " + ch.seat + " · " +
+                                (outfit ? outfit.name.toLowerCase() : "as you are") }),
             ]),
+            el("div", { class: "pass-bag" }, ch.bag.length
+                ? ch.bag.map((id) => PRS.atlas.icon(D.byId(id).sprite.split(":")[1], 2))
+                : [el("i", { text: "nothing on you" })]),
+            el("span", { class: "pass-go", text: "Board" }),
         ]);
     }
 
-    /** Five bars. */
-    function statBars(ch) {
+    // ---------------------------------------------------------------------------------- setup ---
+    //
+    // Who you are and what you are wearing: two decisions on one screen with one button. Locked
+    // cards say exactly what turns them over, because a row of question marks is not something
+    // anybody can aim at.
+
+    function setup() {
+        ready();
+        show(function (root) {
+            root.className = "screen picker";
+            paintSetup(root);
+        });
+    }
+
+    /** Rebuilt in place on every click, with the scroll kept where it was. */
+    function paintSetup(root) {
+        const y = window.scrollY;
+        clear(root);
+        const C = PRS.data.characters, O = PRS.data.outfits, D = PRS.data.items, L = PRS.logbook;
+        ready();
+        const book = L.load();
+        const ch = C.byId(choice.characterId);
+        const outfit = O.byId(choice.outfitId);
+        const repaint = function (sound) {
+            PRS.audio.unlock();
+            PRS.audio.play(sound || "select");
+            paintSetup(root);
+        };
+        const lock = (thing) => el("div", { class: "char-lock" }, [
+            el("span", { class: "lock-tag", text: "LOCKED" }),
+            el("i", { text: "Unlocks at " + thing.unlock + " souls · " + book.souls + " so far" }),
+        ]);
+
+        // Who.
+        const chars = el("div", { class: "char-grid" });
+        for (const c of C.CHARACTERS) {
+            const open = L.isUnlocked(c);
+            chars.appendChild(el("button", {
+                class: "char" + (choice.characterId === c.id ? " on" : "") +
+                       (open ? "" : " locked"),
+                onclick: !open ? null : function () { choice.characterId = c.id; repaint(); },
+            }, [
+                el("div", { class: "char-face" }, [PRS.atlas.icon("pax", 5, PRS.pax.palette(c))]),
+                el("div", { class: "char-id" }, [
+                    el("b", { text: c.name }),
+                    el("i", { text: c.age + " · " + c.title }),
+                ]),
+                open ? el("div", { class: "char-stats" }, statBars(c)) : lock(c),
+                open ? el("u", { class: "char-lean", text: c.lean }) : null,
+            ]));
+        }
+
+        // Wearing.
+        const wear = el("div", { class: "outfit-grid" });
+        wear.appendChild(el("button", {
+            class: "outfit" + (!choice.outfitId ? " on" : ""),
+            onclick: function () { choice.outfitId = null; repaint(); },
+        }, [
+            el("div", { class: "outfit-head" }, [
+                el("b", { text: "What you flew in" }),
+                el("span", { class: "outfit-mod", text: "as you are" }),
+            ]),
+            el("i", { text: "Whatever " + ch.short + " had on. The five numbers are the five " +
+                            "numbers." }),
+        ]));
+        for (const o of O.OUTFITS) {
+            const open = L.isUnlocked(o);
+            wear.appendChild(el("button", {
+                class: "outfit" + (choice.outfitId === o.id ? " on" : "") + (open ? "" : " locked"),
+                onclick: !open ? null : function () { choice.outfitId = o.id; repaint(); },
+            }, [
+                el("div", { class: "outfit-head" }, [
+                    el("b", { text: o.name }),
+                    el("span", { class: "outfit-mod", text: O.summary(o) }),
+                ]),
+                open ? el("i", { text: o.blurb }) : null,
+                open ? el("u", { text: o.note }) : lock(o),
+            ]));
+        }
+
+        // The composite you, and the one button.
+        const panel = el("div", { class: "char-detail" }, [
+            el("div", { class: "you-name" }, [
+                PRS.atlas.icon("pax", 4, PRS.pax.palette(ch)),
+                el("div", {}, [
+                    el("b", { text: ch.name }),
+                    el("i", { text: ch.age + " · " + ch.title + " · seat " + ch.seat }),
+                ]),
+            ]),
+            el("div", { class: "char-stats big-stats" }, statBars(ch, outfit)),
+            el("div", { class: "sub", text: outfit ? outfit.name + ". " + outfit.note
+                                                   : "What you flew in." }),
+            el("p", { text: ch.blurb }),
+            el("p", { class: "lean", text: ch.lean }),
+            el("div", { class: "kit" }, ch.bag.map((id) => {
+                const item = D.byId(id);
+                return el("span", { class: "kit-item", title: item.name }, [
+                    PRS.atlas.icon(item.sprite.split(":")[1], 2),
+                    el("i", { text: PRS.loot.short(item.name) }),
+                ]);
+            })),
+            el("div", { class: "title-buttons" }, [
+                el("button", { class: "big", text: "Board as " + ch.short, onclick: begin }),
+                el("button", { text: "Back", onclick: title }),
+            ]),
+        ]);
+
+        root.appendChild(el("h2", { text: "Who you are" }));
+        root.appendChild(el("p", { class: "lede", text: logLine(book) + " Every soul you " +
+            "secure goes into the book, and the book turns the cards over." }));
+        root.appendChild(el("div", { class: "picker-body" }, [
+            el("div", { class: "setup-sections" }, [
+                chars,
+                el("h3", { text: "What you are wearing" }),
+                el("p", { class: "sec-note", text:
+                    "It does nothing except move your five numbers. Two points of speed is a " +
+                    "second off every step of nine hundred of them." }),
+                wear,
+            ]),
+            panel,
+        ]));
+        window.scrollTo(0, y);
+    }
+
+    /** Five bars. With an outfit passed, the changed ones are coloured and the numbers move. */
+    function statBars(ch, outfit) {
         const names = { strength: "STR", speed: "SPD", lungs: "LNG", nerve: "NRV", voice: "VOI" };
+        const base = ch.stats;
+        const now = outfit ? PRS.data.outfits.apply(base, outfit) : base;
         const out = [];
         for (const key in names) {
-            const v = ch.stats[key];
+            const v = now[key];
+            const delta = v - base[key];
+            const dir = delta > 0 ? " up" : delta < 0 ? " down" : "";
             out.push(el("div", { class: "stat" }, [
                 el("span", { text: names[key] }),
                 el("div", { class: "stat-track" }, [
-                    el("div", { class: "stat-fill", style: { width: (v * 10) + "%" } }),
+                    el("div", { class: "stat-fill" + dir, style: { width: (v * 10) + "%" } }),
                 ]),
-                el("b", { text: String(v) }),
+                el("b", { class: dir.trim(), text: String(v) }),
             ]));
         }
         return out;
@@ -95,11 +264,13 @@
 
     // ------------------------------------------------------------------------------ boarding ---
 
-    /** One click, from the title or the report. Remembers who, so the next flight is one click. */
-    function begin(characterId) {
-        store.set("character", characterId);
+    /** One click, from the title, the setup or the report. Remembers who, and in what. */
+    function begin() {
+        ready();
+        store.set("choice", { characterId: choice.characterId, outfitId: choice.outfitId });
         const S = PRS.state.create({
-            characterId: characterId,
+            characterId: choice.characterId,
+            outfitId: choice.outfitId,
             seed: (Math.random() * 0xffffffff) >>> 0,
         });
         PRS.current = S;
@@ -163,11 +334,46 @@
         store.set("seenHelp", true);
     }
 
+    // ---------------------------------------------------------------------- previous flights ---
+
+    function flights() {
+        show(function (root) {
+            root.className = "screen prose";
+            const book = PRS.logbook.load();
+            const C = PRS.data.characters, O = PRS.data.outfits;
+            root.appendChild(el("div", { class: "prose-inner" }, [
+                el("h2", { text: "The log book" }),
+                el("p", { text: logLine(book) }),
+                el("div", { class: "history" }, book.history.map(function (h) {
+                    const ch = C.byId(h.character);
+                    const o = O.byId(h.outfit);
+                    return el("div", { class: "hrow" }, [
+                        PRS.atlas.icon("pax", 1, PRS.pax.palette(ch)),
+                        el("b", { text: ch.short + (o ? ", " + o.name.toLowerCase() : "") }),
+                        el("span", { text: h.secured + " secured" }),
+                        el("span", { text: h.lost + " lost" }),
+                        el("span", { class: "grade-" + h.grade, text: h.grade }),
+                        el("i", { text: h.ending }),
+                    ]);
+                })),
+                el("div", { class: "title-buttons" }, [
+                    el("button", { text: "Back", onclick: title }),
+                    el("button", { text: "Start the book again", onclick: function () {
+                        if (window.confirm("Forget every flight, and lock everything the book " +
+                                           "has unlocked?")) {
+                            PRS.logbook.forget();
+                            title();
+                        }
+                    } }),
+                ]),
+            ]));
+        });
+    }
+
     // --------------------------------------------------------------------------------- report ---
 
     function report(S) {
         const R = S.result || PRS.scoring.settle(S);
-        const other = PRS.data.characters.other(S.character.id);
         PRS.audio.stopRoar();
         PRS.audio.play("touchdown");
         show(function (root) {
@@ -198,6 +404,23 @@
                 el("span", { text: R.secured + " secured · " + R.byYou + " carried by you · " +
                     R.byHelpers + " carried by people you recruited" }),
             ]));
+
+            // The log book, and anything it turned over.
+            if (R.logbook) {
+                const L = R.logbook;
+                inner.appendChild(el("div", { class: "book" }, [
+                    el("b", { text: "+" + PRS.util.plural(R.secured, "soul") + " in the log book" }),
+                    el("i", { text: PRS.util.plural(L.after.flights, "flight") + " · " +
+                                    PRS.util.plural(L.after.souls, "soul") + " secured in all" }),
+                    L.unlocked.length
+                        ? el("span", { class: "unlocked", text: "Unlocked: " +
+                              PRS.util.listSentence(L.unlocked.map((t) => t.name)) + "." })
+                        : L.next
+                            ? el("span", { text: "Next: " + L.next.name + " at " + L.next.unlock +
+                                                  "." })
+                            : el("span", { text: "Everything is unlocked." }),
+                ]));
+            }
 
             // The cabin at touchdown.
             const cv = el("canvas", { class: "rep-canvas" });
@@ -267,13 +490,13 @@
             }
 
             inner.appendChild(el("div", { class: "title-buttons" }, [
-                el("button", { class: "big", text: "Fly it again",
-                               onclick: () => begin(S.character.id) }),
-                el("button", { text: "Fly as " + other.short, onclick: () => begin(other.id) }),
+                el("button", { class: "big", text: "Fly it again", onclick: begin }),
+                el("button", { text: "Change who you are", onclick: setup }),
                 el("button", { text: "Title", onclick: title }),
             ]));
             inner.appendChild(el("p", { class: "footnote", text:
-                S.character.name + " · seed " + R.seed + " · " + R.actions + " actions taken · " +
+                S.character.name + (S.outfit ? " in " + S.outfit.name.toLowerCase() : "") +
+                " · seed " + R.seed + " · " + R.actions + " actions taken · " +
                 (S.stats.itemsFound || 0) + " things found aboard · " +
                 (S.stats.undos ? "changed your mind " + S.stats.undos + " times"
                                : "never changed your mind") }));
@@ -304,5 +527,5 @@
         ]);
     }
 
-    PRS.screens = { mount, title, begin, report, help, hideHelp };
+    PRS.screens = { mount, title, setup, begin, report, flights, help, hideHelp };
 })(window);

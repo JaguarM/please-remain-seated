@@ -78,7 +78,7 @@
             }
         }
         // The data modules the run cannot be built without.
-        for (const key of ["characters", "items", "passengers"]) {
+        for (const key of ["characters", "outfits", "items", "passengers"]) {
             if (!PRS.data || !PRS.data[key]) bad.push("Missing data: PRS.data." + key + ".");
         }
         // Every item has to live somewhere, or the bag screen and the aeroplane disagree.
@@ -96,14 +96,28 @@
             }
         }
         // Every passenger's seat must exist in the cabin, and what is in their lap must exist.
+        const taken = {};
         if (PRS.data && PRS.data.passengers && PRS.cabin) {
             for (const row of PRS.data.passengers.ROSTER) {
                 const seat = row[1];
+                taken[seat] = row[0];
                 const x = PRS.cabin.xOfRow(parseInt(seat, 10));
                 const y = PRS.cabin.yOfLetter(seat.replace(/[0-9]/g, ""));
                 if (x === null || y === null) bad.push("Seat " + seat + " is not in this aircraft.");
                 if (row[9] && !PRS.data.items.byId(row[9])) {
                     bad.push(row[0] + " is holding an item that does not exist: " + row[9] + ".");
+                }
+            }
+        }
+        // And every character's seat must be a real, empty one, with a bag of real things.
+        if (PRS.data && PRS.data.characters && PRS.data.items && PRS.cabin) {
+            for (const ch of PRS.data.characters.CHARACTERS) {
+                const x = PRS.cabin.xOfRow(parseInt(ch.seat, 10));
+                const y = PRS.cabin.yOfLetter(ch.seat.replace(/[0-9]/g, ""));
+                if (x === null || y === null) bad.push(ch.name + " sits in " + ch.seat + ", which is not in this aircraft.");
+                if (taken[ch.seat]) bad.push(ch.name + " sits in " + ch.seat + ", which is " + taken[ch.seat] + "'s.");
+                for (const id of ch.bag) {
+                    if (!PRS.data.items.byId(id)) bad.push(ch.name + " boards with an item that does not exist: " + id + ".");
                 }
             }
         }

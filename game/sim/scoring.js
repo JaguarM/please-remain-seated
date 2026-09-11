@@ -122,6 +122,8 @@
 
         result.grade = gradeOf(result);
         result.ending = PRS.endings.pick(S, result);
+        // What carries over. The bots have a log book too, in memory, and do not read it.
+        result.logbook = PRS.logbook ? PRS.logbook.record(S, result) : null;
         S.result = result;
         S.ended = true;
 

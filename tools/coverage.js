@@ -185,8 +185,8 @@ const SCENARIOS = [
     { name: "kitted out",   opts: { elapsed: 300, wetBlanket: true, binsOpen: true } },
 ];
 
-// Strength gates a few carries, so both characters are tried.
-const CHARACTERS = ["ansel", "gordy"];
+// Strength gates a few carries and the bag gates the item actions, so every character is tried.
+const CHARACTERS = PRS.data.characters.CHARACTERS.map((c) => c.id);
 
 /** Every tile you could stand on. The slow second pass, for the ones the short list missed. */
 function everywhere() {

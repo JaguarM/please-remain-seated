@@ -1,5 +1,7 @@
-// Two people who could be in seat 9C. Five numbers each, one to ten, and every one of them is a
-// multiplier on something the player will feel within thirty seconds of the first action:
+// Nine people who could be in seat 9C. Two are free; the rest unlock as the log book fills.
+//
+// Five numbers each, one to ten, and every one of them is a multiplier on something the player
+// feels within a minute:
 //
 //   strength  how long a carry takes, who can be carried at all, and at ten, two at once
 //   speed     the cost of every step and most actions
@@ -7,40 +9,126 @@
 //   nerve     how fast your own panic rises
 //   voice     whether anybody does what you say
 //
-// There are no perks. What a character can do is what the numbers say, and the two of them are
-// the game's own fork: she can talk a row out of its seats and cannot lift the heavy ones; he can
-// carry two adults at once and nobody listens to him. Both can play the whole game, and the best
-// runs do both things.
+// There are no perks. What a character can do is what the numbers say, plus what is on them when
+// they board and where they are sitting, and all three are data the rest of the game already
+// understands. The retired fire officer is the slowest person in the cast and boards with gloves
+// and tape; the eight-year-old cannot lift an adult and is unbelievable, and is fast and low.
+//
+//   bag     what is on you when you board. Everything else is in the aeroplane.
+//   seat    where you start. The row decides how far the fire and the two galleys are.
+//   unlock  the souls-secured total in the log book at which this person becomes available.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
 
     const CHARACTERS = [
         {
-            id: "ansel",
-            name: "Dr Priya Ansel",
-            short: "Priya",
-            age: 44,
+            id: "ansel", name: "Dr Priya Ansel", short: "Priya", age: 44,
             title: "Veterinary surgeon",
             blurb: "Small animals, mostly. Airways are airways, oxygen is oxygen, and she has " +
                    "resuscitated a great many things that were not people.",
             stats: { strength: 5, speed: 6, lungs: 6, nerve: 8, voice: 8 },
-            lean: "Talks people out of their seats. Cannot lift the heavy ones.",
+            lean: "Talks people out of their seats, and treats the ones who are hurt. Cannot " +
+                  "lift the heavy ones.",
+            bag: ["water_big", "phone", "first_aid"], seat: "9C", unlock: 0,
             hair: "#1d1712", longHair: true, skin: "#c08a5e", shirt: "#3f7d8a",
             open: "You have already worked out who on this aeroplane is going to die first.",
         },
         {
-            id: "gordy",
-            name: "Gordy Mach",
-            short: "Gordy",
-            age: 38,
+            id: "gordy", name: "Gordy Mach", short: "Gordy", age: 38,
             title: "Competitive strongman",
             blurb: "Fourth in Europe, twice. He can pick up two adults at once, and he is about " +
                    "to find out that this is the least of it.",
             stats: { strength: 10, speed: 5, lungs: 4, nerve: 6, voice: 5 },
             lean: "Carries two at a time, and nobody is too heavy. Nobody listens to him.",
+            bag: ["water_big", "phone", "blanket"], seat: "9C", unlock: 0,
             hair: "#4a3220", skin: "#e5b791", shirt: "#8a4526",
             open: "Everything on this aeroplane is lighter than your opener.",
+        },
+        {
+            id: "volk", name: "Deidre Volk", short: "Deidre", age: 71,
+            title: "Retired station officer",
+            blurb: "Thirty-one years in the fire service, eleven of them on the aerodrome crew. " +
+                   "She has done this before, on the ground, with a hose, with a team, and with " +
+                   "her knees.",
+            stats: { strength: 6, speed: 3, lungs: 9, nerve: 10, voice: 6 },
+            lean: "Boards with gloves and tape and lungs that last. The slowest person in the " +
+                  "cast.",
+            bag: ["water_big", "gloves", "tape"], seat: "9C", unlock: 20,
+            hair: "#dfe3e6", skin: "#e5b791", shirt: "#4f5a68",
+            open: "You have smelled this before. Nobody else on this aeroplane has.",
+        },
+        {
+            id: "miriam", name: "Sister Miriam-Claire", short: "Miriam", age: 62,
+            title: "Sister of the Order of St Brigid",
+            blurb: "Forty years of getting people to do things they do not want to do, in a " +
+                   "voice that has never once been raised.",
+            stats: { strength: 4, speed: 4, lungs: 6, nerve: 10, voice: 10 },
+            lean: "Voice ten. Cannot lift most adults. Everything she achieves, she achieves " +
+                  "through other people.",
+            bag: ["water_big", "phone", "wet_towel"], seat: "9C", unlock: 50,
+            hair: "#9aa0a6", longHair: true, skin: "#d9a279", shirt: "#232630",
+            open: "You have buried more people than anyone else on board. It has not helped.",
+        },
+        {
+            id: "kip", name: "Kip Halloran", short: "Kip", age: 19,
+            title: "Energy drink athlete",
+            blurb: "Four hundred thousand followers, a sponsorship with a taurine company, and " +
+                   "the fastest hands in row 9.",
+            stats: { strength: 4, speed: 10, lungs: 7, nerve: 4, voice: 5 },
+            lean: "Speed ten: every step and most things cost him less. Frightens easily and " +
+                  "cannot lift the heavy ones.",
+            bag: ["water_big", "phone", "wet_towel"], seat: "9C", unlock: 90,
+            hair: "#d9b16a", skin: "#f2d0b4", shirt: "#2f3f7a",
+            open: "This is the single greatest thing that has ever happened to your channel.",
+        },
+        {
+            id: "rusk", name: "Captain Nell Rusk", short: "Nell", age: 58,
+            title: "Deadheading captain",
+            blurb: "Type rated on this airframe, in row 22, in a jumper, going home. It is not " +
+                   "her aeroplane. She is about to make it her aeroplane.",
+            stats: { strength: 5, speed: 5, lungs: 7, nerve: 9, voice: 8 },
+            lean: "Starts in row 22: two rows from the aft galley, eight from the fire, and " +
+                  "twenty from the front.",
+            bag: ["water_big", "phone", "blanket"], seat: "22B", unlock: 140,
+            hair: "#9aa0a6", skin: "#e5b791", shirt: "#1c2130",
+            open: "You have flown this approach nine hundred times. Never from row 22.",
+        },
+        {
+            id: "dale", name: "Dale Kowalczyk", short: "Dale", age: 46,
+            title: "Air marshal",
+            blurb: "Seat 20A, back to the bulkhead, eleven years of watching people, and a " +
+                   "sidearm that is about to be of no use whatsoever.",
+            stats: { strength: 8, speed: 6, lungs: 6, nerve: 8, voice: 7 },
+            lean: "Strong, calm, and wearing the vest. Starts in row 20, six from the fire.",
+            bag: ["water_big", "phone", "hivis"], seat: "20A", unlock: 200,
+            hair: "#2b2118", skin: "#d9a279", shirt: "#4f5a68",
+            open: "You have been watching seat 14C for an hour. For the wrong reasons.",
+        },
+        {
+            id: "yuki", name: "Yuki Tanaka-Brandt", short: "Yuki", age: 8,
+            title: "Unaccompanied minor",
+            blurb: "A lanyard, a plastic wallet, and a flight attendant who was supposed to be " +
+                   "checking on her every twenty minutes and has not, for fifty.",
+            stats: { strength: 1, speed: 9, lungs: 8, nerve: 5, voice: 3 },
+            lean: "Eight years old. Fast and low, cannot lift an adult, and nobody believes a " +
+                  "word she says.",
+            bag: ["phone"], seat: "3C", unlock: 280,
+            hair: "#1d1712", longHair: true, skin: "#e5b791", shirt: "#b8617f",
+            open: "The lady said she would come back and check on you. That was a long time ago.",
+        },
+        {
+            id: "beverley", name: "Beverley Crane", short: "Beverley", age: 66,
+            title: "Retired purser",
+            blurb: "Thirty-eight years, four airlines, two evacuations and one thing in 1998 " +
+                   "that she does not talk about. Travelling as a passenger for the first time " +
+                   "since.",
+            stats: { strength: 6, speed: 6, lungs: 8, nerve: 10, voice: 9 },
+            lean: "Knows the aeroplane, the kit and how little time there is. Boards with a " +
+                  "hood and the tool that opens the mask panels, in row 1.",
+            bag: ["hood", "multitool", "water_big"], seat: "1B", unlock: 330,
+            hair: "#dfe3e6", longHair: true, skin: "#c08a5e", shirt: "#c9c0aa",
+            open: "You know where everything is. You know it will not be enough.",
         },
     ];
 
@@ -48,14 +136,9 @@
         return CHARACTERS.filter((c) => c.id === id)[0] || CHARACTERS[0];
     }
 
-    /** The one you are not. The report offers them as the other button. */
-    function other(id) {
-        return CHARACTERS.filter((c) => c.id !== id)[0] || CHARACTERS[1];
-    }
-
-    /** Everything derived from the five numbers, in one place so the tuning is visible. */
-    function derive(ch) {
-        const s = ch.stats;
+    /** The character's five numbers with the outfit added, and everything derived from them. */
+    function derive(ch, outfit) {
+        const s = outfit && PRS.data.outfits ? PRS.data.outfits.apply(ch.stats, outfit) : ch.stats;
         return {
             stats: s,
             // A step in the aisle for a 6-speed character is one second flat.
@@ -72,5 +155,5 @@
     }
 
     PRS.data = PRS.data || {};
-    PRS.data.characters = { CHARACTERS, byId, other, derive };
+    PRS.data.characters = { CHARACTERS, byId, derive };
 })(window);

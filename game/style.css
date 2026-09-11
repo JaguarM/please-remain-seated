@@ -431,22 +431,106 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .help-line span { font-size: 12.5px; color: var(--ink-dim); }
 .help .title-buttons { margin: 14px 0 0; justify-content: flex-start; }
 
-/* ------------------------------------------------------------------------ who is in seat 9C */
+/* ---------------------------------------------------------------------------- the pass */
 
-/* Two people, two buttons. The face, the five numbers, and the one sentence that says what
-   each of them is for, so the choice is made in the time it takes to read it. */
-.roster { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; margin: 4px 0 6px; }
-.boarding {
-  display: grid; grid-template-columns: 64px 1fr; gap: 14px; align-items: start; text-align: left;
-  width: 350px; padding: 14px; background: var(--panel); border-color: var(--line);
+/* The boarding pass on the title: who the one button puts on the aeroplane, with their face,
+   their clothes, their seat and the things on them. One click boards. */
+.pass {
+  display: inline-flex; align-items: center; gap: 12px; text-align: left;
+  padding: 8px 14px 8px 10px; margin: 0 0 2px;
+  background: var(--panel); border-color: var(--line);
 }
-.boarding:hover { border-color: var(--gold); background: #2b2f38; }
-.boarding.lit { border-color: #5a6b95; }
-.boarding img { margin-top: 2px; }
-.boarding-who b { display: block; font-size: 16px; line-height: 1.2; }
-.boarding-who i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint); margin-bottom: 8px; }
-.boarding-who u { display: block; text-decoration: none; font-size: 12px; color: var(--ink-dim); margin: 8px 0 10px; }
-.boarding-go { font: 10px var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--gold); }
+.pass:hover { border-color: var(--gold); background: #2b2f38; }
+.pass-who b { display: block; font-size: 14px; line-height: 1.2; }
+.pass-who i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
+.pass-bag {
+  display: flex; gap: 6px; align-items: center; min-height: 32px;
+  padding-left: 12px; border-left: 1px solid var(--line);
+}
+.pass-bag i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
+.pass-go {
+  font: 700 11px var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--gold);
+  padding-left: 12px; border-left: 1px solid var(--line);
+}
+.logline { margin-top: 6px; color: var(--ink-dim); }
+
+/* ---------------------------------------------------------------------------- the setup */
+
+.picker { padding: 34px 20px 20px; max-width: 1240px; margin: 0 auto; }
+.picker h2 { font-size: 30px; margin: 0 0 8px; letter-spacing: -0.02em; }
+.picker h3 { font-size: 20px; letter-spacing: -0.02em; margin: 30px 0 4px; }
+.lede { color: var(--ink-dim); max-width: 74ch; margin: 0 0 24px; }
+.sec-note { color: var(--ink-faint); font-size: 12px; max-width: 74ch; margin: 0 0 12px; }
+.picker-body { display: grid; grid-template-columns: 1fr 340px; gap: 20px; align-items: start; }
+@media (max-width: 900px) { .picker-body { grid-template-columns: 1fr; } }
+
+.char-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.char {
+  display: grid; grid-template-columns: 46px 1fr; gap: 10px; align-items: start;
+  text-align: left; padding: 10px; background: var(--panel); border-color: var(--line);
+}
+.char.on { border-color: var(--gold); background: #2b2f38; }
+.char-face { grid-row: span 3; }
+.char-id b { display: block; font-size: 14px; }
+.char-id i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
+.char-stats { grid-column: 2; margin-top: 6px; }
+.char-lean { grid-column: 2; display: block; text-decoration: none; font-size: 11px; color: var(--ink-dim); margin-top: 6px; }
+.stat { display: grid; grid-template-columns: 26px 1fr 14px; gap: 5px; align-items: center; }
+.stat span { font: 9px var(--mono); color: var(--ink-faint); }
+.stat b { font: 9px var(--mono); color: var(--ink-dim); text-align: right; }
+.stat-track { height: 3px; background: #2f3540; border-radius: 2px; overflow: hidden; }
+.stat-fill { height: 100%; background: var(--blue); }
+.stat-fill.up { background: var(--good); }
+.stat-fill.down { background: #b06a5a; }
+.stat b.up { color: var(--good); }
+.stat b.down { color: #e08076; }
+.big-stats .stat { grid-template-columns: 30px 1fr 18px; margin-bottom: 3px; }
+.big-stats .stat-track { height: 6px; }
+.big-stats .stat span, .big-stats .stat b { font-size: 11px; }
+
+/* A locked card is a goal, not a blank: the name, the face, and exactly what turns it over. */
+.char.locked, .outfit.locked { cursor: default; filter: grayscale(0.7); }
+.char.locked .char-face { opacity: .45; }
+.char.locked:hover, .outfit.locked:hover { background: var(--panel); border-color: var(--line); }
+.char-lock { grid-column: 2; margin-top: 6px; }
+.lock-tag {
+  font: 9px var(--mono); letter-spacing: .12em; color: var(--ink-faint);
+  border: 1px solid var(--line); border-radius: 2px; padding: 1px 4px;
+}
+.char-lock i { display: block; font-style: normal; font-size: 11px; color: var(--warn); margin-top: 4px; }
+
+.outfit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.outfit { text-align: left; background: var(--panel); padding: 11px 12px; }
+.outfit.on { border-color: var(--gold); background: #2b2f38; }
+.outfit-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; }
+.outfit-head b { font-size: 14px; }
+.outfit-mod { font: 10px var(--mono); color: var(--gold); white-space: nowrap; }
+.outfit i { display: block; font-style: normal; font-size: 12px; color: var(--ink-dim); margin: 6px 0 4px; }
+.outfit u { display: block; text-decoration: none; font-size: 11px; color: var(--blue); }
+
+.char-detail { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 18px; position: sticky; top: 16px; }
+.char-detail .you-name { margin-bottom: 10px; }
+.char-detail .you-name b { font-size: 16px; }
+.char-detail .sub { color: var(--ink-faint); font-size: 12px; margin: 10px 0 12px; }
+.char-detail p { color: var(--ink-dim); font-size: 13px; }
+.char-detail p.lean { color: var(--ink); }
+.char-detail .kit { display: flex; gap: 6px; flex-wrap: wrap; margin: 12px 0 4px; }
+.char-detail .kit-item { display: inline-flex; align-items: center; gap: 6px; padding: 4px 8px 4px 5px; font-size: 11px; }
+.char-detail .kit-item i { font-style: normal; color: var(--ink-dim); }
+.char-detail .title-buttons { margin: 16px 0 0; }
+@media (max-width: 900px) { .char-detail { position: static; } }
+
+/* The log book, on the report. */
+.book { margin-top: 10px; padding: 12px 16px; border-left: 3px solid var(--gold); background: var(--panel); }
+.book b { display: block; font-size: 15px; color: var(--gold); }
+.book i { display: block; font-style: normal; font-size: 12px; color: var(--ink-faint); margin: 3px 0; }
+.book span { font-size: 13px; color: var(--ink-dim); }
+.book .unlocked { color: var(--great); font-weight: 500; }
+
+.history { border: 1px solid var(--line); border-radius: 4px; margin-bottom: 20px; }
+.hrow { display: grid; grid-template-columns: 16px 1fr 100px 80px 34px 1fr; gap: 8px; align-items: center; padding: 6px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
+.hrow i { font-style: normal; color: var(--ink-faint); }
+.hrow img { image-rendering: pixelated; }
 .stat { display: grid; grid-template-columns: 26px 1fr 14px; gap: 5px; align-items: center; }
 .stat span { font: 9px var(--mono); color: var(--ink-faint); }
 .stat b { font: 9px var(--mono); color: var(--ink-dim); text-align: right; }

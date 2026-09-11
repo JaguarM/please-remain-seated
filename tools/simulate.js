@@ -2,7 +2,7 @@
 //
 //   node tools/simulate.js                    200 random flights
 //   node tools/simulate.js 2000               2000 of them
-//   node tools/simulate.js 400 --strategy=carry --char=gordy
+//   node tools/simulate.js 400 --strategy=carry --char=gordy --outfit=work
 //   node tools/simulate.js 1 --seed=12345 --verbose
 //
 // This exists because the action list is three hundred definitions written by hand, every one of
@@ -74,9 +74,11 @@ const FILES = [
     "game/sim/undo.js",
     "game/sim/actions.js",
     "game/sim/scoring.js",
+    "game/sim/logbook.js",
     "game/data/passengers.js",
     "game/data/characters.js",
     "game/data/items.js",
+    "game/data/outfits.js",
     "game/data/events.js",
     "game/data/medals.js",
     "game/data/endings.js",
@@ -252,7 +254,9 @@ function playOne(PRS, opts) {
     const rng = PRS.util.makeRng(seed);
 
     const ch = opts.char ? PRS.data.characters.byId(opts.char) : rng.pick(chars);
-    const S = PRS.state.create({ characterId: ch.id, seed: seed });
+    // One flight in six is flown in an outfit, which is roughly how often a player will bother.
+    const outfit = opts.outfit || (rng.chance(1 / 6) ? rng.pick(PRS.data.outfits.OUTFITS).id : null);
+    const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, seed: seed });
     setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = BOTS[opts.strategy || "random"];
     let steps = 0;
@@ -301,6 +305,7 @@ function main() {
     const verbose = args.includes("--verbose");
     const strategy = opt("strategy", null);
     const char = opt("char", null);
+    const outfit = opt("outfit", null);
     const seedArg = opt("seed", null);
 
     const PRS = load();
@@ -323,7 +328,7 @@ function main() {
         const per = Math.max(1, Math.round(n / strategies.length));
         for (let i = 0; i < per; i++) {
             const r = playOne(PRS, {
-                strategy: s, char: char,
+                strategy: s, char: char, outfit: outfit,
                 seed: seedArg !== null ? Number(seedArg) : undefined,
                 verbose: verbose,
             });

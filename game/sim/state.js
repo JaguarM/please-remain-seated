@@ -16,12 +16,16 @@
         const seed = opts.seed || (Date.now() >>> 0);
         const rng = util.makeRng(seed);
         const ch = PRS.data.characters.byId(opts.characterId);
-        const derived = PRS.data.characters.derive(ch);
+        const outfit = PRS.data.outfits.byId(opts.outfitId) || null;
+        const derived = PRS.data.characters.derive(ch, outfit);
+        const seatRow = parseInt(ch.seat, 10);
+        const seatY = cabin.yOfLetter(ch.seat.replace(/[0-9]/g, ""));
 
         const S = {
             seed: seed,
             rng: rng,
             character: ch,
+            outfit: outfit,
             derived: derived,
 
             clock: {
@@ -33,9 +37,11 @@
             },
 
             player: {
-                x: cabin.xOfRow(9), y: cabin.AISLE_Y,
-                seat: opts.seatOverride || "9C",
-                homeX: cabin.xOfRow(9), homeY: 3,
+                // Out of the seat already, in the aisle at your row: the fifteen minutes start
+                // with you standing up, because you are the one who noticed.
+                x: cabin.xOfRow(seatRow), y: cabin.AISLE_Y,
+                seat: ch.seat,
+                homeX: cabin.xOfRow(seatRow), homeY: seatY,
                 panic: 12,
                 smokeDose: 0,
                 burns: 0,
@@ -47,7 +53,7 @@
                 downedAt: null,
             },
 
-            inventory: (opts.items || PRS.data.items.START_BAG).map(function (id) {
+            inventory: (opts.items || ch.bag).map(function (id) {
                 const item = PRS.data.items.byId(id);
                 return item ? { id: id, item: item, uses: item.uses, wet: false, spent: false } : null;
             }).filter(Boolean),

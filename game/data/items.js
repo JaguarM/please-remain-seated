@@ -1,8 +1,9 @@
 // Everything you can hold. Fourteen things, and every one of them does something that helps.
 //
-// Three are on you when you board. The rest are in the aeroplane: two in the galley drawers, two
-// in the crew's own kit, and seven in other passengers' laps, which means the way you get equipped
-// is by talking to people, and that is the same conversation that turns them into helpers.
+// Each character boards with two or three of them (see `bag` in characters.js). The rest are in
+// the aeroplane: two in the galley drawers, two in the crew's own kit, and seven in other
+// passengers' laps, which means the way you get equipped is by talking to people, and that is
+// the same conversation that turns them into helpers.
 //
 // Fields
 //   sprite    "cabin:name", a sprite in game/art/cabin-sprites.js
@@ -11,7 +12,7 @@
 //   tags      what actions look for: the decks ask for tags, never for item ids, so a new item is
 //             playable the moment it is listed here
 //   refill    where its charges come back from, if anywhere
-//   where     bag | pax | galley | crew - where it starts, which passengers.js and the decks honour
+//   where     bag | pax | galley | crew - where it is found; a character's bag may hold any of them
 //   note      the one line the log prints when you find it
 (function (global) {
     "use strict";
@@ -82,14 +83,11 @@
           note: "Nine litres under pressure, two discharges, and it weighs as much as a child." },
     ];
 
-    /** What is on you when you board. Everything else is in the aeroplane. */
-    const START_BAG = ITEMS.filter((i) => i.where === "bag").map((i) => i.id);
-
     function byId(id) {
         for (const item of ITEMS) if (item.id === id) return item;
         return null;
     }
 
     PRS.data = PRS.data || {};
-    PRS.data.items = { ITEMS, START_BAG, byId };
+    PRS.data.items = { ITEMS, byId };
 })(window);
