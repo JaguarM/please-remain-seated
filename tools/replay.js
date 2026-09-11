@@ -60,6 +60,9 @@ function replay(rec) {
         const res = PRS.actions.perform(S, entry);
         steps.push({ clock: clock, cost: res ? res.cost : 0, id: entry.id, label: entry.label });
     }
+    // Whatever is left of the flight still happens, with nobody doing anything, so a flight that
+    // stopped replaying is scored at touchdown and not at the moment it stopped.
+    if (!S.clock.landed) PRS.actions.spend(S, S.clock.remaining, null);
     if (!S.clock.landed) PRS.actions.land(S);
     return { S: S, steps: steps, broke: broke };
 }

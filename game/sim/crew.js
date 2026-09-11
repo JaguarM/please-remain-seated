@@ -35,6 +35,8 @@
         const roster = PRS.data.passengers.CREW;
         S.crew = roster.map(function (c, i) {
             const fwd = c.seat === "fwd";
+            // Yasmin boards the flight already out with the trolley, standing behind it.
+            const withCart = c.id === "fa1" && S.cabinFlags.cartOut;
             return {
                 id: c.id,
                 name: c.name,
@@ -42,7 +44,7 @@
                 sprite: c.sprite,
                 hair: c.hair, skin: c.skin, shirt: c.shirt,
                 line: c.line,
-                x: fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
+                x: withCart ? S.cabinFlags.cartX + 1 : fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
                 y: cabin.AISLE_Y + (i === 1 ? 0 : 0),
                 home: fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
                 task: "service",
@@ -192,7 +194,8 @@
                         delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
                         S.cabinFlags.cartX = next;
                         S.cabinFlags.aisleBlocked[next] = 9999;
-                        c.x = next;
+                        // Behind it, pushing, where you can see her. Not on the same square.
+                        c.x = next + 1;
                     }
                 }
                 continue;
