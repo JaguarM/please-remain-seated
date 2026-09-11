@@ -5,12 +5,15 @@
 // putting the world back exactly as it was.
 //
 // The thing it must not become is a way to reroll. Persuasion is the centre of this game and
-// almost every social action is a die roll against a passenger's resistance; if undo let you
-// retry a refusal, the whole social layer would collapse into "click until it works".
+// almost every social action is a roll against a passenger's resistance; if undo let you retry
+// a refusal, the whole social layer would collapse into "click until it works".
 //
-// So the snapshot includes the position of the random number stream. Rewind, repeat the same
-// action, and you get the same result, down to the sentence the passenger says. You can change
-// your mind. You cannot change your luck.
+// It cannot, because there is nothing left to roll: every die in the flight was cast at boarding
+// from the seed (state.js, `dice`), and the snapshot carries the counters that say which have
+// been used. Rewind, repeat the same action, and you get the same result, down to the sentence
+// the passenger says. Do something else first and you still get the same result, because the
+// dice are not a queue that other actions push along. You can change your mind. You cannot
+// change your luck.
 //
 // Two things still cannot be undone:
 //   * anything tagged `reveal`, because you cannot un-see what was in the bin, and rewinding the
@@ -46,7 +49,6 @@
 
     function snapshot(S) {
         return {
-            rng: S.rng.save(),
             clock: copy(S.clock),
             player: copy(S.player),
             inventory: S.inventory.map(copy),
@@ -69,11 +71,12 @@
             bags: copy(S._bags || {}),
             eventClock: S._eventClock || 0,
             eventsFired: copy(S._eventsFired || {}),
+            eventTurn: S._eventTurn || 0,
+            bagN: copy(S._bagN || {}),
         };
     }
 
     function restore(S, snap) {
-        S.rng.load(snap.rng);
         S.clock = copy(snap.clock);
         S.player = copy(snap.player);
         S.inventory = snap.inventory.map(copy);
@@ -95,9 +98,11 @@
         S.log.length = snap.logLength;
         S._eventClock = snap.eventClock;
         S._eventsFired = copy(snap.eventsFired);
-        // The bags of flavour lines are restored too. They look cosmetic, but refilling one
-        // draws from the random stream, so losing them would desynchronise every roll after.
+        S._eventTurn = snap.eventTurn;
+        // The bags of flavour lines are restored too, with the count of refills each has had,
+        // which is what the next refill's shuffle is drawn from.
         S._bags = copy(snap.bags);
+        S._bagN = copy(snap.bagN);
         // The route field is derived from the rest and is cheaper to rebuild than to copy.
         S._field = null;
         S._fieldStamp = null;

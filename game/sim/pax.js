@@ -352,12 +352,12 @@
             else if (p.moved) { /* staying down */ }
             else if (p.state === "seated" && p.panic > 58 && p.awareness > 45 &&
                        canStandUp(p)) {
-                if (S.rng.chance(clamp01(dt * 0.045))) {
+                if (PRS.state.hazard(S, p, "stand", dt * 0.045)) {
                     p.state = "standing";
                     p.belted = false;
                 }
             } else if (p.state === "standing" && p.panic > 74 && canStandUp(p)) {
-                if (S.rng.chance(clamp01(dt * 0.05)) && S.crewPhase < 5) {
+                if (PRS.state.hazard(S, p, "aisle", dt * 0.05) && S.crewPhase < 5) {
                     // Into the aisle, facing the wrong way, with a bag.
                     p.state = "aisle";
                     p.x = p.homeX; p.y = cabin.AISLE_Y;
@@ -366,7 +366,8 @@
                     PRS.state.log(S, p.name + " gets into the aisle at row " + p.row +
                                      " with a wheelie bag and stops.", "bad");
                 }
-            } else if (p.state === "aisle" && p.panic > 86 && S.rng.chance(clamp01(dt * 0.02))) {
+            } else if (p.state === "aisle" && p.panic > 86 &&
+                       PRS.state.hazard(S, p, "drift", dt * 0.02)) {
                 // Toward the front. Everyone toward the front. This is how aisles jam.
                 const nx = Math.max(cabin.FWD_CROSS_X, p.x - 1);
                 if (nx !== p.x) {
@@ -489,12 +490,13 @@
         // About one conversion every two minutes per helper, at full credibility, and none at all
         // while nobody believes anything is happening.
         const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
-        if (!S.rng.chance(rate)) return;
+        if (rate <= 0 || !PRS.state.hazard(S, p, "spread", rate)) return;
         const near = S.pax.filter((q) => canHelp(q) && Math.abs(q.x - p.x) <= 3 &&
             q.traits.indexOf("hostile") < 0);
         if (!near.length) return;
-        const q = S.rng.pick(near);
-        if (resistance(S, q) > persuasion(S, 24) + S.rng.range(-10, 20)) return;
+        const q = PRS.state.dice(S, "spread:pick:" + p.id + ":" + p.spreadN, "mid").pick(near);
+        // A helper asking is a friendlier ask than yours, and it meets the same mood yours would.
+        if (resistance(S, q) > persuasion(S, 24) + q.mood + 5) return;
         recruit(S, q, p.name + " asked them, which is not something you had to do.");
     }
 
@@ -563,16 +565,21 @@
         return v + (extra || 0);
     }
 
-    /** The roll itself. Returns { ok, margin }. */
+    /**
+     * The roll itself, except that it was rolled at boarding: the fourteen points either way are
+     * the mood this person boarded in, so asking twice meets the same person twice, and what
+     * moves between the two asks is trust, awareness and how often they have been asked.
+     * Returns { ok, margin }.
+     */
     function convince(S, p, extra) {
         const need = resistance(S, p);
-        const got = persuasion(S, extra) + S.rng.range(-14, 14);
+        const got = persuasion(S, extra) + (p.mood || 0);
         p.spokenTo++;
         p.trust = clamp(p.trust + (got - need) * 0.20, -60, 100);
         return { ok: got >= need, margin: got - need, need: need, got: got };
     }
 
-    /** The chance the roll in convince() comes off, worked out before it is rolled. */
+    /** The chance convince() comes off, over a mood you cannot see: even odds at a mood of nought. */
     function odds(S, p, extra) {
         return clamp01((persuasion(S, extra) + 14 - resistance(S, p)) / 28);
     }

@@ -2,9 +2,9 @@
 // help, the previous flights, and the incident report.
 //
 // The title is a boarding pass. It boards you in one click as whoever you were last time, and
-// under the name are four boxes: what you are wearing and the three things on you. A box opens a
-// page of choices, unless it is part of who the character is, in which case it has a lock in the
-// corner. The setup screen is for being somebody else: nine cards, and a locked card says exactly
+// under the name are five boxes: what you are wearing, the three things on you, and the seed the
+// dice are cast from. A box opens a page of choices, unless it is part of who the character is,
+// in which case it has a lock in the corner. The setup screen is for being somebody else: nine cards, and a locked card says exactly
 // what turns it over. The report is the point of the whole thing: it is written in the flat voice
 // of an air accident investigator, it lists every soul on board by seat with what happened to
 // them, and it quotes your own actions back at you in the order you took them. Then it writes the
@@ -17,7 +17,8 @@
     let host = null;
 
     // Who the next flight is flown by, in what, and with what. Boarding saves it.
-    const choice = { characterId: "ansel", outfitId: null, items: null };
+    const choice = { characterId: "ansel", outfitId: null, items: null,
+                     seed: null, seedText: "", luck: "dice" };
     let choiceLoaded = false;
 
     /**
@@ -32,7 +33,16 @@
                 if (typeof saved.characterId === "string") choice.characterId = saved.characterId;
                 if (typeof saved.outfitId === "string") choice.outfitId = saved.outfitId;
                 if (Array.isArray(saved.items)) choice.items = saved.items.slice();
+                if (typeof saved.seedText === "string") setSeed(saved.seedText);
+                if (saved.luck === "perfect") choice.luck = "perfect";
             }
+            // ?seed=606 or ?seed=PARIS on the address bar is a flight somebody sent you, and
+            // ?luck=perfect is the testing mode. Both win over whatever was saved.
+            try {
+                const q = new URLSearchParams(global.location.search);
+                if (q.has("seed")) setSeed(q.get("seed"));
+                if (q.has("luck")) choice.luck = q.get("luck") === "perfect" ? "perfect" : "dice";
+            } catch (e) { /* no address bar to read */ }
         }
         const C = PRS.data.characters, O = PRS.data.outfits, D = PRS.data.items, L = PRS.logbook;
         if (!L.isUnlocked(C.byId(choice.characterId))) choice.characterId = C.CHARACTERS[0].id;
@@ -49,7 +59,17 @@
 
     function saveChoice() {
         store.set("choice", { characterId: choice.characterId, outfitId: choice.outfitId,
-                              items: choice.items.slice() });
+                              items: choice.items.slice(), seedText: choice.seedText,
+                              luck: choice.luck });
+    }
+
+    /** A seed typed or pasted: digits are the seed itself, and a word is hashed into one. */
+    function setSeed(text) {
+        const t = String(text === null || text === undefined ? "" : text).trim();
+        if (!t) { choice.seed = null; choice.seedText = ""; return; }
+        choice.seedText = t.slice(0, 40);
+        choice.seed = /^\d+$/.test(choice.seedText) ? (Number(choice.seedText) % 4294967296) >>> 0
+                                                    : PRS.util.seedFromString(choice.seedText);
     }
 
     function mount(node) { host = node; }
@@ -157,6 +177,14 @@
                 open: fixed ? null : () => bag(i, back),
             }));
         }
+        // The fifth box is the seed: which aeroplane, and whether the dice are cast at all.
+        row.appendChild(slot({
+            icon: el("span", { class: "slot-empty slot-dice",
+                               text: choice.luck === "perfect" ? "⚅" : "⚄" }),
+            label: choice.seed === null ? "any seed" : choice.seedText,
+            sub: choice.luck === "perfect" ? "perfect luck" : "seed",
+            open: () => flight(back),
+        }));
         return row;
     }
 
@@ -290,6 +318,103 @@
         });
     }
 
+    /**
+     * Which aeroplane: the seed every die in the flight is cast from, and whether they are cast
+     * at all. Perfect luck is for testing a plan, and the log book does not take flights flown
+     * on it.
+     */
+    function flight(back) {
+        ready();
+        show(function (root) {
+            root.className = "screen picker";
+            const done = function () {
+                saveChoice();
+                PRS.audio.unlock();
+                PRS.audio.play("select");
+                back();
+            };
+
+            const seeds = el("div", { class: "option-grid" });
+            seeds.appendChild(el("button", {
+                class: "option" + (choice.seed === null ? " on" : ""),
+                onclick: () => { setSeed(""); done(); },
+            }, [
+                el("span", { class: "slot-empty slot-dice", text: "⚄" }),
+                el("div", { class: "option-text" }, [
+                    el("b", { text: "Whatever comes" }),
+                    el("i", { text: "A new seed every flight. The report quotes it, so a flight " +
+                                    "worth flying again is one number away." }),
+                ]),
+            ]));
+            const input = el("input", { class: "seed-input", type: "text", maxlength: "40",
+                                        placeholder: "606, or a word", spellcheck: "false",
+                                        value: choice.seedText || "" });
+            const take = () => { setSeed(input.value); done(); };
+            // Typing is not a keyboard shortcut, and Enter is the button.
+            input.addEventListener("keydown", (ev) => {
+                ev.stopPropagation();
+                if (ev.key === "Enter") take();
+            });
+            seeds.appendChild(el("div", { class: "option" + (choice.seed !== null ? " on" : "") }, [
+                el("span", { class: "slot-empty", text: "#" }),
+                el("div", { class: "option-text" }, [
+                    el("b", { text: "This seed" }),
+                    el("i", { text: "Every die in the flight is cast from it before you board: " +
+                                    "what mood each passenger is in, when row 14 catches, what " +
+                                    "the cabin does on its third turn. Two flights on one seed " +
+                                    "differ only in what you do. The address bar takes it too: " +
+                                    "index.html?seed=606." }),
+                    input,
+                    el("div", { class: "title-buttons" }, [
+                        el("button", { text: "Fly this seed", onclick: take }),
+                    ]),
+                ]),
+            ]));
+
+            const luck = el("div", { class: "option-grid" });
+            const pickLuck = (v) => { choice.luck = v; done(); };
+            luck.appendChild(el("button", {
+                class: "option" + (choice.luck !== "perfect" ? " on" : ""),
+                onclick: () => pickLuck("dice"),
+            }, [
+                el("span", { class: "slot-empty slot-dice", text: "⚄" }),
+                el("div", { class: "option-text" }, [
+                    el("b", { text: "Dice" }),
+                    el("i", { text: "Cast at boarding, from the seed. Backspace cannot re-cast " +
+                                    "them, and neither can doing something else first." }),
+                ]),
+            ]));
+            luck.appendChild(el("button", {
+                class: "option" + (choice.luck === "perfect" ? " on" : ""),
+                onclick: () => pickLuck("perfect"),
+            }, [
+                el("span", { class: "slot-empty slot-dice", text: "⚅" }),
+                el("div", { class: "option-text" }, [
+                    el("b", { text: "Perfect luck" }),
+                    el("i", { text: "For testing a plan against the aeroplane rather than the " +
+                                    "dice. Every coin lands your way: people say yes whenever " +
+                                    "asking was worth it, the blanket does not burn through, " +
+                                    "turbulence drops nobody, and the cabin's turn is the kindest " +
+                                    "thing that could happen. Everything on a timer, the fire " +
+                                    "included, happens at its middle time." }),
+                    el("u", { class: "locked", text: "Nothing from a flight like this goes in " +
+                                                     "the log book." }),
+                ]),
+            ]));
+
+            root.appendChild(el("h2", { text: "Which flight" }));
+            root.appendChild(el("p", { class: "lede", text:
+                "It is the same aeroplane every time and the fire is in the same locker. What " +
+                "the seed decides is everything that could have gone either way." }));
+            root.appendChild(seeds);
+            root.appendChild(el("h3", { text: "The dice" }));
+            root.appendChild(luck);
+            root.appendChild(el("div", { class: "title-buttons" }, [
+                el("button", { text: "Back", onclick: back }),
+            ]));
+        });
+    }
+
     // ---------------------------------------------------------------------------------- setup ---
     //
     // Who you are: nine cards and the composite you. A locked card says exactly what turns it
@@ -406,7 +531,8 @@
             characterId: choice.characterId,
             outfitId: choice.outfitId,
             items: choice.items.slice(),
-            seed: (Math.random() * 0xffffffff) >>> 0,
+            seed: choice.seed === null ? (Math.random() * 0xffffffff) >>> 0 : choice.seed,
+            luck: choice.luck,
         });
         PRS.current = S;
         PRS.audio.unlock();
@@ -548,12 +674,12 @@
             // The flight recorder. A replay can work out everything about this flight except what
             // you were trying to do, so there is a box for that.
             if (R.recording && PRS.recorder) {
-                const seed = R.recording.seed;
+                const at = R.recording.at;
                 const done = el("span", { class: "done" });
                 const note = el("textarea", { placeholder: "What were you trying to do, and when " +
                     "did you notice it was or was not working? (optional)" });
                 note.value = R.recording.note || "";
-                note.addEventListener("input", () => { PRS.recorder.note(seed, note.value); });
+                note.addEventListener("input", () => { PRS.recorder.note(at, note.value); });
                 // Typing is not a keyboard shortcut.
                 note.addEventListener("keydown", (ev) => ev.stopPropagation());
                 inner.appendChild(el("div", { class: "rec" }, [
@@ -568,14 +694,21 @@
                             done.textContent = "saved to your downloads";
                         } }),
                         el("button", { text: "Copy this flight", onclick: () => copyText(
-                            PRS.recorder.exportText(PRS.recorder.all().filter((r) => r.seed === seed)),
+                            PRS.recorder.exportText(PRS.recorder.all().filter((r) => r.at === at)),
                             done) }),
                         done,
                     ]),
                 ]));
             }
 
-            // The log book, and anything it turned over.
+            // The log book, and anything it turned over. A flight on perfect luck is not in it.
+            if (!R.logbook && S.luck === "perfect") {
+                inner.appendChild(el("div", { class: "book" }, [
+                    el("b", { text: "Nothing in the log book" }),
+                    el("i", { text: "Perfect luck is for testing a plan. The flight is in the " +
+                                    "recorder and nowhere else." }),
+                ]));
+            }
             if (R.logbook) {
                 const L = R.logbook;
                 inner.appendChild(el("div", { class: "book" }, [
@@ -658,13 +791,21 @@
             }
 
             inner.appendChild(el("div", { class: "title-buttons" }, [
-                el("button", { class: "big", text: "Fly it again", onclick: begin }),
+                el("button", { class: "big", onclick: begin,
+                               text: choice.seed === null ? "Fly it again"
+                                                          : "Fly seed " + choice.seedText + " again" }),
+                // The same aeroplane once more, when this one came off the dice.
+                choice.seed === null
+                    ? el("button", { text: "Fly seed " + R.seed + " again",
+                                     onclick: () => { setSeed(String(R.seed)); begin(); } })
+                    : null,
                 el("button", { text: "Change who you are", onclick: setup }),
                 el("button", { text: "Title", onclick: title }),
             ]));
             inner.appendChild(el("p", { class: "footnote", text:
                 S.character.name + (S.outfit ? " in " + S.outfit.name.toLowerCase() : "") +
-                " · seed " + R.seed + " · " + R.actions + " actions taken · " +
+                " · seed " + R.seed + (S.luck === "perfect" ? " · perfect luck" : "") +
+                " · " + R.actions + " actions taken · " +
                 (S.stats.itemsFound || 0) + " things found aboard · " +
                 (S.stats.undos ? "changed your mind " + S.stats.undos + " times"
                                : "never changed your mind") }));
@@ -725,5 +866,6 @@
         ]);
     }
 
-    PRS.screens = { mount, title, setup, wardrobe, bag, begin, report, flights, help, hideHelp };
+    PRS.screens = { mount, title, setup, wardrobe, bag, flight, begin, report, flights, help,
+                    hideHelp };
 })(window);

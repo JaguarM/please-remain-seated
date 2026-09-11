@@ -484,6 +484,10 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .option-text u { text-decoration: none; display: block; font-size: 11px; color: var(--blue); }
 .option-text u.locked { color: var(--warn); }
 .option-mod { font: 10px var(--mono); color: var(--gold); }
+.slot-dice { font-size: 30px; color: #3a4150; }
+.option .seed-input { display: block; width: 100%; box-sizing: border-box; margin: 6px 0 2px; padding: 6px 8px; font: 700 15px var(--mono); letter-spacing: .04em; background: #12151a; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; }
+.option .seed-input:focus { outline: none; border-color: var(--gold); }
+.option .title-buttons { justify-content: flex-start; margin: 6px 0 0; }
 
 /* ---------------------------------------------------------------------------- the setup */
 

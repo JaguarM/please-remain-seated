@@ -469,7 +469,7 @@
             PRS.atlas.icon("pax", 2, PRS.render.paletteOf(S.character)),
             el("div", {}, [
                 el("b", { text: S.character.name }),
-                el("i", { text: S.character.title }),
+                el("i", { text: S.character.title + (S.luck === "perfect" ? " · perfect luck" : "") }),
             ]),
         ]));
         box.appendChild(meter("YOUR LUNGS", 100 - P.smokeDose, 100, "m-lungs",

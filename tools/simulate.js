@@ -5,6 +5,7 @@
 //   node tools/simulate.js 400 --strategy=carry --char=gordy --outfit=work
 //   node tools/simulate.js 300 --strategy=douse --bag=water_big,wet_towel,blanket
 //   node tools/simulate.js 1 --seed=12345 --verbose
+//   node tools/simulate.js 8 --luck=perfect --seed=1     every bot once, one aeroplane, no dice
 //
 // This exists because the action list is a hundred definitions written by hand, every one of
 // which is a function that touches the world, and the only honest way to know that none of them
@@ -115,11 +116,11 @@ function load() {
 
 // ------------------------------------------------------------------------------------ bots ---
 
-// The bots' own coin, kept well away from the game's. `S.rng` is the flight - every refusal,
-// every flare, every flavour line comes out of it - and a bot that drew from it would be
-// deciding what happens as well as what to do. This one is seeded from the run seed instead, so
-// a seed still reproduces a whole flight, bot included, which is what tools/dump_frame.js needs
-// in order to promise that the picture in the README regenerates.
+// The bots' own coin, kept well away from the game's. The flight's dice are cast at boarding
+// from its seed and never touched again, so a bot cannot shift them; this coin is for the bot's
+// own tie-breaks, seeded from the run seed so that a seed still reproduces a whole flight, bot
+// included, which is what tools/dump_frame.js needs in order to promise that the picture in the
+// README regenerates.
 let coin = () => Math.random();
 
 function setCoin(rng) { coin = rng; }
@@ -364,7 +365,8 @@ function playOne(PRS, opts) {
                               .slice(0, PRS.data.items.SLOTS)
               : rng.chance(0.5) ? ch.bag
               : ch.kit.concat(rng.shuffle(free).slice(0, PRS.data.items.SLOTS - ch.kit.length));
-    const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, items: bag, seed: seed });
+    const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, items: bag, seed: seed,
+                                 luck: opts.luck });
     setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = BOTS[opts.strategy || "random"];
     let steps = 0;
@@ -416,11 +418,15 @@ function main() {
     const outfit = opt("outfit", undefined);
     const seedArg = opt("seed", null);
     const bagArg = opt("bag", null);
+    const luck = opt("luck", "dice");
 
     const PRS = load();
     console.log("Loaded " + PRS.atlas.boot() + " sprites, " + PRS.actions.count() +
                 " action definitions.");
     console.log("Decks: " + JSON.stringify(PRS.actions.deckCounts()));
+    if (luck === "perfect") {
+        console.log("Perfect luck: every coin the player's way, every timer at its middle, no dice.");
+    }
 
     // How many concrete actions exist at the very start, before targets multiply further.
     const probe = PRS.state.create({ characterId: "ansel", seed: 1 });
@@ -437,7 +443,7 @@ function main() {
         const per = Math.max(1, Math.round(n / strategies.length));
         for (let i = 0; i < per; i++) {
             const r = playOne(PRS, {
-                strategy: s, char: char, outfit: outfit,
+                strategy: s, char: char, outfit: outfit, luck: luck,
                 seed: seedArg !== null ? Number(seedArg) : undefined,
                 // The douse bot flies with what the playtest flew with, unless told otherwise.
                 bag: bagArg ? bagArg.split(",") : s === "douse" ? ["water_big", "wet_towel", "blanket"]

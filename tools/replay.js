@@ -48,7 +48,7 @@ function find(S, key) {
 
 function replay(rec) {
     const S = PRS.state.create({ characterId: rec.character, outfitId: rec.outfit,
-                                 items: rec.items, seed: rec.seed });
+                                 items: rec.items, seed: rec.seed, luck: rec.luck });
     const steps = [];
     let broke = null;
     for (let i = 0; i < rec.keys.length; i++) {
@@ -76,6 +76,7 @@ function describe(n, rec) {
 
     console.log("\n#" + n + "  " + ch.name + (outfit ? ", " + outfit.name.toLowerCase() : "") +
                 "  ·  bag: " + rec.items.join(", ") + "  ·  seed " + rec.seed +
+                (rec.luck === "perfect" ? " (perfect luck)" : "") +
                 (rec.at ? "  ·  " + rec.at.slice(0, 16).replace("T", " ") : ""));
     if (rec.note) console.log("    “" + rec.note.trim().replace(/\s+/g, " ") + "”");
     console.log("    survived " + R.survivors + " of 60  (walked " + T.unhurt + " · treated " +
@@ -99,7 +100,8 @@ function describe(n, rec) {
     if (R.medals.length) console.log("    medals: " + R.medals.map((m) => m.name).join(", "));
 
     // The same aeroplane, flown by the bots.
-    const same_ = { char: rec.character, outfit: rec.outfit, bag: rec.items, seed: rec.seed };
+    const same_ = { char: rec.character, outfit: rec.outfit, bag: rec.items, seed: rec.seed,
+                    luck: rec.luck };
     const bots = {};
     for (const b of ["idle", "douse", "good", "blend"]) {
         bots[b] = playOne(PRS, Object.assign({ strategy: b }, same_)).result.survivors;

@@ -27,8 +27,8 @@
     const BANDS = { unhurt: 30, treated: 66, serious: 96 };
 
     /**
-     * One person's harm at touchdown, in named parts, before the dice. Kept apart from the roll
-     * so tools/harm.js can show where a flight's harm came from with the same arithmetic the
+     * One person's harm at touchdown, in named parts. Kept apart from the banding so that
+     * tools/harm.js can show where a flight's harm came from with the same arithmetic the
      * report uses, rather than a copy of it that drifts.
      */
     function harmParts(S, p) {
@@ -67,9 +67,9 @@
         return "lost";
     }
 
-    /** Everything that decides one person's afternoon, and then the dice. */
+    /** Everything that decides one person's afternoon. No dice: two identical flights score alike. */
     function outcomeFor(S, p) {
-        const harm = Math.max(0, harmParts(S, p).total + S.rng.range(-7, 7));
+        const harm = Math.max(0, harmParts(S, p).total);
         return { key: band(harm), harm: harm };
     }
 

@@ -38,7 +38,8 @@ const outcomes = {};
 let survived = 0;
 
 for (let i = 0; i < n; i++) {
-    const r = playOne(PRS, { strategy: strategy, char: char, seed: 5000 + i });
+    const r = playOne(PRS, { strategy: strategy, char: char, seed: 5000 + i,
+                             luck: opt("luck", "dice") });
     const S = r.S;
     survived += r.result.survivors;
     for (const p of S.pax) {

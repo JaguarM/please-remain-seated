@@ -9,6 +9,34 @@
     // ------------------------------------------------------------------------------- random ---
     // Mulberry32. Seeded, because a run should be reproducible from its seed and because the
     // incident report at the end quotes the seed like a flight number.
+    //
+    // Nothing in a flight draws from one long stream. Every roll the game makes comes from a
+    // stream of its own, named for what it decides and seeded from the flight's seed and that
+    // name (`hashSeed`), so whether row 14 catches or what the cabin does on its third turn does
+    // not depend on how many people you spoke to first. A seed is a whole flight; what you do in
+    // it is the only thing that varies. `constRng` is the same interface with the dice glued
+    // down, which is what perfect luck flies on.
+    function attach(rng, unit) {
+        // `unit` is the draw kept below 1, for the helpers that index with it.
+        rng.int = (n) => Math.floor(unit() * n);
+        rng.range = (lo, hi) => lo + rng() * (hi - lo);
+        rng.irange = (lo, hi) => lo + Math.floor(unit() * (hi - lo + 1));
+        rng.pick = (arr) => arr[Math.floor(unit() * arr.length)];
+        rng.chance = (p) => rng() < p;
+        // How much hazard something sits through before it happens: the waiting time of a thing
+        // that has a small chance every second, with a mean of one. Infinity when the draw is 1.
+        rng.expo = () => -Math.log(1 - rng());
+        rng.shuffle = function (arr) {
+            const out = arr.slice();
+            for (let i = out.length - 1; i > 0; i--) {
+                const j = Math.floor(unit() * (i + 1));
+                const t = out[i]; out[i] = out[j]; out[j] = t;
+            }
+            return out;
+        };
+        return rng;
+    }
+
     function makeRng(seed) {
         let a = seed >>> 0;
         const rng = function () {
@@ -19,25 +47,18 @@
             return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
         };
         rng.seed = seed >>> 0;
-        // Where in the sequence we are, so a snapshot can put the stream back. This is what makes
-        // undo safe: rewind and repeat the same action and you get the same luck. You can change
-        // your mind; you cannot change the dice.
         rng.save = () => a;
         rng.load = (v) => { a = v >>> 0; };
-        rng.int = (n) => Math.floor(rng() * n);
-        rng.range = (lo, hi) => lo + rng() * (hi - lo);
-        rng.irange = (lo, hi) => lo + Math.floor(rng() * (hi - lo + 1));
-        rng.pick = (arr) => arr[Math.floor(rng() * arr.length)];
-        rng.chance = (p) => rng() < p;
-        rng.shuffle = function (arr) {
-            const out = arr.slice();
-            for (let i = out.length - 1; i > 0; i--) {
-                const j = Math.floor(rng() * (i + 1));
-                const t = out[i]; out[i] = out[j]; out[j] = t;
-            }
-            return out;
-        };
-        return rng;
+        return attach(rng, rng);
+    }
+
+    /** Dice that always land on `v`: 0 is the lowest they go, 1 the highest, 0.5 the middle. */
+    function constRng(v) {
+        const rng = function () { return v; };
+        rng.seed = null;
+        rng.save = () => 0;
+        rng.load = () => {};
+        return attach(rng, () => Math.min(v, 1 - 1e-9));
     }
 
     function seedFromString(str) {
@@ -47,6 +68,28 @@
             h = Math.imul(h, 16777619);
         }
         return h >>> 0;
+    }
+
+    /**
+     * One 32-bit seed for a named thing inside a flight, from the flight's seed and the name:
+     * "mood:p14", "event:3", "fire:vent:0". The flight is the seed; the name is what is being
+     * decided; nothing about how the flight was played comes into it.
+     */
+    function hashSeed(seed, key) {
+        const s = seed >>> 0;
+        let h = 2166136261 >>> 0;
+        for (const b of [s & 255, (s >>> 8) & 255, (s >>> 16) & 255, s >>> 24]) {
+            h ^= b;
+            h = Math.imul(h, 16777619);
+        }
+        for (let i = 0; i < key.length; i++) {
+            h ^= key.charCodeAt(i);
+            h = Math.imul(h, 16777619);
+        }
+        // Stir, so that seeds a bit apart do not start their streams a bit apart.
+        h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+        h = Math.imul(h ^ (h >>> 16), 0x45d9f3b);
+        return (h ^ (h >>> 16)) >>> 0;
     }
 
     // -------------------------------------------------------------------------------- maths ---
@@ -143,7 +186,8 @@
     };
 
     PRS.util = {
-        makeRng, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel, plural, shade,
+        makeRng, constRng, hashSeed, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel,
+        plural, shade,
         listSentence, el, $, $$, clear, store,
     };
 })(window);

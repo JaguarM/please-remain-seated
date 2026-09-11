@@ -18,7 +18,7 @@
     }
     function cred(S, n) { S.credibility = Math.min(100, Math.max(0, S.credibility + n)); }
 
-    /** The crew's willingness to do a thing for you, before the dice. */
+    /** The crew's willingness to do a thing for you, before their mood. */
     function askScore(S, c, bonus) {
         let score = S.credibility + (bonus || 0);
         score += c.obliging * 8;
@@ -29,9 +29,9 @@
         return score;
     }
 
-    /** The same, rolled against credibility. */
+    /** The same, plus the mood this crew member boarded in, against the difficulty. */
     function ask(S, c, difficulty, bonus) {
-        const ok = askScore(S, c, bonus) + S.rng.range(-12, 12) >= difficulty;
+        const ok = askScore(S, c, bonus) + (c.mood || 0) >= difficulty;
         if (ok) c.obliging++; else c.refusals++;
         return ok;
     }

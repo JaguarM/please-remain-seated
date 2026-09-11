@@ -53,6 +53,8 @@
                 obliging: 0,        // how many times you have got this one to do something
                 refusals: 0,
                 askedThisPhase: false,
+                // The twelve points either way that every ask used to roll, decided at boarding.
+                mood: PRS.state.dice(S, "mood:" + c.id, "high").range(-12, 12),
             };
         });
         S.crewPhase = 0;
@@ -235,8 +237,8 @@
             if (S.crewPhase >= 5) {
                 // Secure the cabin. They will physically undo your work, politely.
                 stepToward(c, c.home, cabin.AISLE_Y, dt);
-                if (S.rng.chance(clamp01(dt / 60))) {
-                    const victim = pickStander(S);
+                if (PRS.state.hazard(S, c, "sit", dt / 60)) {
+                    const victim = pickStander(S, c);
                     if (victim) {
                         victim.state = "seated";
                         victim.belted = true;
@@ -263,11 +265,11 @@
         return best;
     }
 
-    function pickStander(S) {
+    function pickStander(S, c) {
         const options = S.pax.filter((p) => (p.state === "standing" || p.state === "aisle") &&
                                             !p.helper);
         if (!options.length) return null;
-        return S.rng.pick(options);
+        return PRS.state.dice(S, "sit:pick:" + c.id + ":" + c.sitN, "mid").pick(options);
     }
 
     function doCrewCarry(S, c, dt) {

@@ -12,9 +12,11 @@
     const FLIGHT_SECONDS = 900;   // fifteen minutes to the runway
 
     function create(opts) {
-        const util = PRS.util;
-        const seed = opts.seed || (Date.now() >>> 0);
-        const rng = util.makeRng(seed);
+        const seed = (opts.seed === undefined || opts.seed === null ? (Date.now() >>> 0)
+                                                                    : opts.seed) >>> 0;
+        // "dice" is a flight. "perfect" is the same aeroplane with every coin landing the player's
+        // way and every timer at its middle: for testing a plan against the cabin, not the luck.
+        const luck = opts.luck === "perfect" ? "perfect" : "dice";
         const ch = PRS.data.characters.byId(opts.characterId);
         const outfit = PRS.data.outfits.byId(opts.outfitId) || null;
         const derived = PRS.data.characters.derive(ch, outfit);
@@ -24,7 +26,7 @@
 
         const S = {
             seed: seed,
-            rng: rng,
+            luck: luck,
             character: ch,
             outfit: outfit,
             derived: derived,
@@ -61,7 +63,7 @@
                 return item ? { id: id, item: item, uses: item.uses, wet: false, spent: false } : null;
             }).filter(Boolean),
 
-            fire: PRS.fire.create(rng),
+            fire: null,            // built below, once the seed and the luck are on S
 
             pax: [],
             crew: [],
@@ -94,6 +96,7 @@
             ended: null,
         };
 
+        S.fire = PRS.fire.create(S);
         buildPassengers(S);
         buildStash(S);
         PRS.crew.create(S);
@@ -106,8 +109,8 @@
 
     function buildPassengers(S) {
         const data = PRS.data.passengers;
-        const rng = S.rng;
         S.pax = data.ROSTER.map(function (row, n) {
+            const id = "p" + n;
             const [name, seat, kg, hairKey, skinKey, shirtKey, traits, says, refuse,
                    carries] = row;
             const rowNum = parseInt(seat, 10);
@@ -117,7 +120,7 @@
             const asleep = traits.indexOf("asleep") >= 0;
             const hair = data.hairOf(hairKey);
             return {
-                id: "p" + n,
+                id: id,
                 n: n,
                 name: name,
                 seat: seat,
@@ -136,8 +139,12 @@
                 carries: carries || null,   // what is in their lap, if anything
                 revealed: false,            // whether you have asked them about it
                 state: asleep ? "asleep" : "seated",
-                awareness: asleep ? 0 : rng.irange(0, 14),
-                panic: rng.irange(0, 8),
+                awareness: asleep ? 0 : dice(S, "aware:" + id, "mid").irange(0, 14),
+                panic: dice(S, "panic:" + id, "mid").irange(0, 8),
+                // How this person takes being asked, decided now and not per conversation: the
+                // same fourteen points either way that used to be rolled every time, so that a
+                // refusal is a fact about them and not about the moment.
+                mood: dice(S, "mood:" + id, "high").range(-14, 14),
                 trust: traits.indexOf("sceptic") >= 0 ? -20
                      : traits.indexOf("helpful") >= 0 ? 25
                      : traits.indexOf("hostile") >= 0 ? -30 : 0,
@@ -168,7 +175,7 @@
      * rather than a lever with a known output.
      */
     function buildStash(S) {
-        S.stash = { galley: S.rng.shuffle(["first_aid", "binbag"]) };
+        S.stash = { galley: dice(S, "stash", "mid").shuffle(["first_aid", "binbag"]) };
     }
 
     /** Put an item into your hands. Topping up something you already have counts. */
@@ -290,6 +297,46 @@
         return n;
     }
 
+    // --------------------------------------------------------------------------------- dice ---
+    //
+    // Nothing in the flight draws from a stream that other actions can push along. Every roll
+    // asks for the dice by name - "mood:p14", "event:3", "fire:vent:0" - and gets a stream seeded
+    // from the flight's seed and that name, so the answer depends on the seed and on what is
+    // being decided, and on nothing else. Two flights on one seed differ only in what was done.
+
+    /**
+     * The dice for one named thing. `favour` is which way is the player's way, for perfect luck:
+     * "high" and "low" pin the draw to that end, and "mid" pins it to the middle, which is what
+     * everything on a timer gets, the fire included, so that perfect luck is still a flight.
+     */
+    function dice(S, key, favour) {
+        if (S.luck === "perfect") {
+            return PRS.util.constRng(favour === "low" ? 0 : favour === "mid" ? 0.5 : 1);
+        }
+        return PRS.util.makeRng(PRS.util.hashSeed(S.seed, key));
+    }
+
+    /**
+     * Something that happens at some point rather than on a roll every second: a passenger
+     * standing up, a helper talking somebody else into it, the crew putting somebody back. The
+     * wait is drawn ahead of time, and `amount` is the chance the moment would have had this
+     * tick; when the chances paid in reach the mark, it happens and the next mark is drawn.
+     * Numbered per thing, so neither undo nor a detour changes when.
+     */
+    function hazard(S, obj, name, amount) {
+        if (obj[name + "At"] === undefined) rearm(S, obj, name);
+        obj[name + "Acc"] += amount;
+        if (obj[name + "Acc"] < obj[name + "At"]) return false;
+        rearm(S, obj, name);
+        return true;
+    }
+
+    function rearm(S, obj, name) {
+        const n = obj[name + "N"] = (obj[name + "N"] || 0) + 1;
+        obj[name + "At"] = dice(S, name + ":" + (obj.id || "") + ":" + n, "mid").expo();
+        obj[name + "Acc"] = 0;
+    }
+
     // ------------------------------------------------------------------------------ the log ---
 
     /**
@@ -298,8 +345,13 @@
      */
     function line(S, key, options) {
         S._bags = S._bags || {};
+        S._bagN = S._bagN || {};
         let bag = S._bags[key];
-        if (!bag || !bag.length) bag = S._bags[key] = S.rng.shuffle(options);
+        if (!bag || !bag.length) {
+            // Each refill of a bag is numbered, so it is the same shuffle however you got here.
+            const n = S._bagN[key] = (S._bagN[key] || 0) + 1;
+            bag = S._bags[key] = dice(S, "line:" + key + ":" + n, "mid").shuffle(options);
+        }
         return bag.pop();
     }
 
@@ -321,6 +373,6 @@
         FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
         inventoryHas, inventoryAll, slotOf, useCharge, give, buildStash,
         has, setFlag, wearing,
-        movedCount, downCount, helperCount, log, line,
+        movedCount, downCount, helperCount, log, line, dice, hazard, rearm,
     };
 })(window);

@@ -45,7 +45,12 @@
         air:       { knock: -22, hold: 0, decay: 0.10, smoke: +8,  coolsCore: 0.00, name: "air" },
     };
 
-    function create(rng) {
+    function create(S) {
+        const st = PRS.state;
+        // The fuel map, and the mark every tile has to reach before the fire jumps to it. Both
+        // are drawn now, from the seed, so the fire on a seed is the same fire whatever you do.
+        const fuelDice = st.dice(S, "fire:fuel", "mid");
+        const spreadDice = st.dice(S, "fire:spread", "mid");
         const f = {
             intensity: new Float32Array(N),
             fuel: new Float32Array(N),
@@ -53,6 +58,10 @@
             suppress: new Float32Array(N),   // agent still on the tile
             smoke: new Float32Array(N),
             heat: new Float32Array(N),
+            spreadAcc: new Float32Array(N),  // chances of catching paid in so far, per tile
+            spreadAt: new Float32Array(N),   // the mark they have to reach
+            spreadAmt: new Float32Array(N),  // how hard the tile catches when they do
+            spreadN: new Uint16Array(N),     // how many marks this tile has had
             binOpen: {},                     // binKey -> true, an open bin feeds the fire air
             binBurning: {},
             // The seat of it.
@@ -78,7 +87,9 @@
             for (let y = 0; y < cabin.H; y++) {
                 const i = cabin.idx(x, y);
                 // A little variation so the fire does not spread in a diamond.
-                f.fuel[i] = cabin.baseFuel(x, y) * (0.82 + rng() * 0.36);
+                f.fuel[i] = cabin.baseFuel(x, y) * (0.82 + fuelDice() * 0.36);
+                f.spreadAt[i] = spreadDice.expo();
+                f.spreadAmt[i] = 6 + spreadDice() * 8;
             }
         }
         const ci = cabin.idx(f.core.x, f.core.y);
@@ -179,7 +190,6 @@
      */
     function advance(f, dt, S) {
         if (dt <= 0) return { vented: false, spread: 0 };
-        const rng = S.rng;
 
         // Ventilation limit. Everything alight is competing for the same air, so the cabin as a
         // whole has a ceiling and a big fire holds itself down.
@@ -204,7 +214,9 @@
         let vented = false;
         if (f.core.heat >= 100 && f.core.cells > 0) {
             vented = true;
-            f.core.heat = 18 + rng() * 14;
+            // This cell's own dice: how far the core drops back, and which bins the splash reaches.
+            const vent = PRS.state.dice(S, "fire:vent:" + f.ventCount, "mid");
+            f.core.heat = 18 + vent() * 14;
             f.core.cells--;
             f.core.vented++;
             f.ventCount++;
@@ -222,7 +234,7 @@
                 if (cabin.rowAt(bx) === null) continue;
                 const bi = cabin.idx(bx, f.core.y);
                 const reach = violence * (1 - Math.abs(d) / 4.5);
-                if (reach > 0 && rng() < reach) {
+                if (reach > 0 && vent() < reach) {
                     f.intensity[bi] = Math.min(100, f.intensity[bi] + 22 * reach);
                     f.binBurning[cabin.binKey(bx, side)] = true;
                 }
@@ -290,7 +302,13 @@
                         if (ny === cabin.AISLE_Y || y === cabin.AISLE_Y) p *= 0.42;  // the aisle is a firebreak
                         if (nx !== x) p *= 1.55;                                     // along the bin
                         if (cabin.kindAt(nx, ny) === "galley") p *= 1.4;
-                        if (p > rng()) spreadTo.push([ni, 6 + rng() * 8]);
+                        // Not a roll: the chance is paid into the tile, and the tile catches when
+                        // what it has been paid reaches the mark it was given at boarding.
+                        f.spreadAcc[ni] += p;
+                        if (f.spreadAcc[ni] >= f.spreadAt[ni]) {
+                            spreadTo.push([ni, f.spreadAmt[ni]]);
+                            rearmSpread(S, f, ni);
+                        }
                     }
                 }
             }
@@ -302,6 +320,15 @@
 
         advanceSmoke(f, dt, S);
         return { vented: vented, spread: spread };
+    }
+
+    /** A tile has just caught: reset what it had paid in, and draw its next mark from its own dice. */
+    function rearmSpread(S, f, i) {
+        const n = ++f.spreadN[i];
+        const r = PRS.state.dice(S, "fire:spread:" + i + ":" + n, "mid");
+        f.spreadAcc[i] = 0;
+        f.spreadAt[i] = r.expo();
+        f.spreadAmt[i] = 6 + r() * 8;
     }
 
     /**

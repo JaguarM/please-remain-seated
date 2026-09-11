@@ -9,6 +9,8 @@
 //   2. no reroll   a social action that failed, undone and repeated, fails again in the same
 //                  words. This is the one that matters: without it, persuasion is free.
 //   3. no scouting an action tagged `reveal` refuses to be undone.
+//   4. no detour    the same ask, with and without ten seconds of something else first, meets
+//                  the same dice. A shared random stream cannot give you this; named dice can.
 //
 // The comparison is a canonical digest of the whole simulation state, so anything a snapshot
 // forgets to copy shows up here rather than as a strange bug three sessions later.
@@ -31,7 +33,7 @@ const BOTS = mod.exports.BOTS;
  */
 function digest(S) {
     const parts = [
-        S.rng.save(),
+        S._eventTurn || 0,
         S.clock.remaining.toFixed(4), S.clock.elapsed.toFixed(4), S.clock.total,
         S.credibility.toFixed(4), S.cabinAwareness.toFixed(4), S.cabinPanic.toFixed(4),
         S.crewPhase, S.crewPhaseAt,
@@ -45,7 +47,8 @@ function digest(S) {
         JSON.stringify(S.counts), JSON.stringify(S.flags), JSON.stringify(S.cabinFlags),
         JSON.stringify(S.stash), JSON.stringify(S.medals),
     ];
-    for (const key of ["intensity", "fuel", "burnt", "suppress", "smoke", "heat"]) {
+    for (const key of ["intensity", "fuel", "burnt", "suppress", "smoke", "heat", "spreadAcc",
+                       "spreadAt", "spreadN"]) {
         let sum = 0, i = 0;
         for (const v of S.fire[key]) sum += v * (1 + (i++ % 7));
         parts.push(key + sum.toFixed(3));
@@ -54,9 +57,14 @@ function digest(S) {
         parts.push([p.id, p.x, p.y, p.state, p.helper, p.carries, p.revealed, p.masked, p.belted,
                     p.braced, p.moved, (p.annoyed || 0).toFixed(3), p.claimedBy,
                     p.smokeDose.toFixed(3), p.panic.toFixed(3), p.trust.toFixed(3),
-                    p.awareness.toFixed(3), (p.taskLeft || 0).toFixed(2)].join(","));
+                    p.awareness.toFixed(3), (p.taskLeft || 0).toFixed(2), p.mood.toFixed(3),
+                    p.standN || 0, (p.standAcc || 0).toFixed(4), p.spreadN || 0,
+                    (p.spreadAcc || 0).toFixed(4)].join(","));
     }
-    for (const c of S.crew) parts.push([c.id, c.x, c.y, c.halon, c.busy.toFixed(2)].join(","));
+    for (const c of S.crew) {
+        parts.push([c.id, c.x, c.y, c.halon, c.busy.toFixed(2), c.sitN || 0,
+                    (c.sitAcc || 0).toFixed(4)].join(","));
+    }
     return parts.join(";");
 }
 
@@ -186,6 +194,24 @@ for (const id of ["fire.open_bin", "loot.ask_carrying", "loot.galley_drawer", "e
     if (!done) problems.push("could not reach reveal action to test it: " + id);
 }
 
+// A detour is not a reroll. The same ask, with and without something else done first, meets
+// the same dice: whatever moved between the two is trust and awareness, not luck. This is the
+// property a shared random stream cannot give you, and the reason the dice are named instead.
+let detourChecked = 0, detourFails = 0;
+for (const seed of [606, 7, 42, 1999, 31]) {
+    const rolls = [0, 10, 40].map(function (wait) {
+        const S = fresh(seed, "ansel");
+        if (wait) PRS.actions.spend(S, wait, { tags: [] });
+        const r = PRS.pax.convince(S, S.pax[12], 6);
+        return r.got - PRS.pax.persuasion(S, 6);       // what the dice added to your side
+    });
+    detourChecked++;
+    if (rolls.some((v) => Math.abs(v - rolls[0]) > 1e-9)) {
+        detourFails++;
+        problems.push("a detour changed the dice on seed " + seed + ": " + rolls.join(", "));
+    }
+}
+
 console.log(undone + " undos across " + checked + " undo-and-redo pairs");
 console.log("  state restored exactly:      " + (exactFails ? "FAIL (" + exactFails + ")" : "yes"));
 console.log("  social rolls not rerollable: " +
@@ -193,6 +219,8 @@ console.log("  social rolls not rerollable: " +
 console.log("  a run collapses to one:      " + (collapseOk ? "yes, three walks" : "FAIL"));
 console.log("  reveals refuse to undo:      " +
             (revealFails ? "FAIL (" + revealFails + ")" : "yes, " + revealChecked + " checked"));
+console.log("  a detour is not a reroll:    " +
+            (detourFails ? "FAIL (" + detourFails + ")" : "yes, " + detourChecked + " seeds"));
 
 if (problems.length) {
     console.log("\nPROBLEMS");

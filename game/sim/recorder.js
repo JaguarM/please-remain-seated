@@ -1,8 +1,8 @@
 // The flight recorder: what you did, in a form that plays back.
 //
 // A flight is a seed, a loadout and the list of things you did, because the simulation is
-// nothing else: every roll comes out of the seeded stream, and undo puts that stream back where
-// it was, so the actions that were still standing at touchdown replay to the same touchdown.
+// nothing else: every die was cast at boarding from the seed, so the actions that were still
+// standing at touchdown replay to the same touchdown.
 // `node tools/replay.js` does exactly that, which is how a flight played in a browser turns into
 // something the balance table can read.
 //
@@ -28,6 +28,7 @@
             v: VERSION,
             at: new Date().toISOString(),
             seed: S.seed,
+            luck: S.luck || "dice",
             character: L.characterId,
             outfit: L.outfitId,
             items: L.items.slice(),
@@ -49,10 +50,10 @@
         return rec;
     }
 
-    /** What the player says they were trying to do, attached to the flight with that seed. */
-    function note(seed, text) {
+    /** What the player says they were trying to do, attached to the flight recorded at `at`. */
+    function note(at, text) {
         const list = all();
-        for (const r of list) if (r.seed === seed) r.note = String(text || "");
+        for (const r of list) if (r.at === at) r.note = String(text || "");
         store.set("recordings", list);
     }
 

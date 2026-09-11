@@ -64,6 +64,9 @@
      * way. Returns what changed, so the report can say it, including everything that unlocked.
      */
     function record(S, result) {
+        // A flight on perfect luck is a test of a plan, not a flight. It stays out of the book,
+        // and so does everything it would have unlocked.
+        if (S.luck && S.luck !== "dice") return null;
         const before = load();
         const medals = Object.assign({}, before.medals);
         for (const id in S.medals) if (!medals[id]) medals[id] = before.flights + 1;

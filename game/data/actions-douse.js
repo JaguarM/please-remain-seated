@@ -141,9 +141,12 @@
             run(S) {
                 const entry = best(S, CLOTHS);
                 const out = apply(S, entry, hot(S), "smother");
-                if (entry.id === "blanket" && S.rng.chance(0.35)) {
-                    const b = st.slotOf(S, "blanket");
-                    if (b) {
+                const b = entry.id === "blanket" ? st.slotOf(S, "blanket") : null;
+                if (b) {
+                    // Whether this smothering scorches it was decided at boarding: the first, the
+                    // second and the third time it is used, whatever else you did in between.
+                    b.smothers = (b.smothers || 0) + 1;
+                    if (PRS.state.dice(S, "blanket:" + b.smothers, "high").chance(0.35)) {
                         b.scorched = (b.scorched || 0) + 1;
                         if (b.scorched >= 2) {
                             S.inventory = S.inventory.filter((s) => s !== b);

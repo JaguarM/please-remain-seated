@@ -4,6 +4,10 @@
 // one of these. Every one of them changes a number the score depends on: the detector is thirty
 // credibility you cannot make happen, only be standing somewhere useful for; turbulence is what
 // a long carry risks; a passenger standing up is the aisle getting narrower.
+//
+// Which one it spends the turn on is that turn's own dice, so the third cabin turn on a seed is
+// the same draw however you spent the first two minutes. On perfect luck it is the kindest thing
+// that could happen, or nothing.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -11,8 +15,10 @@
     const clamp = PRS.util.clamp;
 
     // weight: relative chance. when: must be true. once: fires at most once a run.
+    // luck: how welcome it is; perfect luck takes the highest on offer and nothing below nought.
+    // run(S, r): r is the turn's dice, pinned the player's way on perfect luck.
     const EVENTS = [
-        { id: "detector", weight: 30, once: true,
+        { id: "detector", weight: 30, once: true, luck: 4,
           when: (S) => PRS.fire.totalSmoke(S.fire) > 7 && !S.cabinFlags.detectorSounded,
           run(S) {
               S.cabinFlags.detectorSounded = true;
@@ -24,12 +30,12 @@
                        kind: "great" };
           } },
 
-        { id: "flashover", weight: 16,
+        { id: "flashover", weight: 16, luck: -3,
           when: (S) => PRS.fire.worst(S.fire) > 58,
-          run(S) {
+          run(S, r) {
               const f = S.fire;
-              const x = f.core.x + S.rng.irange(-2, 2);
-              const y = S.rng.chance(0.5) ? f.core.y : (f.core.y === 3 ? 2 : 5);
+              const x = f.core.x + r.irange(-2, 2);
+              const y = r.chance(0.5) ? f.core.y : (f.core.y === 3 ? 2 : 5);
               if (!cabin.inBounds(x, y)) return null;
               f.intensity[cabin.idx(x, y)] = Math.min(100, f.intensity[cabin.idx(x, y)] + 30);
               PRS.audio.play("flare");
@@ -37,12 +43,12 @@
                              (cabin.rowAt(x) || "?") + " is alight at once.", kind: "bad" };
           } },
 
-        { id: "turbulence", weight: 12,
+        { id: "turbulence", weight: 12, luck: 1,
           when: (S) => S.clock.elapsed > 90,
-          run(S) {
+          run(S, r) {
               const dropped = [];
               for (const id of S.player.carrying.slice()) {
-                  if (S.rng.chance(0.4)) {
+                  if (r.chance(0.4)) {
                       const p = PRS.state.paxById(S, id);
                       if (p) {
                           p.state = p.state === "down" ? "down" : PRS.pax.looseState(p);
@@ -59,7 +65,7 @@
                        kind: dropped.length ? "bad" : "plain" };
           } },
 
-        { id: "cart_rolls", weight: 10,
+        { id: "cart_rolls", weight: 10, luck: -2,
           when: (S) => S.cabinFlags.cartOut && S.cabinPanic > 40,
           run(S) {
               const x = clamp(S.cabinFlags.cartX + 3, cabin.FWD_ROWS.x0, cabin.AFT_ROWS.x1);
@@ -71,13 +77,13 @@
                              (cabin.rowAt(x) || "?") + ".", kind: "bad" };
           } },
 
-        { id: "someone_stands", weight: 18,
+        { id: "someone_stands", weight: 18, luck: -1,
           when: (S) => S.cabinPanic > 30,
-          run(S) {
+          run(S, r) {
               const options = S.pax.filter((p) => p.state === "seated" && p.panic > 45 &&
                                                   !p.helper && PRS.pax.canStandUp(p));
               if (!options.length) return null;
-              const p = S.rng.pick(options);
+              const p = r.pick(options);
               p.state = "aisle";
               p.x = p.homeX; p.y = cabin.AISLE_Y;
               S.cabinFlags.aisleBlocked[p.x] = (S.cabinFlags.aisleBlocked[p.x] || 0) + 30;
@@ -86,23 +92,23 @@
                              "puts it down in the aisle, and stands next to it.", kind: "bad" };
           } },
 
-        { id: "helpful_offer", weight: 14,
+        { id: "helpful_offer", weight: 14, luck: 3,
           when: (S) => S.credibility > 45 && PRS.state.helperCount(S) < 6,
-          run(S) {
+          run(S, r) {
               const options = S.pax.filter((p) => !p.helper && p.state !== "down" &&
                   p.state !== "dead" && p.traits.indexOf("helpful") >= 0);
               if (!options.length) return null;
-              const p = S.rng.pick(options);
+              const p = r.pick(options);
               p.trust = Math.min(100, p.trust + 30);
               return { text: p.name + " catches your eye from " + p.seat + " and mouths: what do " +
                              "you need. Ask them.", kind: "great" };
           } },
 
-        { id: "sit_down", weight: 22,
+        { id: "sit_down", weight: 22, luck: -1,
           when: (S) => S.crewPhase < 4 && S.credibility < 55,
-          run(S) {
-              const p = S.rng.pick(S.pax.filter((q) => q.traits.indexOf("hostile") >= 0 &&
-                                                        q.state !== "down" && q.state !== "dead"));
+          run(S, r) {
+              const p = r.pick(S.pax.filter((q) => q.traits.indexOf("hostile") >= 0 &&
+                                                   q.state !== "down" && q.state !== "dead"));
               if (!p) return null;
               S.player.panic = Math.min(100, S.player.panic + 4);
               (S.stats.sitDownBy = S.stats.sitDownBy || {})[p.id] = true;
@@ -129,20 +135,38 @@
         fire(S);
     }
 
+    /** The cabin's turn. Numbered, and the number is the name of the dice it is decided with. */
     function fire(S) {
         S._eventsFired = S._eventsFired || {};
+        const turn = S._eventTurn = (S._eventTurn || 0) + 1;
+        const r = PRS.state.dice(S, "event:" + turn, "high");
         const pool = [];
         for (const e of EVENTS) {
             if (e.once && S._eventsFired[e.id]) continue;
             let ok = true;
             try { ok = e.when ? e.when(S) : true; } catch (err) { ok = false; }
-            if (!ok) continue;
-            for (let i = 0; i < e.weight; i++) pool.push(e);
+            if (ok) pool.push(e);
         }
         if (!pool.length) return null;
-        const chosen = S.rng.pick(pool);
+
+        let chosen = null;
+        if (S.luck === "perfect") {
+            // The kindest thing on offer, and nothing rather than something unkind.
+            for (const e of pool) if (e.luck >= 0 && (!chosen || e.luck > chosen.luck)) chosen = e;
+            if (!chosen) return null;
+        } else {
+            let total = 0;
+            for (const e of pool) total += e.weight;
+            let t = r() * total;
+            for (const e of pool) {
+                t -= e.weight;
+                if (t < 0) { chosen = e; break; }
+            }
+            chosen = chosen || pool[pool.length - 1];
+        }
+
         let result = null;
-        try { result = chosen.run(S); } catch (err) { console.error("event", chosen.id, err); }
+        try { result = chosen.run(S, r); } catch (err) { console.error("event", chosen.id, err); }
         if (!result) return null;
         S._eventsFired[chosen.id] = true;
         PRS.state.log(S, result.text, result.kind || "plain");
@@ -153,7 +177,7 @@
     function force(S, id) {
         const e = BY_ID[id];
         if (!e) return null;
-        const r = e.run(S);
+        const r = e.run(S, PRS.state.dice(S, "event:forced:" + id, "high"));
         if (r) {
             S._eventsFired = S._eventsFired || {};
             S._eventsFired[id] = true;
