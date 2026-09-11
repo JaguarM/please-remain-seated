@@ -79,6 +79,17 @@
         return i < 0 ? null : i + 1;
     }
 
+    /**
+     * Where a seat is in its bank of three, as it sits on the screen: "top", "mid" or "bot".
+     * The art is one bank cut into three tiles that join up, so the renderer needs this and
+     * not the letter: the top seat of the left bank is by the window and the top seat of the
+     * right bank is by the aisle, and the drawing is the same. Null for anything not a seat row.
+     */
+    function seatPos(y) {
+        if (y === AISLE_Y || y <= WALL_TOP || y >= WALL_BOTTOM) return null;
+        return ["top", "mid", "bot"][y < AISLE_Y ? y - 1 : y - AISLE_Y - 1];
+    }
+
     /** "14C" for a tile that is a seat, otherwise a name for the place. */
     function seatName(x, y) {
         const row = rowAt(x);
@@ -222,7 +233,7 @@
         W, H, AISLE_Y, WALL_TOP, WALL_BOTTOM, KIND, SEAT_LETTERS,
         FWD_ROWS, AFT_ROWS, OVERWING_X, FWD_CROSS_X, AFT_CROSS_X, FWD_GALLEY_X, AFT_GALLEY_X,
         ORIGIN, originTile,
-        rowAt, xOfRow, seatLetter, yOfLetter, seatName, kindAt, placeName,
+        rowAt, xOfRow, seatLetter, yOfLetter, seatPos, seatName, kindAt, placeName,
         DOOR_ENDS, byTheDoors, doorDistance, solid, inBounds, baseFuel, baseWalk, eachSeat, neighbours,
         idx, xOf, yOf, binOf, binKey,
     };

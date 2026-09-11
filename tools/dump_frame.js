@@ -55,6 +55,7 @@ for (let y = 0; y < cabin.H; y++) {
         const i = cabin.idx(x, y);
         row.push({
             kind: cabin.kindAt(x, y),
+            seat: cabin.kindAt(x, y) === "seat" ? cabin.seatPos(y) : null,
             burnt: Math.round(S.fire.burnt[i] * 100) / 100,
             fire: Math.round(S.fire.intensity[i] * 10) / 10,
             smoke: Math.round(S.fire.smoke[i] * 10) / 10,
@@ -87,8 +88,12 @@ const frame = {
     // Everybody comes out with the sprite and the eight-colour palette already resolved, by the
     // same two functions the browser uses. The Python side has no opinions about who looks
     // frightened, so it cannot come to a different one.
-    player: { x: S.player.x, y: S.player.y, carrying: S.player.carrying.length,
-              sprite: "pax", palette: PRS.pax.palette(S.character) },
+    // You, with whoever is in your arms and whoever is being dragged, as palettes, because that
+    // is all the drawing needs: a carried body is one sprite in the carried person's colours.
+    player: { x: S.player.x, y: S.player.y, sprite: "pax", palette: PRS.pax.palette(S.character),
+              carrying: S.player.carrying.map((id) => PRS.pax.palette(PRS.state.paxById(S, id))),
+              dragging: S.player.dragging
+                  ? PRS.pax.palette(PRS.state.paxById(S, S.player.dragging)) : null },
     crew: S.crew.map((c) => ({
         x: c.x, y: c.y,
         sprite: S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax",

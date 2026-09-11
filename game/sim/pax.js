@@ -83,6 +83,9 @@
         if (isPet(p)) return "pet_carrier";
         if (p.state === "dead" || p.state === "down") return "pax_down";
         if (p.state === "carried") return "pax_low";
+        // A helper has hold of them: out of the seat and on the way to the floor by a door, and
+        // drawn low like anybody in somebody's arms, so a helper at work is a thing you can see.
+        if (p.claimedBy) return "pax_low";
         const base = isChild(p) ? "child" : "pax";
         if (p.state === "asleep") return base + "_asleep";
         const fear = p.panic + p.smokeDose * 0.55;

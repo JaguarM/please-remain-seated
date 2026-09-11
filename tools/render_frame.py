@@ -38,7 +38,10 @@ def load_sprites():
 def blit(img, sprites, name, ox, oy, scale, palette_override=None, alpha=1.0):
     sprite = sprites.get(name)
     if sprite is None:
-        return
+        # The browser's rule: a missing sprite is the magenta checker, not a gap, so a wrong name
+        # is impossible to miss in the preview sheet or the README picture.
+        sprite = {"rows": ["kkkkkkkkMMMMMMMM"] * 8 + ["MMMMMMMMkkkkkkkk"] * 8,
+                  "palette": {"k": "#000000", "M": "#ff00ff"}}
     palette = dict(sprite["palette"])
     if palette_override:
         palette.update(palette_override)
@@ -81,13 +84,13 @@ def fire_sprite(v):
 
 
 def fire_sprite_at(tile, x, y):
-    """The same rule as PRS.render.fireSpriteAt: a burning seat is a seat on fire, anything else
-    is the fire tile in one of two orientations, and embers are embers."""
+    """The same rule as PRS.render.fireSpriteAt: a burning seat is that seat's tile on fire,
+    anything else is the fire tile in one of two orientations, and embers are embers."""
     base = fire_sprite(tile["fire"])
     if not base or not base.startswith("fire_"):
         return base
     if tile["kind"] == "seat":
-        return "seat_" + base
+        return "seat_" + tile["seat"] + "_" + base
     return base + ("b" if (x + y) & 1 else "")
 
 
@@ -99,6 +102,30 @@ def smoke_sprite(v):
     if v < 58:
         return "smoke_2"
     return "smoke_3"
+
+
+# Where a carried body sits on the person carrying it, in sprite rows, by how many are carried:
+# one across the chest, two stacked with the lower one the other way round and drawn last, so
+# both heads show. Somebody being dragged is the same body lower down, on the floor at the
+# feet. The same numbers as CARRY and DRAG_ROW in render.js.
+CARRY = [[(0, "carried")], [(-1, "carried"), (2, "carried_b")]]
+DRAG_ROW = 4
+
+
+def draw_player(img, sprites, P, scale, alpha):
+    """You, with the ring under you and whoever you have hold of: the same drawing as
+    PRS.render's drawYou, and drawn twice for the same reason, under the smoke and over it."""
+    T = 16 * scale
+    ox, oy = P["x"] * T, P["y"] * T
+    blit(img, sprites, "player_ring", ox, oy, scale)
+    blit(img, sprites, P["sprite"], ox, oy, scale, P["palette"], alpha=alpha)
+    held = P.get("carrying") or []
+    bodies = CARRY[min(len(held), len(CARRY)) - 1] if held else []
+    for (dy, name), palette in zip(bodies, held):
+        blit(img, sprites, name, ox, oy + dy * scale, scale, palette, alpha=alpha)
+    if P.get("dragging"):
+        blit(img, sprites, "carried", ox, oy + DRAG_ROW * scale, scale, P["dragging"],
+             alpha=alpha)
 
 
 def render(frame, sprites, scale):
@@ -113,15 +140,18 @@ def render(frame, sprites, scale):
             t = frame["tiles"][y][x]
             kind = t["kind"]
             ox, oy = x * T, y * T
-            if kind in ("wall", "bulkhead"):
-                blit(img, sprites, "window" if (y in (0, H - 1) and t["bin"]) else "wall",
-                     ox, oy, scale)
+            if kind == "bulkhead":
+                blit(img, sprites, "bulkhead", ox, oy, scale)
+                continue
+            if kind == "wall":
+                blit(img, sprites, "window" if t["bin"] else "wall", ox, oy, scale)
                 continue
             blit(img, sprites, "floor_aisle" if y == aisle else "floor_carpet", ox, oy, scale)
             if kind == "seat":
+                # One of three tiles, by where the seat is in its bank, so the bank joins up.
                 burnt = t["burnt"]
-                blit(img, sprites,
-                     "seat_burnt" if burnt > 0.6 else "seat_scorched" if burnt > 0.2 else "seat",
+                blit(img, sprites, "seat_" + t["seat"] +
+                     ("_burnt" if burnt > 0.6 else "_scorched" if burnt > 0.2 else ""),
                      ox, oy, scale)
             elif kind == "galley":
                 blit(img, sprites, "galley", ox, oy, scale)
@@ -186,9 +216,7 @@ def render(frame, sprites, scale):
     for c in frame["crew"]:
         blit(img, sprites, c["sprite"], c["x"] * T, c["y"] * T, scale, c["palette"])
 
-    P = frame["player"]
-    blit(img, sprites, "player_ring", P["x"] * T, P["y"] * T, scale)
-    blit(img, sprites, P["sprite"], P["x"] * T, P["y"] * T, scale, P["palette"])
+    draw_player(img, sprites, frame["player"], scale, 1.0)
 
     # ---- smoke over everything, then the fire glowing back through it ------------------------
     for y in range(H):
@@ -208,8 +236,7 @@ def render(frame, sprites, scale):
                      alpha=min(1.0, t["smoke"] / 70) * 0.5)
 
     # ---- you, again, over the smoke ----------------------------------------------------------
-    blit(img, sprites, "player_ring", P["x"] * T, P["y"] * T, scale)
-    blit(img, sprites, P["sprite"], P["x"] * T, P["y"] * T, scale, P["palette"], alpha=0.9)
+    draw_player(img, sprites, frame["player"], scale, 0.9)
 
     return img
 

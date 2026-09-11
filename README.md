@@ -9,12 +9,12 @@ who has noticed. The plane lands in fifteen minutes, and the clock only moves wh
 
 ![The cabin four minutes out](docs/cabin.png)
 
-*Four and a half minutes to touchdown. The fire has the left bank from row 10 to row 19 and has
-already burnt through the seats in the middle of it, the forward aisle is full of people who
-stood up, twelve have been moved to the floor by the doors, four people are helping, and the
-flight deck has declared. Drawn by `tools/render_frame.py` from the game's own simulation and
-sprite maps, so `--seed=606 --at=540` gives you this picture and not one like it: every die in
-the flight is cast from the seed.*
+*Four minutes to touchdown. The fire has the left bank from row 8 to row 22 and has already
+burnt through the seats in the middle of it, the aisle is full of people who stood up, thirteen
+have been moved to the floor by the doors, eight are down, and the flight deck has declared.
+Drawn by `tools/render_frame.py` from the game's own simulation and sprite maps, so
+`--seed=606 --at=540` gives you this picture and not one like it: every die in the flight is
+cast from the seed.*
 
 The rules
 ---------
@@ -128,7 +128,8 @@ How it is built
                           action decks
       ui/                 hotspots (what a click means), the play screen, the other screens
       style.css
-    pixel-workshop/       the art generator: every sprite is an ASCII map plus a palette
+    pixel-workshop/       the art generator: every sprite is an ASCII map plus a palette, and
+                          --preview draws the whole set on one sheet, in context and by name
     tools/                the play-testers, replay and harm, the frame renderer, a dev server
 
 Everything assigns to one global, `window.PRS`, because the game has to run from a double-clicked

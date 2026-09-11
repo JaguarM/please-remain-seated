@@ -71,6 +71,35 @@
         return "pax";
     }
 
+    /**
+     * You, and whoever you have hold of. Drawn twice a frame - in your place among everybody
+     * else, and again over the smoke - so it is one function. Somebody in your arms is a body
+     * across your chest, head one side and feet the other, in their own colours; two are two,
+     * stacked, the lower one the other way round and drawn last, so the heads are at opposite
+     * ends and both show; somebody you are dragging is the same body, lower, on the floor at
+     * your feet rather than across your chest. It used to be a crouching figure drawn three
+     * pixels off centre, which read as somebody standing very close to you.
+     */
+    const CARRY = [[[0, "carried"]], [[-1, "carried"], [2, "carried_b"]]];   // rows down, by how many
+    const DRAG_ROW = 4;
+
+    function drawYou(ctx, S, ppx, ppy, scale, alpha, ring) {
+        const P = S.player;
+        atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale, ring);
+        atlas.blitAlpha(ctx, playerFace(S), ppx, ppy, scale, alpha, paletteOf(S.character));
+        if (PRS.state.wearing(S, "hood")) atlas.blitAlpha(ctx, "mask_on", ppx, ppy, scale, alpha);
+        const held = P.carrying.map((id) => PRS.state.paxById(S, id)).filter((q) => q);
+        const bodies = CARRY[Math.min(held.length, CARRY.length) - 1] || [];
+        bodies.forEach(([dy, name], k) => {
+            atlas.blitAlpha(ctx, name, ppx, ppy + dy * scale, scale, alpha, paletteOf(held[k]));
+        });
+        if (P.dragging) {
+            const q = PRS.state.paxById(S, P.dragging);
+            if (q) atlas.blitAlpha(ctx, "carried", ppx, ppy + DRAG_ROW * scale, scale, alpha,
+                                   paletteOf(q));
+        }
+    }
+
     // ----------------------------------------------------------------------------- figures ---
     //
     // A person no longer fills their cell. The body stops three pixels short of the edge on every
@@ -415,16 +444,21 @@
                 const kind = cabin.kindAt(x, y);
                 const i = cabin.idx(x, y);
 
-                if (kind === "wall" || kind === "bulkhead") {
-                    atlas.blit(ctx, (y === 0 || y === cabin.H - 1) && cabin.rowAt(x) !== null
-                                    ? "window" : "wall", px, py, scale);
+                if (kind === "bulkhead") {
+                    atlas.blit(ctx, "bulkhead", px, py, scale);
+                    continue;
+                }
+                if (kind === "wall") {
+                    atlas.blit(ctx, cabin.rowAt(x) !== null ? "window" : "wall", px, py, scale);
                     continue;
                 }
                 atlas.blit(ctx, y === cabin.AISLE_Y ? "floor_aisle" : "floor_carpet", px, py, scale);
 
                 if (kind === "seat") {
+                    // One of three tiles, by where the seat is in its bank, so the bank joins up.
                     const burnt = f.burnt[i];
-                    const name = burnt > 0.6 ? "seat_burnt" : burnt > 0.2 ? "seat_scorched" : "seat";
+                    const name = "seat_" + cabin.seatPos(y) +
+                                 (burnt > 0.6 ? "_burnt" : burnt > 0.2 ? "_scorched" : "");
                     atlas.blit(ctx, name, px, py, scale);
                 } else if (kind === "galley") {
                     atlas.blit(ctx, "galley", px, py, scale);
@@ -564,25 +598,7 @@
 
         // ---- you ----------------------------------------------------------------------------
         const ppx = pixels(youAt.x, scale), ppy = pixels(youAt.y, scale);
-        const you = paletteOf(S.character);
-        atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale,
-                        0.55 + 0.45 * Math.abs(Math.sin(t * 0.004)));
-        atlas.blit(ctx, playerFace(S), ppx, ppy, scale, you);
-        if (PRS.state.wearing(S, "hood")) atlas.blitAlpha(ctx, "mask_on", ppx, ppy, scale, 1);
-        // Anyone in your arms rides one pixel up and to the side.
-        let off = 0;
-        for (const id of P.carrying) {
-            const q = PRS.state.paxById(S, id);
-            if (!q) continue;
-            atlas.blitAlpha(ctx, q.state === "down" ? "pax_down" : "pax_low",
-                            ppx + (3 + off) * scale, ppy - 2 * scale, scale, 0.95, paletteOf(q));
-            off += 3;
-        }
-        if (P.dragging) {
-            const q = PRS.state.paxById(S, P.dragging);
-            if (q) atlas.blitAlpha(ctx, "pax_down", ppx - 4 * scale, ppy + 2 * scale, scale, 0.9,
-                                   paletteOf(q));
-        }
+        drawYou(ctx, S, ppx, ppy, scale, 1, 0.55 + 0.45 * Math.abs(Math.sin(t * 0.004)));
 
         // ---- smoke, over everything, because that is what it does ---------------------------
         for (let x = 0; x < cabin.W; x++) {
@@ -616,8 +632,7 @@
         // ---- you, again, over the smoke ----------------------------------------------------
         // Not a cheat: the smoke does everything to you it does to everybody, and this is the
         // interface refusing to lose the player in it.
-        atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale, 1);
-        atlas.blitAlpha(ctx, playerFace(S), ppx, ppy, scale, 0.9, you);
+        drawYou(ctx, S, ppx, ppy, scale, 0.9, 1);
         {
             // A chevron over your head, so a glance finds you at any zoom.
             const cx = ppx + T / 2, cy = ppy - 3 * scale;
@@ -653,15 +668,16 @@
     }
 
     /**
-     * What a burning tile is drawn with. A seat that is alight is `seat_fire_N`, a seat with the
-     * fire in it; anything else is `fire_N`, in one of two orientations by tile so a row of them
-     * is not a row of stamps. Embers are embers. tools/render_frame.py follows the same rule.
+     * What a burning tile is drawn with. A seat that is alight is `seat_{pos}_fire_N`, the seat
+     * tile for its place in the bank with the fire in it; anything else is `fire_N`, in one of
+     * two orientations by tile so a row of them is not a row of stamps. Embers are embers.
+     * tools/render_frame.py follows the same rule.
      */
     function fireSpriteAt(S, x, y) {
         const base = PRS.fire.fireSprite(S.fire.intensity[cabin.idx(x, y)]);
         if (!base) return null;
         if (base.indexOf("fire_") !== 0) return base;
-        if (cabin.kindAt(x, y) === "seat") return "seat_" + base;
+        if (cabin.kindAt(x, y) === "seat") return "seat_" + cabin.seatPos(y) + "_" + base;
         return base + (((x + y) & 1) ? "b" : "");
     }
 
