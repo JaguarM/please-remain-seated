@@ -1094,6 +1094,188 @@
   ],
   "source": "make_cabin_textures.py"
  },
+ "outfit": {
+  "palette": {
+   "c": "#4a5a86",
+   "k": "#1e2024",
+   "l": "#6b7cab"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "outfit_beach": {
+  "palette": {
+   "c": "#e8c53a",
+   "k": "#1e2024",
+   "l": "#f5e08a"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "outfit_comfort": {
+  "palette": {
+   "c": "#6b7280",
+   "k": "#1e2024",
+   "l": "#9aa3b2"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "outfit_gym": {
+  "palette": {
+   "c": "#3a8fd0",
+   "k": "#1e2024",
+   "l": "#7ab8e8"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "outfit_hill": {
+  "palette": {
+   "c": "#c0392b",
+   "k": "#1e2024",
+   "l": "#e07060"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "outfit_suit": {
+  "palette": {
+   "c": "#2a3140",
+   "k": "#1e2024",
+   "l": "#4a566e"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "outfit_work": {
+  "palette": {
+   "c": "#6b4423",
+   "k": "#1e2024",
+   "l": "#8f6a3f"
+  },
+  "rows": [
+   "................",
+   "....kkkkkkkk....",
+   "...kccckkcccck..",
+   "..kccccclcccccck",
+   "..kcccclccccccck",
+   "..kkccclcccccckk",
+   "...kkcclcccccckk",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kcclcccccck.",
+   "....kkkkkkkkkkk.",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
  "pax": {
   "palette": {
    "b": "#634a37",

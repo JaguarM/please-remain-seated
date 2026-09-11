@@ -52,8 +52,9 @@ Who you are
 The title is a boarding pass. One click puts you on the aeroplane as whoever you were last time,
 and the first time that is Dr Priya Ansel, who talks people out of their seats and cannot lift
 the heavy ones. Under the name is the loadout: what you are wearing and the three things on you,
-each a chip that opens a menu, except the ones that are part of who the character is, which are
-locked in place. Deidre Volk always boards with her gloves and her tape; the other slot is yours.
+each a box that opens a page of choices, except the ones that are part of who the character is,
+which have a lock in the corner. Deidre Volk always boards with her gloves and her tape; the
+other slot is yours.
 
 "Change who you are" appears from the second flight and opens the roster: nine people, two of
 them free. Gordy Mach carries two at a time and nobody listens to him. Each of the other seven is

@@ -441,46 +441,49 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
   text-align: left; padding: 12px 14px 12px 12px; margin: 0 0 2px; max-width: 720px;
   background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
 }
+@media (max-width: 600px) {
+  .pass { grid-template-columns: auto 1fr; }
+  .pass .pass-go { grid-column: 1 / -1; }
+}
 .pass-who b { display: block; font-size: 15px; line-height: 1.2; }
 .pass-who i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint); }
 .pass-go { align-self: center; }
 .logline { margin-top: 6px; color: var(--ink-dim); }
 
-/* The loadout row and its menus. */
-.loadout { position: relative; display: flex; gap: 5px; flex-wrap: wrap; margin-top: 8px; }
-.loadout-chip {
-  display: inline-flex; align-items: center; gap: 6px; padding: 4px 7px 4px 5px;
-  background: #1a1d23; border: 1px solid var(--line); border-radius: 4px; font-size: 11px;
-  line-height: 1.15; cursor: default;
+/* The loadout: what you are wearing and the three things on you, as four boxes under the face.
+   A box opens a page of choices, unless it is part of who the character is, in which case it
+   has a lock in the corner and opens nothing. */
+.slots { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.slot {
+  position: relative; display: grid; justify-items: center; gap: 2px; width: 74px;
+  padding: 6px 4px 5px; background: #1a1d23; border: 1px solid var(--line); border-radius: 4px;
+  font: inherit; color: inherit; cursor: default;
 }
-.loadout-chip.opens { cursor: pointer; }
-.loadout-chip.opens:hover { border-color: var(--gold); background: #232833; }
-.loadout-chip.fixed { border-color: #3a4150; background: #161920; }
-.loadout-chip img { image-rendering: pixelated; }
-.chip-glyph { display: inline-grid; place-items: center; width: 16px; height: 16px; font: 700 10px var(--mono); color: var(--ink-faint); }
-.chip-text { display: grid; text-align: left; }
-.chip-text b { font-weight: 500; }
-.chip-text i { font-style: normal; font: 9px var(--mono); color: var(--ink-faint); }
-.chip-lock { text-decoration: none; font: 9px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-faint); border: 1px solid #3a4150; border-radius: 2px; padding: 0 3px; }
-.chip-caret { text-decoration: none; color: var(--gold); font-size: 10px; }
-.menu {
-  position: absolute; z-index: 30; min-width: 300px; max-width: 380px; max-height: 60vh; overflow-y: auto;
-  display: grid; gap: 2px; padding: 6px;
-  background: rgba(24,27,34,0.985); border: 1px solid #4a5361; border-radius: 5px;
-  box-shadow: 0 10px 34px rgba(0,0,0,.6);
+.slot img { image-rendering: pixelated; }
+.slot.opens { cursor: pointer; }
+.slot.opens:hover { border-color: var(--gold); background: #232833; }
+.slot.fixed { border-color: #3a4150; background: #161920; }
+.slot b { font-size: 10px; font-weight: 500; line-height: 1.15; text-align: center; }
+.slot i { font: 9px var(--mono); font-style: normal; color: var(--ink-faint); min-height: 11px; text-align: center; }
+.slot-empty { width: 48px; height: 48px; display: grid; place-items: center; font: 700 18px var(--mono); color: #2f3540; }
+.slot-lock { position: absolute; top: 3px; right: 4px; font: 8px var(--mono); letter-spacing: .1em; color: var(--ink-faint); }
+.slot-caret { position: absolute; top: 2px; right: 5px; font-size: 10px; color: var(--gold); }
+
+/* The pages a slot opens. */
+.option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }
+.option {
+  display: grid; grid-template-columns: 48px 1fr; gap: 10px; align-items: start;
+  text-align: left; background: var(--panel); padding: 9px; border-color: var(--line);
 }
-.menu-row {
-  display: grid; grid-template-columns: 18px 1fr; gap: 8px; align-items: center; text-align: left;
-  padding: 6px 8px; background: transparent; border: 1px solid transparent; border-left: 2px solid var(--line);
-  border-radius: 0 3px 3px 0; font-size: 12px;
-}
-.menu-row:hover { background: var(--panel-2); border-color: var(--line); border-left-color: var(--gold); }
-.menu-row.on { border-left-color: var(--gold); background: #2b2f38; }
-.menu-row.locked { opacity: .5; cursor: default; }
-.menu-row.locked:hover { background: transparent; border-color: transparent; border-left-color: var(--line); }
-.menu-row .chip-text i { font: 10px var(--sans); white-space: normal; }
-.menu-row.locked .chip-text i { color: var(--warn); }
-.menu-row img { image-rendering: pixelated; }
+.option.on { border-color: var(--gold); background: #2b2f38; }
+.option.locked { cursor: default; filter: grayscale(0.7); opacity: .7; }
+.option.locked:hover { background: var(--panel); border-color: var(--line); }
+.option img { image-rendering: pixelated; }
+.option-text b { display: block; font-size: 13px; }
+.option-text i { font-style: normal; display: block; font-size: 11px; color: var(--ink-dim); margin: 2px 0; }
+.option-text u { text-decoration: none; display: block; font-size: 11px; color: var(--blue); }
+.option-text u.locked { color: var(--warn); }
+.option-mod { font: 10px var(--mono); color: var(--gold); }
 
 /* ---------------------------------------------------------------------------- the setup */
 
@@ -542,9 +545,9 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .char-detail .sub { color: var(--ink-faint); font-size: 12px; margin: 10px 0 12px; }
 .char-detail p { color: var(--ink-dim); font-size: 13px; }
 .char-detail p.lean { color: var(--ink); }
-.char-detail .loadout { margin: 12px 0 4px; }
+.char-detail .slots { margin: 12px 0 4px; }
 .char-detail .title-buttons { margin: 16px 0 0; }
-@media (max-width: 900px) { .char-detail { position: static; } }
+@media (max-width: 900px) { .char-detail { position: static; order: -1; } }
 
 /* The log book, on the report. */
 .book { margin-top: 10px; padding: 12px 16px; border-left: 3px solid var(--gold); background: var(--panel); }

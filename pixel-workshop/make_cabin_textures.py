@@ -1059,6 +1059,33 @@ sprite("strap", m("""
 ................
 """), {"k": "#1e2024", "o": "#e0782a", "h": "#f5a55a", "m": "#4f5a68", "s": "#8e94a2"})
 
+# What you are wearing: one top, and a palette per outfit. "As you are" is the same map in the
+# character's own shirt colour, swapped in at runtime the way a passenger's is.
+sprite("outfit", m("""
+................
+....kkkkkkkk....
+...kccckkcccck..
+..kccccclcccccck
+..kcccclccccccck
+..kkccclcccccckk
+...kkcclcccccckk
+....kcclcccccck.
+....kcclcccccck.
+....kcclcccccck.
+....kcclcccccck.
+....kcclcccccck.
+....kcclcccccck.
+....kkkkkkkkkkk.
+................
+................
+"""), {"k": "#1e2024", "c": "#4a5a86", "l": "#6b7cab"})
+variant("outfit_gym",     "outfit", {"c": "#3a8fd0", "l": "#7ab8e8"})
+variant("outfit_suit",    "outfit", {"c": "#2a3140", "l": "#4a566e"})
+variant("outfit_work",    "outfit", {"c": "#6b4423", "l": "#8f6a3f"})
+variant("outfit_comfort", "outfit", {"c": "#6b7280", "l": "#9aa3b2"})
+variant("outfit_hill",    "outfit", {"c": "#c0392b", "l": "#e07060"})
+variant("outfit_beach",   "outfit", {"c": "#e8c53a", "l": "#f5e08a"})
+
 sprite("inhaler", m("""
 ................
 ......kkkk......
