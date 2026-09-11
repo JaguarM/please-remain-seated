@@ -271,9 +271,11 @@ const BOTS = {
         return goodScore(PRS, S, list, true);
     },
 
-    // Never moves. Establishes the floor: what happens if you do nothing useful at all.
-    idle(PRS, S, list) {
-        return pickBy(list, (e) => (e.deck === "self" ? 10 : 0));
+    // Does nothing at all. Establishes the floor, and it is the same flight the report calls
+    // "without you". It used to pick a thing for itself and, with nothing to pick, clicked at
+    // random, which made the floor a few people too high.
+    idle() {
+        return null;
     },
 
     // The coverage bot. Always takes the thing it has taken least, which walks it into the
@@ -383,7 +385,12 @@ function playOne(PRS, opts) {
         }
         if (!list.length) { errors.push({ where: "empty list", err: new Error("no actions") }); break; }
         const entry = bot(PRS, S, list);
-        if (!entry) break;
+        if (!entry) {
+            // A bot with nothing to do waits, in the steps a person would, until the wheels are down.
+            PRS.actions.spend(S, Math.min(10, S.clock.remaining), null);
+            if (S.clock.remaining <= 0.001 && !S.clock.landed) PRS.actions.land(S);
+            continue;
+        }
         try {
             PRS.actions.perform(S, entry);
         } catch (err) {

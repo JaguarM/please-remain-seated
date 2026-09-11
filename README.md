@@ -160,7 +160,7 @@ design aims at. Survivors of 60 as Priya, sixty flights each:
 
 | bot | what it does | survived | best |
 |---|---|---|---|
-| idle | never leaves the seat | 27 | 45 |
+| idle | does nothing at all: the report's "without you" | 20 | 29 |
 | fire | only the fire deck: the bin, the case, the sink | 35 | 60 |
 | douse | the first playtest: pours from where one pour reaches the most fire, refills at the tap | 33 | 49 |
 | carry | carries whoever is worst off to the best floor by a door | 31 | 48 |
