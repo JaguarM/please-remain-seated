@@ -860,6 +860,33 @@
   ],
   "source": "make_cabin_textures.py"
  },
+ "goggles": {
+  "palette": {
+   "b": "#3a8fb8",
+   "k": "#1e2024",
+   "l": "#cfeaf6",
+   "s": "#2a2d33"
+  },
+  "rows": [
+   "................",
+   "................",
+   "................",
+   "..kkkkk..kkkkk..",
+   ".kbbbbbkkbbbbbk.",
+   ".kbllbbkkbbllbk.",
+   ".kbllbbkkbbllbk.",
+   ".kbbbbbkkbbbbbk.",
+   "..kkkkk..kkkkk..",
+   "..k..........k..",
+   "..kssssssssssk..",
+   "...kkkkkkkkkk...",
+   "................",
+   "................",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
  "headphones": {
   "palette": {
    "b": "#5a6270",
@@ -1693,6 +1720,34 @@
    "..kssssssssssk..",
    "...kssssssssk...",
    "....kkkkkkkk....",
+   "................",
+   "................"
+  ],
+  "source": "make_cabin_textures.py"
+ },
+ "strap": {
+  "palette": {
+   "h": "#f5a55a",
+   "k": "#1e2024",
+   "m": "#4f5a68",
+   "o": "#e0782a",
+   "s": "#8e94a2"
+  },
+  "rows": [
+   "................",
+   "..kkkk..........",
+   ".koooook........",
+   ".kohhoook.......",
+   ".kooooook.......",
+   "..koooook.......",
+   "...koooook......",
+   "....koooook.....",
+   ".....koooook....",
+   "......koooook...",
+   ".......kmmmmk...",
+   ".......kmssmk...",
+   ".......kmmmmk...",
+   "........kkkk....",
    "................",
    "................"
   ],

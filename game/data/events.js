@@ -105,6 +105,7 @@
                                                         q.state !== "down" && q.state !== "secured"));
               if (!p) return null;
               S.player.panic = Math.min(100, S.player.panic + 4);
+              (S.stats.sitDownBy = S.stats.sitDownBy || {})[p.id] = true;
               const lines = [
                   "“Will you SIT DOWN.”",
                   "“You are frightening my children.”",

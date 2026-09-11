@@ -50,7 +50,7 @@
      "crew.show_photo", "crew.show_burn", "crew.lead", "crew.tell", "crew.move_trolley",
      "cabin.fill_bottle", "cabin.wet_blanket", "cabin.trigger_detector",
      "cabin.stow_trolley", "cabin.galley_drawer",
-     "self.hood", "self.gloves",
+     "self.hood", "self.gloves", "self.goggles",
     ].forEach((id) => { FIRST[id] = true; });
 
     function rank(e) {

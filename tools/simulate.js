@@ -254,9 +254,13 @@ function playOne(PRS, opts) {
     const rng = PRS.util.makeRng(seed);
 
     const ch = opts.char ? PRS.data.characters.byId(opts.char) : rng.pick(chars);
-    // One flight in six is flown in an outfit, which is roughly how often a player will bother.
+    // One flight in six is flown in an outfit and half are flown with the free slots repacked,
+    // which is roughly how often a player will bother.
     const outfit = opts.outfit || (rng.chance(1 / 6) ? rng.pick(PRS.data.outfits.OUTFITS).id : null);
-    const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, seed: seed });
+    const free = PRS.data.items.pool().map((i) => i.id).filter((id) => ch.kit.indexOf(id) < 0);
+    const bag = rng.chance(0.5) ? ch.bag
+              : ch.kit.concat(rng.shuffle(free).slice(0, PRS.data.items.SLOTS - ch.kit.length));
+    const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, items: bag, seed: seed });
     setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = BOTS[opts.strategy || "random"];
     let steps = 0;

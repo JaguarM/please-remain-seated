@@ -14,9 +14,11 @@
 // understands. The retired fire officer is the slowest person in the cast and boards with gloves
 // and tape; the eight-year-old cannot lift an adult and is unbelievable, and is fast and low.
 //
-//   bag     what is on you when you board. Everything else is in the aeroplane.
+//   kit     the things that are part of who they are, and stay in the bag whatever you repack
+//   bag     the three things on them when they board, kit included, until you repack it
 //   seat    where you start. The row decides how far the fire and the two galleys are.
-//   unlock  the souls-secured total in the log book at which this person becomes available.
+//   unlock  the medal that turns the card over, and the sentence the locked card prints. The
+//           conditions are chosen so that earning each one means playing a different way.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -30,7 +32,8 @@
             stats: { strength: 5, speed: 6, lungs: 6, nerve: 8, voice: 8 },
             lean: "Talks people out of their seats, and treats the ones who are hurt. Cannot " +
                   "lift the heavy ones.",
-            bag: ["water_big", "phone", "first_aid"], seat: "9C", unlock: 0,
+            kit: ["first_aid"], bag: ["water_big", "phone", "first_aid"], seat: "9C",
+            unlock: null,
             hair: "#1d1712", longHair: true, skin: "#c08a5e", shirt: "#3f7d8a",
             open: "You have already worked out who on this aeroplane is going to die first.",
         },
@@ -41,7 +44,7 @@
                    "to find out that this is the least of it.",
             stats: { strength: 10, speed: 5, lungs: 4, nerve: 6, voice: 5 },
             lean: "Carries two at a time, and nobody is too heavy. Nobody listens to him.",
-            bag: ["water_big", "phone", "blanket"], seat: "9C", unlock: 0,
+            kit: [], bag: ["water_big", "phone", "blanket"], seat: "9C", unlock: null,
             hair: "#4a3220", skin: "#e5b791", shirt: "#8a4526",
             open: "Everything on this aeroplane is lighter than your opener.",
         },
@@ -54,7 +57,9 @@
             stats: { strength: 6, speed: 3, lungs: 9, nerve: 10, voice: 6 },
             lean: "Boards with gloves and tape and lungs that last. The slowest person in the " +
                   "cast.",
-            bag: ["water_big", "gloves", "tape"], seat: "9C", unlock: 20,
+            kit: ["gloves", "tape"], bag: ["water_big", "gloves", "tape"], seat: "9C",
+            unlock: { medal: "seen_it",
+                      text: "Open the overhead locker and look at what is actually in it." },
             hair: "#dfe3e6", skin: "#e5b791", shirt: "#4f5a68",
             open: "You have smelled this before. Nobody else on this aeroplane has.",
         },
@@ -66,7 +71,8 @@
             stats: { strength: 4, speed: 4, lungs: 6, nerve: 10, voice: 10 },
             lean: "Voice ten. Cannot lift most adults. Everything she achieves, she achieves " +
                   "through other people.",
-            bag: ["water_big", "phone", "wet_towel"], seat: "9C", unlock: 50,
+            kit: [], bag: ["water_big", "phone", "wet_towel"], seat: "9C",
+            unlock: { medal: "four_helpers", text: "Recruit four helpers in one flight." },
             hair: "#9aa0a6", longHair: true, skin: "#d9a279", shirt: "#232630",
             open: "You have buried more people than anyone else on board. It has not helped.",
         },
@@ -78,7 +84,9 @@
             stats: { strength: 4, speed: 10, lungs: 7, nerve: 4, voice: 5 },
             lean: "Speed ten: every step and most things cost him less. Frightens easily and " +
                   "cannot lift the heavy ones.",
-            bag: ["water_big", "phone", "wet_towel"], seat: "9C", unlock: 90,
+            kit: [], bag: ["water_big", "phone", "wet_towel"], seat: "9C",
+            unlock: { medal: "five_carry",
+                      text: "Carry five people to a galley yourself, in one flight." },
             hair: "#d9b16a", skin: "#f2d0b4", shirt: "#2f3f7a",
             open: "This is the single greatest thing that has ever happened to your channel.",
         },
@@ -90,7 +98,9 @@
             stats: { strength: 5, speed: 5, lungs: 7, nerve: 9, voice: 8 },
             lean: "Starts in row 22: two rows from the aft galley, eight from the fire, and " +
                   "twenty from the front.",
-            bag: ["water_big", "phone", "blanket"], seat: "22B", unlock: 140,
+            kit: [], bag: ["water_big", "phone", "blanket"], seat: "22B",
+            unlock: { medal: "declared",
+                      text: "Get the flight deck to declare an emergency inside five minutes." },
             hair: "#9aa0a6", skin: "#e5b791", shirt: "#1c2130",
             open: "You have flown this approach nine hundred times. Never from row 22.",
         },
@@ -101,7 +111,8 @@
                    "sidearm that is about to be of no use whatsoever.",
             stats: { strength: 8, speed: 6, lungs: 6, nerve: 8, voice: 7 },
             lean: "Strong, calm, and wearing the vest. Starts in row 20, six from the fire.",
-            bag: ["water_big", "phone", "hivis"], seat: "20A", unlock: 200,
+            kit: ["hivis"], bag: ["water_big", "phone", "hivis"], seat: "20A",
+            unlock: { medal: "jammed", text: "Be told to sit down by three different passengers." },
             hair: "#2b2118", skin: "#d9a279", shirt: "#4f5a68",
             open: "You have been watching seat 14C for an hour. For the wrong reasons.",
         },
@@ -113,7 +124,8 @@
             stats: { strength: 1, speed: 9, lungs: 8, nerve: 5, voice: 3 },
             lean: "Eight years old. Fast and low, cannot lift an adult, and nobody believes a " +
                   "word she says.",
-            bag: ["phone"], seat: "3C", unlock: 280,
+            kit: [], bag: ["phone"], seat: "3C",
+            unlock: { medal: "child_secured", text: "Get a child forward to a safe zone." },
             hair: "#1d1712", longHair: true, skin: "#e5b791", shirt: "#b8617f",
             open: "The lady said she would come back and check on you. That was a long time ago.",
         },
@@ -126,7 +138,8 @@
             stats: { strength: 6, speed: 6, lungs: 8, nerve: 10, voice: 9 },
             lean: "Knows the aeroplane, the kit and how little time there is. Boards with a " +
                   "hood and the tool that opens the mask panels, in row 1.",
-            bag: ["hood", "multitool", "water_big"], seat: "1B", unlock: 330,
+            kit: ["hood", "multitool"], bag: ["hood", "multitool", "water_big"], seat: "1B",
+            unlock: { medal: "twentytwo_souls", text: "Secure twenty-two souls in one flight." },
             hair: "#dfe3e6", longHair: true, skin: "#c08a5e", shirt: "#c9c0aa",
             open: "You know where everything is. You know it will not be enough.",
         },

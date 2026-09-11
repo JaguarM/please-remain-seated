@@ -7,7 +7,8 @@
     const st = PRS.state;
     const A = PRS.actions;
 
-    const GIVABLE = ["water_big", "wet_towel", "blanket", "hood", "first_aid", "inhaler", "gloves"];
+    const GIVABLE = ["water_big", "wet_towel", "blanket", "hood", "goggles", "first_aid",
+                     "inhaler", "gloves"];
 
     A.register([
         { id: "items.give", item: (S, c) => c.s.id, deck: "items", tags: ["hands"],
@@ -30,6 +31,7 @@
               if (c.s.id === "hood" || c.s.id === "wet_towel" || c.s.id === "blanket") {
                   c.p.masked = true;
               }
+              if (c.s.id === "goggles") c.p.panic = Math.max(0, c.p.panic - 20);
               if (c.s.id === "inhaler" || c.s.id === "first_aid") {
                   c.p.smokeDose = Math.max(0, c.p.smokeDose - 14);
               }

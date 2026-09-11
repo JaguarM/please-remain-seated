@@ -256,6 +256,7 @@
 
         let fear = smoke * 0.035 + (inten > 8 ? 0.9 : 0) + S.cabinPanic * 0.012;
         fear *= d.panicMul;
+        if (st.wearing(S, "goggles")) fear *= 0.7;   // you can see, which is most of it
         p.panic = clamp(p.panic + fear * dt * 0.11 - dt * 0.035, 0, 100);
 
         if (p.smokeDose > 92 && p.alive) {
@@ -299,7 +300,8 @@
             const p = st.paxById(S, id);
             if (p) c *= 1 + clamp01(p.kg / 120) * 0.95 * d.carryMul;
         }
-        if (S.player.dragging) c *= 1.7;
+        // Dragging is slow. A strap under the arms is a handle, and a handle is half again as fast.
+        if (S.player.dragging) c *= st.slotOf(S, "strap") ? 1.3 : 1.7;
         return c;
     }
 

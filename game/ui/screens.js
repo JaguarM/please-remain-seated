@@ -1,12 +1,14 @@
 // Every screen that is not the aeroplane: the title, the setup, the help, the previous flights,
 // and the incident report.
 //
-// The title boards you in one click as whoever you were last time. The setup screen is for the
-// flights where you want to be somebody else or wear something else, and it shows what the log
-// book has not turned over yet, with the number that turns it. The report is the point of the
-// whole thing: it is written in the flat voice of an air accident investigator, it lists every
-// soul on board by seat with what happened to them, and it quotes your own actions back at you
-// in the order you took them. Then it writes the flight into the log book and boards you again.
+// The title is a boarding pass. It boards you in one click as whoever you were last time, and
+// the row under the name is what you are wearing and the three things on you, each a chip that
+// opens a menu, except the ones that are part of who the character is, which have a lock on
+// them. The setup screen is for being somebody else: nine cards, and a locked card says exactly
+// what turns it over. The report is the point of the whole thing: it is written in the flat
+// voice of an air accident investigator, it lists every soul on board by seat with what happened
+// to them, and it quotes your own actions back at you in the order you took them. Then it writes
+// the flight into the log book and boards you again.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -14,11 +16,14 @@
 
     let host = null;
 
-    // Who the next flight is flown by, and in what. Boarding saves it.
-    const choice = { characterId: "ansel", outfitId: null };
+    // Who the next flight is flown by, in what, and with what. Boarding saves it.
+    const choice = { characterId: "ansel", outfitId: null, items: null };
     let choiceLoaded = false;
 
-    /** The choice, made sane: a saved character or outfit can be locked in this browser. */
+    /**
+     * The choice, made sane: a saved character or outfit can be locked in this browser, a bag
+     * can name things that are not in the pool, and a character's kit is always in their bag.
+     */
     function ready() {
         if (!choiceLoaded) {
             choiceLoaded = true;
@@ -26,13 +31,25 @@
             if (saved && typeof saved === "object") {
                 if (typeof saved.characterId === "string") choice.characterId = saved.characterId;
                 if (typeof saved.outfitId === "string") choice.outfitId = saved.outfitId;
+                if (Array.isArray(saved.items)) choice.items = saved.items.slice();
             }
         }
-        const C = PRS.data.characters, O = PRS.data.outfits, L = PRS.logbook;
+        const C = PRS.data.characters, O = PRS.data.outfits, D = PRS.data.items, L = PRS.logbook;
         if (!L.isUnlocked(C.byId(choice.characterId))) choice.characterId = C.CHARACTERS[0].id;
+        const ch = C.byId(choice.characterId);
         const o = O.byId(choice.outfitId);
         if (!o || !L.isUnlocked(o)) choice.outfitId = null;
+        if (!Array.isArray(choice.items)) choice.items = ch.bag.slice();
+        const allowed = (id) => { const it = D.byId(id); return it && (it.pool || ch.kit.indexOf(id) >= 0); };
+        let items = choice.items.filter((id, i, all) => allowed(id) && all.indexOf(id) === i);
+        for (const id of ch.kit) if (items.indexOf(id) < 0) items.unshift(id);
+        choice.items = items.slice(0, D.SLOTS);
         return choice;
+    }
+
+    function saveChoice() {
+        store.set("choice", { characterId: choice.characterId, outfitId: choice.outfitId,
+                              items: choice.items.slice() });
     }
 
     function mount(node) { host = node; }
@@ -64,7 +81,7 @@
                     fact(String(PRS.actions.count()), "things you can do"),
                     fact("0", "ways to put it out"),
                 ]),
-                pass(),
+                pass(() => title()),
                 // A first flight is one click. The roster and the previous flights appear once
                 // there is a log book to put them in.
                 el("div", { class: "title-buttons" }, [
@@ -84,44 +101,146 @@
         return el("div", { class: "fact" }, [el("b", { text: n }), el("i", { text: label })]);
     }
 
-    /** One sentence about the book: how far it has got, and what turns over next. */
+    /** One sentence about the book: how far it has got, and what the souls turn over next. */
     function logLine(book) {
-        const next = PRS.logbook.next();
-        const so_far = book.flights
-            ? PRS.util.plural(book.flights, "flight") + " · " +
-              PRS.util.plural(book.souls, "soul") + " secured"
-            : "No flights in the log book yet";
-        if (!next) return so_far + " · everything is unlocked.";
-        return so_far + " · next: " + next.name + " at " + next.unlock + ".";
+        const n = PRS.logbook.counts(book);
+        const next = PRS.logbook.nextOutfit(book);
+        return PRS.util.plural(book.flights, "flight") + " · " +
+            PRS.util.plural(book.souls, "soul") + " secured · " +
+            n.people + " of " + n.ofPeople + " people and " + n.outfits + " of " + n.ofOutfits +
+            " outfits" + (next ? " · next outfit at " + next.unlock + " souls." : ".");
     }
 
     /**
-     * The boarding pass: who the one button puts on the aeroplane, with their face, their clothes
-     * and the three things on them. One click boards; the button under it changes any of it.
+     * The boarding pass: who the one button puts on the aeroplane, with their face, their seat,
+     * the loadout row, and the button.
      */
-    function pass() {
+    function pass(onChange) {
         const ch = PRS.data.characters.byId(choice.characterId);
-        const outfit = PRS.data.outfits.byId(choice.outfitId);
-        const D = PRS.data.items;
-        return el("button", { class: "pass", title: "Board the aircraft", onclick: begin }, [
+        return el("div", { class: "pass" }, [
             PRS.atlas.icon("pax", 3, PRS.pax.palette(ch)),
             el("div", { class: "pass-who" }, [
                 el("b", { text: ch.name }),
-                el("i", { text: ch.title + " · seat " + ch.seat + " · " +
-                                (outfit ? outfit.name.toLowerCase() : "as you are") }),
+                el("i", { text: ch.title + " · seat " + ch.seat }),
+                loadout(ch, onChange),
             ]),
-            el("div", { class: "pass-bag" }, ch.bag.length
-                ? ch.bag.map((id) => PRS.atlas.icon(D.byId(id).sprite.split(":")[1], 2))
-                : [el("i", { text: "nothing on you" })]),
-            el("span", { class: "pass-go", text: "Board" }),
+            el("button", { class: "big pass-go", text: "Board", onclick: begin }),
         ]);
+    }
+
+    // -------------------------------------------------------------------------- the loadout ---
+    //
+    // The outfit and the three slots, as chips. A chip with a choice behind it opens a menu under
+    // itself; a chip that is part of who the character is has a lock on it and opens nothing.
+    // The pass and the setup panel both use this, so they cannot disagree.
+
+    function loadout(ch, onChange) {
+        const D = PRS.data.items, O = PRS.data.outfits, L = PRS.logbook;
+        const row = el("div", { class: "loadout" });
+
+        const outfit = O.byId(choice.outfitId);
+        row.appendChild(chip(row, {
+            icon: el("span", { class: "chip-glyph", text: "⌂" }),
+            label: outfit ? outfit.name : "As you are",
+            sub: O.summary(outfit),
+            menu: () => [{ label: "What you flew in", sub: "as you are", on: !choice.outfitId,
+                           pick: () => { choice.outfitId = null; } }]
+                .concat(O.OUTFITS.map((o) => ({
+                    label: o.name, sub: O.summary(o) + " · " + o.note, on: choice.outfitId === o.id,
+                    locked: L.isUnlocked(o) ? null : "unlocks at " + o.unlock + " souls",
+                    pick: () => { choice.outfitId = o.id; } }))),
+        }, onChange));
+
+        for (let i = 0; i < D.SLOTS; i++) {
+            const id = choice.items[i] || null;
+            const item = id ? D.byId(id) : null;
+            const fixed = !!id && ch.kit.indexOf(id) >= 0;
+            row.appendChild(chip(row, {
+                icon: item ? PRS.atlas.icon(item.sprite.split(":")[1], 2)
+                           : el("span", { class: "chip-glyph", text: String(i + 1) }),
+                label: item ? PRS.loot.short(item.name) : "nothing",
+                sub: fixed ? "part of who " + ch.short + " is" : null,
+                locked: fixed,
+                menu: fixed ? null : () => [{ label: "Nothing", sub: "an empty slot", on: !id,
+                                              pick: () => { choice.items.splice(i, 1); } }]
+                    .concat(D.pool()
+                        .filter((it) => it.id === id || choice.items.indexOf(it.id) < 0)
+                        .map((it) => ({
+                            icon: PRS.atlas.icon(it.sprite.split(":")[1], 1),
+                            label: PRS.loot.short(it.name), sub: it.note, on: it.id === id,
+                            pick: () => {
+                                if (id) choice.items[i] = it.id; else choice.items.push(it.id);
+                            } }))),
+            }, onChange));
+        }
+        return row;
+    }
+
+    function chip(row, spec, onChange) {
+        const node = el("button", {
+            class: "chip loadout-chip" + (spec.locked ? " fixed" : spec.menu ? " opens" : ""),
+            title: spec.locked ? "Part of who they are" : spec.menu ? "Click to change" : null,
+            onclick: spec.menu ? (ev) => { ev.stopPropagation(); openMenu(row, node, spec.menu(), onChange); }
+                               : null,
+        }, [
+            spec.icon,
+            el("span", { class: "chip-text" }, [
+                el("b", { text: spec.label }),
+                spec.sub ? el("i", { text: spec.sub }) : null,
+            ]),
+            spec.locked ? el("u", { class: "chip-lock", text: "kit" })
+                        : spec.menu ? el("u", { class: "chip-caret", text: "▾" }) : null,
+        ]);
+        return node;
+    }
+
+    let menuClose = null;
+
+    function closeMenu() {
+        if (menuClose) menuClose();
+        menuClose = null;
+    }
+
+    /** A list under a chip. Click outside, or Escape, closes it. */
+    function openMenu(row, anchor, options, onChange) {
+        closeMenu();
+        const menu = el("div", { class: "menu" }, options.map((opt) => el("button", {
+            class: "menu-row" + (opt.on ? " on" : "") + (opt.locked ? " locked" : ""),
+            onclick: opt.locked ? null : (ev) => {
+                ev.stopPropagation();
+                opt.pick();
+                closeMenu();
+                ready();
+                saveChoice();
+                PRS.audio.unlock();
+                PRS.audio.play("select");
+                onChange();
+            },
+        }, [
+            opt.icon || el("span", { class: "chip-glyph" }),
+            el("span", { class: "chip-text" }, [
+                el("b", { text: opt.label }),
+                el("i", { text: opt.locked || opt.sub || "" }),
+            ]),
+        ])));
+        menu.style.left = anchor.offsetLeft + "px";
+        menu.style.top = (anchor.offsetTop + anchor.offsetHeight + 4) + "px";
+        row.appendChild(menu);
+        const onDoc = (ev) => { if (!menu.contains(ev.target)) closeMenu(); };
+        const onKey = (ev) => { if (ev.key === "Escape") closeMenu(); };
+        document.addEventListener("mousedown", onDoc);
+        document.addEventListener("keydown", onKey);
+        menuClose = () => {
+            document.removeEventListener("mousedown", onDoc);
+            document.removeEventListener("keydown", onKey);
+            menu.remove();
+        };
     }
 
     // ---------------------------------------------------------------------------------- setup ---
     //
-    // Who you are and what you are wearing: two decisions on one screen with one button. Locked
-    // cards say exactly what turns them over, because a row of question marks is not something
-    // anybody can aim at.
+    // Who you are: nine cards and the composite you. A locked card says exactly what turns it
+    // over, because a row of question marks is not something anybody can aim at.
 
     function setup() {
         ready();
@@ -134,8 +253,9 @@
     /** Rebuilt in place on every click, with the scroll kept where it was. */
     function paintSetup(root) {
         const y = window.scrollY;
+        closeMenu();
         clear(root);
-        const C = PRS.data.characters, O = PRS.data.outfits, D = PRS.data.items, L = PRS.logbook;
+        const C = PRS.data.characters, O = PRS.data.outfits, L = PRS.logbook;
         ready();
         const book = L.load();
         const ch = C.byId(choice.characterId);
@@ -145,59 +265,35 @@
             PRS.audio.play(sound || "select");
             paintSetup(root);
         };
-        const lock = (thing) => el("div", { class: "char-lock" }, [
-            el("span", { class: "lock-tag", text: "LOCKED" }),
-            el("i", { text: "Unlocks at " + thing.unlock + " souls · " + book.souls + " so far" }),
-        ]);
 
-        // Who.
         const chars = el("div", { class: "char-grid" });
         for (const c of C.CHARACTERS) {
-            const open = L.isUnlocked(c);
+            const open = L.isUnlocked(c, book);
             chars.appendChild(el("button", {
                 class: "char" + (choice.characterId === c.id ? " on" : "") +
                        (open ? "" : " locked"),
-                onclick: !open ? null : function () { choice.characterId = c.id; repaint(); },
+                onclick: !open ? null : function () {
+                    if (choice.characterId !== c.id) {
+                        choice.characterId = c.id;
+                        choice.items = c.bag.slice();     // their bag, until you repack it
+                    }
+                    repaint();
+                },
             }, [
                 el("div", { class: "char-face" }, [PRS.atlas.icon("pax", 5, PRS.pax.palette(c))]),
                 el("div", { class: "char-id" }, [
                     el("b", { text: c.name }),
                     el("i", { text: c.age + " · " + c.title }),
                 ]),
-                open ? el("div", { class: "char-stats" }, statBars(c)) : lock(c),
+                open ? el("div", { class: "char-stats" }, statBars(c))
+                     : el("div", { class: "char-lock" }, [
+                           el("span", { class: "lock-tag", text: "LOCKED" }),
+                           el("i", { text: c.unlock.text }),
+                       ]),
                 open ? el("u", { class: "char-lean", text: c.lean }) : null,
             ]));
         }
 
-        // Wearing.
-        const wear = el("div", { class: "outfit-grid" });
-        wear.appendChild(el("button", {
-            class: "outfit" + (!choice.outfitId ? " on" : ""),
-            onclick: function () { choice.outfitId = null; repaint(); },
-        }, [
-            el("div", { class: "outfit-head" }, [
-                el("b", { text: "What you flew in" }),
-                el("span", { class: "outfit-mod", text: "as you are" }),
-            ]),
-            el("i", { text: "Whatever " + ch.short + " had on. The five numbers are the five " +
-                            "numbers." }),
-        ]));
-        for (const o of O.OUTFITS) {
-            const open = L.isUnlocked(o);
-            wear.appendChild(el("button", {
-                class: "outfit" + (choice.outfitId === o.id ? " on" : "") + (open ? "" : " locked"),
-                onclick: !open ? null : function () { choice.outfitId = o.id; repaint(); },
-            }, [
-                el("div", { class: "outfit-head" }, [
-                    el("b", { text: o.name }),
-                    el("span", { class: "outfit-mod", text: O.summary(o) }),
-                ]),
-                open ? el("i", { text: o.blurb }) : null,
-                open ? el("u", { text: o.note }) : lock(o),
-            ]));
-        }
-
-        // The composite you, and the one button.
         const panel = el("div", { class: "char-detail" }, [
             el("div", { class: "you-name" }, [
                 PRS.atlas.icon("pax", 4, PRS.pax.palette(ch)),
@@ -207,17 +303,11 @@
                 ]),
             ]),
             el("div", { class: "char-stats big-stats" }, statBars(ch, outfit)),
+            loadout(ch, () => paintSetup(root)),
             el("div", { class: "sub", text: outfit ? outfit.name + ". " + outfit.note
                                                    : "What you flew in." }),
             el("p", { text: ch.blurb }),
             el("p", { class: "lean", text: ch.lean }),
-            el("div", { class: "kit" }, ch.bag.map((id) => {
-                const item = D.byId(id);
-                return el("span", { class: "kit-item", title: item.name }, [
-                    PRS.atlas.icon(item.sprite.split(":")[1], 2),
-                    el("i", { text: PRS.loot.short(item.name) }),
-                ]);
-            })),
             el("div", { class: "title-buttons" }, [
                 el("button", { class: "big", text: "Board as " + ch.short, onclick: begin }),
                 el("button", { text: "Back", onclick: title }),
@@ -225,19 +315,10 @@
         ]);
 
         root.appendChild(el("h2", { text: "Who you are" }));
-        root.appendChild(el("p", { class: "lede", text: logLine(book) + " Every soul you " +
-            "secure goes into the book, and the book turns the cards over." }));
-        root.appendChild(el("div", { class: "picker-body" }, [
-            el("div", { class: "setup-sections" }, [
-                chars,
-                el("h3", { text: "What you are wearing" }),
-                el("p", { class: "sec-note", text:
-                    "It does nothing except move your five numbers. Two points of speed is a " +
-                    "second off every step of nine hundred of them." }),
-                wear,
-            ]),
-            panel,
-        ]));
+        root.appendChild(el("p", { class: "lede", text: logLine(book) + " A locked card says " +
+            "what turns it over: people by something you do on the aeroplane, clothes by the " +
+            "souls in the book." }));
+        root.appendChild(el("div", { class: "picker-body" }, [chars, panel]));
         window.scrollTo(0, y);
     }
 
@@ -264,13 +345,15 @@
 
     // ------------------------------------------------------------------------------ boarding ---
 
-    /** One click, from the title, the setup or the report. Remembers who, and in what. */
+    /** One click, from the title, the setup or the report. Remembers who, in what, with what. */
     function begin() {
         ready();
-        store.set("choice", { characterId: choice.characterId, outfitId: choice.outfitId });
+        closeMenu();
+        saveChoice();
         const S = PRS.state.create({
             characterId: choice.characterId,
             outfitId: choice.outfitId,
+            items: choice.items.slice(),
             seed: (Math.random() * 0xffffffff) >>> 0,
         });
         PRS.current = S;
@@ -410,15 +493,12 @@
                 const L = R.logbook;
                 inner.appendChild(el("div", { class: "book" }, [
                     el("b", { text: "+" + PRS.util.plural(R.secured, "soul") + " in the log book" }),
-                    el("i", { text: PRS.util.plural(L.after.flights, "flight") + " · " +
-                                    PRS.util.plural(L.after.souls, "soul") + " secured in all" }),
+                    el("i", { text: logLine(L.after) }),
                     L.unlocked.length
                         ? el("span", { class: "unlocked", text: "Unlocked: " +
-                              PRS.util.listSentence(L.unlocked.map((t) => t.name)) + "." })
-                        : L.next
-                            ? el("span", { text: "Next: " + L.next.name + " at " + L.next.unlock +
-                                                  "." })
-                            : el("span", { text: "Everything is unlocked." }),
+                              PRS.util.listSentence(L.unlocked) + "." })
+                        : el("span", { text: "Every locked card on the roster says what turns " +
+                                             "it over." }),
                 ]));
             }
 

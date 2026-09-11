@@ -2,7 +2,9 @@
 // bottom of the incident report under the heading OTHER OBSERVATIONS.
 //
 // They are not achievements in the sense of being good. They are the only place the game says
-// out loud what it thinks of a strategy, so each one is a sentence about the arithmetic.
+// out loud what it thinks of a strategy, so each one is a sentence about the arithmetic. Seven of
+// them are also what turns a character's card over in the log book, and the first time one of
+// those is awarded the line says who has become available.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -22,11 +24,17 @@
         { id: "sink", name: "The correct answer",
           text: "Got the case into a sink full of water. Nobody has ever thought of this in time.",
           when: (S) => S.fire.core.inSink },
+        { id: "seen_it", name: "Looked at it",
+          text: "Actually opened the bin and looked at the thing that is doing all this.",
+          when: (S) => S.fire.core.exposed },
 
         // ------------------------------------------------------------------------- carrying ---
         { id: "first_carry", name: "One",
           text: "Carried one person to safety, which is one more than anybody else did.",
           when: (S) => S.stats.carriesCompleted >= 1 },
+        { id: "five_carry", name: "Five",
+          text: "Five. On your own. In a corridor full of people telling you to stop.",
+          when: (S) => S.stats.carriesCompleted >= 5 },
         { id: "twelve_carry", name: "Twelve",
           text: "Twelve carries. That is the physical limit and you found it.",
           when: (S) => S.stats.carriesCompleted >= 12 },
@@ -34,6 +42,9 @@
           text: "Both wheelchair users were secured. Neither could have done anything alone.",
           when: (S) => S.pax.filter((p) => p.traits.indexOf("immobile") >= 0)
                              .every((p) => p.state === "secured") },
+        { id: "child_secured", name: "A child, forward",
+          text: "Got one of the children to a safe zone.",
+          when: (S) => S.pax.some((p) => PRS.pax.isChild(p) && p.state === "secured") },
         { id: "dog", name: "Bruno",
           text: "The dog got out. This was not free and you knew that.",
           when: (S) => S.pax.filter((p) => p.traits.indexOf("pet") >= 0)
@@ -66,6 +77,10 @@
           text: "Had the flight deck declare an emergency inside five minutes, which is " +
                 "six minutes before it would have happened on its own.",
           when: (S) => S.crewPhase >= 4 && S.clock.elapsed < 300 },
+        { id: "jammed", name: "Asked to sit down, repeatedly",
+          text: "Three separate passengers told you, personally, to sit down. The cabin turned " +
+                "on you before the fire did.",
+          when: (S) => Object.keys(S.stats.sitDownBy || {}).length >= 3 },
         { id: "argued_long", name: "Three minutes of arguing",
           text: "Spent a hundred and eighty seconds of a fifteen minute flight in conversation.",
           when: (S) => S.stats.timeArguing >= 180 },
@@ -100,8 +115,18 @@
             try { ok = m.when(S); } catch (e) { ok = false; }
             if (!ok) continue;
             S.medals[m.id] = S.clock.elapsed;
-            PRS.state.log(S, "◆ " + m.name + " — " + m.text, "medal");
+            PRS.state.log(S, "◆ " + m.name + " — " + m.text + opens(m.id), "medal");
         }
+    }
+
+    /** " Deidre Volk is now available." if this medal turns a card over for the first time. */
+    function opens(id) {
+        if (!PRS.logbook || !PRS.data.characters) return "";
+        const book = PRS.logbook.load();
+        const names = PRS.data.characters.CHARACTERS
+            .filter((c) => c.unlock && c.unlock.medal === id && !book.medals[id])
+            .map((c) => c.name);
+        return names.length ? " " + PRS.util.listSentence(names) + " is now available." : "";
     }
 
     function earned(S) {

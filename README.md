@@ -49,35 +49,39 @@ help again.
 Who you are
 -----------
 
-The title is a boarding pass: one click puts you on the aeroplane as whoever you were last time,
+The title is a boarding pass. One click puts you on the aeroplane as whoever you were last time,
 and the first time that is Dr Priya Ansel, who talks people out of their seats and cannot lift
-the heavy ones. "Change who you are" opens the roster: nine people, two of them free. Gordy Mach
-carries two at a time and nobody listens to him. The other seven, from a retired fire officer who
-boards with gloves and tape to an eight-year-old who cannot lift an adult, unlock as the log book
-fills.
+the heavy ones. Under the name is the loadout: what you are wearing and the three things on you,
+each a chip that opens a menu, except the ones that are part of who the character is, which are
+locked in place. Deidre Volk always boards with her gloves and her tape; the other slot is yours.
+
+"Change who you are" appears from the second flight and opens the roster: nine people, two of
+them free. Gordy Mach carries two at a time and nobody listens to him. Each of the other seven is
+locked behind something you do on the aeroplane, printed on the card, and each one makes you play
+a different way to earn it: open the locker and look inside, recruit four helpers, carry five
+people yourself, get the flight deck to declare inside five minutes, be told to sit down by three
+different passengers, get a child forward, secure twenty-two souls.
 
 There are no perks. Each person is five numbers, one to ten, and every number is a multiplier on
 something you feel inside a minute: strength (how long a carry takes, who can be carried at all,
 and at ten, two at once), speed, lungs, nerve, voice. What else makes them different is data the
 game already understands: what is on them when they board, and which row they are sitting in.
-Six outfits move the five numbers by a point or two, and unlock the same way.
+Six outfits move the five numbers by a point or two; they unlock as the souls total in the log
+book climbs, ten for the first and two hundred and forty for the last.
 
-**The log book** is the only thing that carries over between flights: how many you have flown
-and how many souls you have secured across all of them. Every character and outfit names a souls
-total at which it unlocks, so a good flight unlocks things faster than a bad one, and a bad one
-still counts. Nothing is bought and nothing is chosen; reach the number and the card turns over.
-The whole ladder is 330 souls, which is somewhere between ten and thirty flights depending on how
-quickly you find out what the game is about. Everything else in the aeroplane, from the galley
-drawers to what other passengers have in their laps, is found in flight, and asking somebody what
-they have is the same conversation that recruits them.
+**The log book** is the only thing that carries over between flights: flights flown, souls
+secured across all of them, every medal ever awarded, and the last sixty flights one line each.
+Nothing is bought. Everything else in the aeroplane, from the galley drawers to what other
+passengers have in their laps, is found in flight, and asking somebody what they have is the same
+conversation that recruits them.
 
 What is in it
 -------------
 
 - **81 actions** across seven decks, each with a cost, a condition and a line of text. Every one
   changes a number the score depends on. The ones that did not are in git history.
-- **Nine characters and six outfits**, two and none of them free, the rest on a ladder the log
-  book climbs.
+- **Nine characters, six outfits and a bag of three from a pool of nine.** Two characters are
+  free; the rest are earned by playing a particular way. The outfits open with the souls total.
 - **60 named passengers** with a weight, a temperament, a seat and an opinion, and a helper
   system that is the only thing in the game that scales. All sixty have faces: one map, sixty
   palettes, five expressions from five pixels moved.

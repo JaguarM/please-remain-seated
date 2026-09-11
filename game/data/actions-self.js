@@ -48,6 +48,16 @@
               return { text: "Two puffs. The bottom of your lungs comes back online.", kind: "good" };
           } },
 
+        { id: "self.goggles", item: "goggles", deck: "self", tags: ["self"], danger: "good",
+          label: "Put the swimming goggles on", cost: 7,
+          when: (S) => have(S, "goggles") && !st.wearing(S, "goggles"),
+          run(S) {
+              S.player.wearing.goggles = true;
+              return { text: "You put mirrored swimming goggles on in a burning aeroplane and you " +
+                  "can suddenly keep your eyes open in smoke that has everybody else's shut. You " +
+                  "look absurd. You look absurd and you can see.", kind: "good" };
+          } },
+
         // ---------------------------------------------------------------------------- wearing ---
         { id: "self.hivis", item: "hivis", deck: "self", tags: ["self"], danger: "good",
           label: "Put the hi-vis vest on", cost: 9,

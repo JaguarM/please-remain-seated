@@ -81,10 +81,10 @@
         for (const key of ["characters", "outfits", "items", "passengers"]) {
             if (!PRS.data || !PRS.data[key]) bad.push("Missing data: PRS.data." + key + ".");
         }
-        // Every item has to live somewhere, or the bag screen and the aeroplane disagree.
+        // Every item has to be packable or somewhere in the aeroplane, or nobody can ever hold it.
         if (PRS.data && PRS.data.items) {
-            const homeless = PRS.data.items.ITEMS.filter((i) => !i.where);
-            if (homeless.length) bad.push(homeless.length + " items have no `where`.");
+            const homeless = PRS.data.items.ITEMS.filter((i) => !i.where && !i.pool);
+            if (homeless.length) bad.push(homeless.length + " items are neither packable nor anywhere in the aeroplane.");
         }
         // Every sprite an item names must exist.
         if (PRS.data && PRS.data.items && PRS.atlas) {
@@ -118,6 +118,13 @@
                 if (taken[ch.seat]) bad.push(ch.name + " sits in " + ch.seat + ", which is " + taken[ch.seat] + "'s.");
                 for (const id of ch.bag) {
                     if (!PRS.data.items.byId(id)) bad.push(ch.name + " boards with an item that does not exist: " + id + ".");
+                }
+                for (const id of ch.kit) {
+                    if (ch.bag.indexOf(id) < 0) bad.push(ch.name + "'s kit has " + id + " in it, and the bag does not.");
+                }
+                if (ch.unlock && typeof ch.unlock === "object" && PRS.medals &&
+                    !PRS.medals.BY_ID[ch.unlock.medal]) {
+                    bad.push(ch.name + " is locked behind '" + ch.unlock.medal + "', which no medal grants.");
                 }
             }
         }

@@ -131,9 +131,11 @@
                                                    !P.canCarry(S, c.p)),
             when: (S, c) => !S.player.dragging && S.player.carrying.length === 0 &&
                             c.p.state !== "secured" && c.p.state !== "dead" && !c.p.helper,
-            label: (S, c) => "Drag " + who(c) + " along the floor",
+            label: (S, c) => "Drag " + who(c) + " along the floor" +
+                             (st.slotOf(S, "strap") ? " by the strap" : ""),
             detail: (S, c) => c.p.kg + "kg. Slower than carrying, and it works on people you " +
-                              "cannot lift.",
+                              "cannot lift." + (st.slotOf(S, "strap") ? " The strap is a handle."
+                                                : ""),
             cost: (S, c) => 8 + c.p.kg * 0.06,
             run(S, c) {
                 S.player.dragging = c.p.id;

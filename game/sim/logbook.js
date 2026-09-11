@@ -1,12 +1,16 @@
 // The log book: what carries over between flights, and the only thing that does.
 //
 // Kept in the browser: how many flights you have flown, how many souls you have secured across
-// all of them, and the last sixty flights one line each. Characters and outfits each name a
-// souls total at which they unlock, so a good flight unlocks things faster than a bad one, and a
-// bad one still counts for something, because three secured is three. There is nothing to buy
-// and nothing to choose: reach the number and the card turns over.
+// all of them, every medal you have ever been awarded, and the last sixty flights one line each.
 //
-// Nothing in the simulation reads this. It is the title screen's business and the report's.
+// Two kinds of thing unlock from it. A character unlocks when a particular medal is in the book,
+// and the locked card says which - open the locker and look, get a child forward, be told to sit
+// down three times - so the roster is a list of things to try rather than a wall. An outfit
+// unlocks when the souls total reaches the number on it, so a good flight opens the wardrobe
+// faster and a bad one still counts. Nothing is bought.
+//
+// Nothing in the simulation reads this. Medals ask it whether they are news; the title screen
+// and the report do the rest.
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
@@ -19,40 +23,54 @@
         return {
             flights: typeof raw.flights === "number" ? raw.flights : 0,
             souls: typeof raw.souls === "number" ? raw.souls : 0,
+            medals: raw.medals && typeof raw.medals === "object" ? raw.medals : {},
             history: Array.isArray(raw.history) ? raw.history : [],
         };
     }
 
     function save(book) { store.set("logbook", book); }
 
-    /** Everything that can be unlocked, in the order it unlocks. */
-    function ladder() {
-        const C = PRS.data.characters.CHARACTERS.map((c) => ({ kind: "character", id: c.id,
-            name: c.name, unlock: c.unlock }));
-        const O = PRS.data.outfits.OUTFITS.map((o) => ({ kind: "outfit", id: o.id,
-            name: o.name, unlock: o.unlock }));
-        return C.concat(O).sort((a, b) => a.unlock - b.unlock);
+    /**
+     * Whether a character or outfit is available. `unlock` is a souls total (a number), a medal
+     * ({ medal, text }), or nothing at all for the ones you start with.
+     */
+    function isUnlocked(thing, book) {
+        const u = thing.unlock;
+        if (!u) return true;
+        book = book || load();
+        if (typeof u === "number") return u <= book.souls;
+        return !!book.medals[u.medal];
     }
 
-    function isUnlocked(thing) {
-        return !thing.unlock || thing.unlock <= load().souls;
+    /** The next outfit the souls total will turn over, or null. */
+    function nextOutfit(book) {
+        book = book || load();
+        return PRS.data.outfits.OUTFITS.filter((o) => o.unlock > book.souls)
+            .sort((a, b) => a.unlock - b.unlock)[0] || null;
     }
 
-    /** The next thing the log book will turn over, or null once it has turned them all. */
-    function next() {
-        const souls = load().souls;
-        return ladder().filter((t) => t.unlock > souls)[0] || null;
+    /** "4 of 9 people, 2 of 6 outfits". */
+    function counts(book) {
+        book = book || load();
+        const C = PRS.data.characters.CHARACTERS, O = PRS.data.outfits.OUTFITS;
+        return {
+            people: C.filter((c) => isUnlocked(c, book)).length, ofPeople: C.length,
+            outfits: O.filter((o) => isUnlocked(o, book)).length, ofOutfits: O.length,
+        };
     }
 
     /**
-     * Write a landed flight into the book. Returns what changed, so the report can say it:
-     * the totals before and after, and everything that unlocked on the way.
+     * Write a landed flight into the book: the flight, the souls, and every medal awarded on the
+     * way. Returns what changed, so the report can say it, including everything that unlocked.
      */
     function record(S, result) {
         const before = load();
+        const medals = Object.assign({}, before.medals);
+        for (const id in S.medals) if (!medals[id]) medals[id] = before.flights + 1;
         const after = {
             flights: before.flights + 1,
             souls: before.souls + (result.secured || 0),
+            medals: medals,
             history: [{
                 at: Date.now(), seed: S.seed, character: S.character.id,
                 outfit: S.outfit ? S.outfit.id : null,
@@ -61,11 +79,16 @@
             }].concat(before.history).slice(0, KEEP),
         };
         save(after);
-        const unlocked = ladder().filter((t) => t.unlock > before.souls && t.unlock <= after.souls);
-        return { before: before, after: after, unlocked: unlocked, next: next() };
+        const unlocked = PRS.data.characters.CHARACTERS
+            .filter((c) => !isUnlocked(c, before) && isUnlocked(c, after))
+            .map((c) => c.name)
+            .concat(PRS.data.outfits.OUTFITS
+                .filter((o) => !isUnlocked(o, before) && isUnlocked(o, after))
+                .map((o) => o.name));
+        return { before: before, after: after, unlocked: unlocked, next: nextOutfit(after) };
     }
 
     function forget() { store.drop("logbook"); }
 
-    PRS.logbook = { load, ladder, isUnlocked, next, record, forget };
+    PRS.logbook = { load, isUnlocked, nextOutfit, counts, record, forget };
 })(window);

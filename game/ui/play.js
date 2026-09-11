@@ -43,9 +43,9 @@
     // What a thing in your bag is called under a forty-eight pixel icon.
     const SHORT = {
         water_big: "water", wet_towel: "towel", blanket: "blanket", gloves: "gloves",
-        hood: "hood", multitool: "multi-tool", tape: "tape", binbag: "bin liners",
-        first_aid: "first aid", inhaler: "inhaler", hivis: "hi-vis", phone: "phone",
-        halon_bottle: "halon", water_ext: "extinguisher",
+        hood: "hood", goggles: "goggles", multitool: "multi-tool", tape: "tape",
+        binbag: "bin liners", first_aid: "first aid", inhaler: "inhaler", strap: "strap",
+        hivis: "hi-vis", phone: "phone", halon_bottle: "halon", water_ext: "extinguisher",
     };
 
     function build(container, state) {
