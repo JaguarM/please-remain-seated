@@ -197,7 +197,7 @@
 
     /**
      * The same aeroplane with nobody doing anything: the same seed, the same person in the same
-     * seat with the same bag, the same luck, and fifteen minutes spent standing in the aisle.
+     * seat with the same bag, and fifteen minutes spent standing in the aisle.
      * Thirty people off alive is a failure or a triumph depending entirely on this number, so it
      * is what the report prints and what the log book counts.
      *
@@ -213,7 +213,7 @@
     function idleFlight(S) {
         const L = S.loadout;
         const B = st.create({ characterId: L.characterId, outfitId: L.outfitId, items: L.items,
-                              seed: S.seed, luck: S.luck });
+                              seed: S.seed });
         B.quiet = true;
         // In the steps a person would take, so an early descent shortens this flight as it would
         // have shortened yours, instead of being flown straight through.

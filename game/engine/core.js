@@ -14,8 +14,7 @@
     // stream of its own, named for what it decides and seeded from the flight's seed and that
     // name (`hashSeed`), so whether row 14 catches or what the cabin does on its third turn does
     // not depend on how many people you spoke to first. A seed is a whole flight; what you do in
-    // it is the only thing that varies. `constRng` is the same interface with the dice glued
-    // down, which is what perfect luck flies on.
+    // it is the only thing that varies.
     function attach(rng, unit) {
         // `unit` is the draw kept below 1, for the helpers that index with it.
         rng.int = (n) => Math.floor(unit() * n);
@@ -50,15 +49,6 @@
         rng.save = () => a;
         rng.load = (v) => { a = v >>> 0; };
         return attach(rng, rng);
-    }
-
-    /** Dice that always land on `v`: 0 is the lowest they go, 1 the highest, 0.5 the middle. */
-    function constRng(v) {
-        const rng = function () { return v; };
-        rng.seed = null;
-        rng.save = () => 0;
-        rng.load = () => {};
-        return attach(rng, () => Math.min(v, 1 - 1e-9));
     }
 
     function seedFromString(str) {
@@ -194,7 +184,7 @@
     };
 
     PRS.util = {
-        makeRng, constRng, hashSeed, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel,
+        makeRng, hashSeed, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel,
         plural, shade,
         listSentence, el, $, $$, clear, store,
     };

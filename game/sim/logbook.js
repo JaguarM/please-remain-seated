@@ -68,9 +68,6 @@
      * way. Returns what changed, so the report can say it, including everything that unlocked.
      */
     function record(S, result) {
-        // A flight on perfect luck is a test of a plan, not a flight. It stays out of the book,
-        // and so does everything it would have unlocked.
-        if (S.luck && S.luck !== "dice") return null;
         const before = load();
         const medals = Object.assign({}, before.medals);
         for (const id in S.medals) if (!medals[id]) medals[id] = before.flights + 1;
@@ -112,9 +109,8 @@
             if (isUnlocked(c, book)) continue;
             const medal = c.unlock && c.unlock.medal && PRS.medals.BY_ID[c.unlock.medal];
             if (!medal || !medal.near) continue;
-            // Awarded on this flight and the card is still locked: perfect luck, which the
-            // screen has already said keeps nothing. A full bar under a lock invites the
-            // wrong question, so that card is not the one to print.
+            // Awarded on this flight and the card is still locked: a full bar under a lock
+            // invites the wrong question, so that card is not the one to print.
             if (S.medals && S.medals[medal.id]) continue;
             const got = (S.nearly || {})[medal.id];
             if (!got || !got.need) continue;

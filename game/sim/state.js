@@ -14,9 +14,6 @@
     function create(opts) {
         const seed = (opts.seed === undefined || opts.seed === null ? (Date.now() >>> 0)
                                                                     : opts.seed) >>> 0;
-        // "dice" is a flight. "perfect" is the same aeroplane with every coin landing the player's
-        // way and every timer at its middle: for testing a plan against the cabin, not the luck.
-        const luck = opts.luck === "perfect" ? "perfect" : "dice";
         const ch = PRS.data.characters.byId(opts.characterId);
         const outfit = PRS.data.outfits.byId(opts.outfitId) || null;
         const derived = PRS.data.characters.derive(ch, outfit);
@@ -26,7 +23,6 @@
 
         const S = {
             seed: seed,
-            luck: luck,
             character: ch,
             outfit: outfit,
             derived: derived,
@@ -63,7 +59,7 @@
                 return item ? { id: id, item: item, uses: item.uses, wet: false, spent: false } : null;
             }).filter(Boolean),
 
-            fire: null,            // built below, once the seed and the luck are on S
+            fire: null,            // built below, once the seed is on S
 
             pax: [],
             crew: [],
@@ -143,12 +139,12 @@
                 carries: carries || null,   // what is in their lap, if anything
                 revealed: false,            // whether you have asked them about it
                 state: asleep ? "asleep" : "seated",
-                awareness: asleep ? 0 : dice(S, "aware:" + id, "mid").irange(0, 14),
-                panic: dice(S, "panic:" + id, "mid").irange(0, 8),
+                awareness: asleep ? 0 : dice(S, "aware:" + id).irange(0, 14),
+                panic: dice(S, "panic:" + id).irange(0, 8),
                 // How this person takes being asked, decided now and not per conversation: the
                 // same fourteen points either way that used to be rolled every time, so that a
                 // refusal is a fact about them and not about the moment.
-                mood: dice(S, "mood:" + id, "high").range(-14, 14),
+                mood: dice(S, "mood:" + id).range(-14, 14),
                 trust: traits.indexOf("sceptic") >= 0 ? -20
                      : traits.indexOf("helpful") >= 0 ? 25
                      : traits.indexOf("hostile") >= 0 ? -30 : 0,
@@ -180,7 +176,7 @@
      * rather than a lever with a known output.
      */
     function buildStash(S) {
-        S.stash = { galley: dice(S, "stash", "mid").shuffle(["first_aid", "binbag"]) };
+        S.stash = { galley: dice(S, "stash").shuffle(["first_aid", "binbag"]) };
     }
 
     /** Put an item into your hands. Topping up something you already have counts. */
@@ -309,15 +305,8 @@
     // from the flight's seed and that name, so the answer depends on the seed and on what is
     // being decided, and on nothing else. Two flights on one seed differ only in what was done.
 
-    /**
-     * The dice for one named thing. `favour` is which way is the player's way, for perfect luck:
-     * "high" and "low" pin the draw to that end, and "mid" pins it to the middle, which is what
-     * everything on a timer gets, the fire included, so that perfect luck is still a flight.
-     */
-    function dice(S, key, favour) {
-        if (S.luck === "perfect") {
-            return PRS.util.constRng(favour === "low" ? 0 : favour === "mid" ? 0.5 : 1);
-        }
+    /** The dice for one named thing, from the flight's seed and that name. */
+    function dice(S, key) {
         return PRS.util.makeRng(PRS.util.hashSeed(S.seed, key));
     }
 
@@ -338,7 +327,7 @@
 
     function rearm(S, obj, name) {
         const n = obj[name + "N"] = (obj[name + "N"] || 0) + 1;
-        obj[name + "At"] = dice(S, name + ":" + (obj.id || "") + ":" + n, "mid").expo();
+        obj[name + "At"] = dice(S, name + ":" + (obj.id || "") + ":" + n).expo();
         obj[name + "Acc"] = 0;
     }
 
@@ -355,7 +344,7 @@
         if (!bag || !bag.length) {
             // Each refill of a bag is numbered, so it is the same shuffle however you got here.
             const n = S._bagN[key] = (S._bagN[key] || 0) + 1;
-            bag = S._bags[key] = dice(S, "line:" + key + ":" + n, "mid").shuffle(options);
+            bag = S._bags[key] = dice(S, "line:" + key + ":" + n).shuffle(options);
         }
         return bag.pop();
     }

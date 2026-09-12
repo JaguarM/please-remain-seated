@@ -50,8 +50,8 @@
         const st = PRS.state;
         // The fuel map, and the mark every tile has to reach before the fire jumps to it. Both
         // are drawn now, from the seed, so the fire on a seed is the same fire whatever you do.
-        const fuelDice = st.dice(S, "fire:fuel", "mid");
-        const spreadDice = st.dice(S, "fire:spread", "mid");
+        const fuelDice = st.dice(S, "fire:fuel");
+        const spreadDice = st.dice(S, "fire:spread");
         const f = {
             intensity: new Float32Array(N),
             fuel: new Float32Array(N),
@@ -216,7 +216,7 @@
         if (f.core.heat >= 100 && f.core.cells > 0) {
             vented = true;
             // This cell's own dice: how far the core drops back, and which bins the splash reaches.
-            const vent = PRS.state.dice(S, "fire:vent:" + f.ventCount, "mid");
+            const vent = PRS.state.dice(S, "fire:vent:" + f.ventCount);
             f.core.heat = 18 + vent() * 14;
             f.core.cells--;
             f.core.vented++;
@@ -326,7 +326,7 @@
     /** A tile has just caught: reset what it had paid in, and draw its next mark from its own dice. */
     function rearmSpread(S, f, i) {
         const n = ++f.spreadN[i];
-        const r = PRS.state.dice(S, "fire:spread:" + i + ":" + n, "mid");
+        const r = PRS.state.dice(S, "fire:spread:" + i + ":" + n);
         f.spreadAcc[i] = 0;
         f.spreadAt[i] = r.expo();
         f.spreadAmt[i] = 6 + r() * 8;

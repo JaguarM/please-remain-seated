@@ -58,7 +58,7 @@
                 refusals: 0,
                 askedThisPhase: false,
                 // The twelve points either way that every ask used to roll, decided at boarding.
-                mood: PRS.state.dice(S, "mood:" + c.id, "high").range(-12, 12),
+                mood: PRS.state.dice(S, "mood:" + c.id).range(-12, 12),
             };
         });
         S.crewPhase = 0;
@@ -283,7 +283,7 @@
         const options = S.pax.filter((p) => (p.state === "standing" || p.state === "aisle") &&
                                             !p.helper);
         if (!options.length) return null;
-        return PRS.state.dice(S, "sit:pick:" + c.id + ":" + c.sitN, "mid").pick(options);
+        return PRS.state.dice(S, "sit:pick:" + c.id + ":" + c.sitN).pick(options);
     }
 
     function doCrewCarry(S, c, dt) {

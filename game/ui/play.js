@@ -414,7 +414,7 @@
     /**
      * A step back onto a tile you have just walked from is not a walk. It is the walks since,
      * undone: the seconds come back and so does the cabin, which is what going back the way you
-     * came ought to mean in a game where you can change your mind and not your luck.
+     * came ought to mean in a game where you can change your mind and not the dice.
      */
     function walkBack(t) {
         const stop = trailStop(t);
@@ -674,8 +674,7 @@
             PRS.atlas.icon("pax", 2, PRS.render.paletteOf(S.character)),
             el("div", {}, [
                 el("b", { text: S.character.name }),
-                el("i", { text: T(S.character.title) +
-                                (S.luck === "perfect" ? T(" · perfect luck") : "") }),
+                el("i", { text: T(S.character.title) }),
             ]),
         ]));
         box.appendChild(meter(T("YOUR LUNGS"), 100 - P.smokeDose, 100, "m-lungs",

@@ -44,7 +44,7 @@ The rules
   eighth from being as cheap as the second is that everybody still sitting down by then is
   somebody who has already said no, and the aisle they would be working is fuller than it was.
   Fifty-four is very hard, and sixty is not on offer.
-- **You can change your mind, not your luck.** Every die in the flight is cast at boarding, from
+- **You can change your mind, not the dice.** Every die in the flight is cast at boarding, from
   the seed on the pass: what mood each passenger is in, when the fire jumps a row, what the cabin
   does on its third turn. Backspace undoes the last action and gives the seconds back, one action
   at a time, and so does walking back: every walk leaves the tile you left from marked on the
@@ -105,9 +105,7 @@ corner. Deidre Volk always boards with her gloves and her tape; the other slot i
 The fifth box is the seed. Leave it and every flight is a new one; type a number or a word and it
 is the same aeroplane, the same moods and the same fire until you clear it, which is how two
 people compare what they did with one fifteen minutes, and `index.html?seed=606` opens with it
-filled in. The same page has the dice. **Perfect luck** is for testing a plan: every coin lands
-your way and everything on a timer, the fire included, happens at its middle time, so what is
-left to vary is what you do. Nothing from a flight like that goes in the log book.
+filled in.
 
 The same screen opens the roster: nine people, two of them free. Gordy Mach carries two at a time
 and nobody listens to him. Each of the other seven is locked behind something you do on the
@@ -203,7 +201,7 @@ Testing it
 
     node tools/simulate.js 360 --char=ansel   # the bots, the balance table, any crash
     node tools/simulate.js 100 --char=yuki --strategy=good,blend --outfit=gym
-    node tools/simulate.js 8 --luck=perfect --seed=1   # every bot once, no dice: the plans alone
+    node tools/simulate.js 8 --seed=1         # every bot once, one aeroplane: the plans alone
     node tools/harm.js 60 --strategy=idle     # where the harm at touchdown comes from, by part
     node tools/replay.js flights.json         # play recorded flights back against the bots
     node tools/coverage.js                    # every action performed at least once

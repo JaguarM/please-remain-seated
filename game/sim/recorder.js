@@ -28,7 +28,6 @@
             v: VERSION,
             at: new Date().toISOString(),
             seed: S.seed,
-            luck: S.luck || "dice",
             character: L.characterId,
             outfit: L.outfitId,
             items: L.items.slice(),

@@ -81,7 +81,6 @@
         "CABIN PANIC": "PANIK IN DER KABINE",
         "CREW": "CREW",
         "What you can do here, and to yourself": "Was du hier tun kannst, und mit dir selbst",
-        " · perfect luck": " · perfektes Glück",
         "YOUR LUNGS": "DEINE LUNGE",
         "failing": "versagt",
         "bad": "schlecht",

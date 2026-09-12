@@ -47,7 +47,6 @@
         ["kit", "fest"],
         ["{n} uses", "{n} Anwendungen"],
         ["any seed", "beliebig"],
-        ["perfect luck", "perfektes Glück"],
         ["seed", "Startwert"],
         ["Part of who they are", "Gehört zu dieser Person"],
         ["Click to change", "Klicken zum Ändern"],
@@ -101,29 +100,11 @@
          "Flüge auf einem Startwert unterscheiden sich nur darin, was du tust. Die Adresszeile " +
          "nimmt ihn auch: index.html?seed=606."],
         ["Fly this seed", "Diesen Startwert fliegen"],
-        ["Dice", "Würfel"],
-        ["Cast at boarding, from the seed. Backspace cannot re-cast them, and neither can doing " +
-         "something else first.",
-         "Beim Einsteigen geworfen, aus dem Startwert. Die Rücktaste wirft sie nicht neu, und " +
-         "erst etwas anderes zu tun auch nicht."],
-        ["Perfect luck", "Perfektes Glück"],
-        ["For testing a plan against the aeroplane rather than the dice. Every coin lands your " +
-         "way: people say yes whenever asking was worth it, the blanket does not burn through, " +
-         "turbulence drops nobody, and the cabin's turn is the kindest thing that could happen. " +
-         "Everything on a timer, the fire included, happens at its middle time.",
-         "Um einen Plan gegen das Flugzeug zu prüfen statt gegen die Würfel. Jede Münze fällt " +
-         "für dich: Leute sagen ja, wann immer Fragen es wert war, die Decke brennt nicht " +
-         "durch, Turbulenz lässt niemanden fallen, und der Zug der Kabine ist das Freundlichste, " +
-         "was passieren könnte. Alles, was an einer Uhr hängt, das Feuer eingeschlossen, " +
-         "passiert zu seiner mittleren Zeit."],
-        ["Nothing from a flight like this goes in the log book.",
-         "Aus so einem Flug kommt nichts ins Flugbuch."],
         ["Which flight", "Welcher Flug"],
         ["It is the same aeroplane every time and the fire is in the same locker. What the seed " +
          "decides is everything that could have gone either way.",
          "Es ist jedes Mal dasselbe Flugzeug, und das Feuer ist in demselben Fach. Der Startwert " +
          "entscheidet alles, was auch anders hätte kommen können."],
-        ["The dice", "Die Würfel"],
 
         // ------------------------------------------------------------------------- the roster ---
         ["{age} · {title}", "{age} · {title}"],
@@ -229,10 +210,6 @@
         ["{have} of {need} {what}, this flight",
          "{have} von {need} {what}, in diesem Flug"],
 
-        ["Nothing in the log book", "Nichts im Flugbuch"],
-        ["Perfect luck is for testing a plan. The flight is in the recorder and nowhere else.",
-         "Perfektes Glück ist zum Prüfen eines Plans da. Der Flug steht im Schreiber und " +
-         "sonst nirgends."],
         ["+{n} in the log book", "+{n} im Flugbuch"],
         ["Unlocked: {what}.", "Freigeschaltet: {what}."],
         ["The cabin at touchdown", "Die Kabine beim Aufsetzen"],

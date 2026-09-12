@@ -13,7 +13,7 @@
 // been used. Rewind, repeat the same action, and you get the same result, down to the sentence
 // the passenger says. Do something else first and you still get the same result, because the
 // dice are not a queue that other actions push along. You can change your mind. You cannot
-// change your luck.
+// change the dice.
 //
 // Two things still cannot be undone:
 //   * anything tagged `reveal`, because you cannot un-see what was in the bin, and rewinding the

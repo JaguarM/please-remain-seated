@@ -150,7 +150,7 @@
                     // Whether this smothering scorches it was decided at boarding: the first, the
                     // second and the third time it is used, whatever else you did in between.
                     b.smothers = (b.smothers || 0) + 1;
-                    if (PRS.state.dice(S, "blanket:" + b.smothers, "high").chance(0.35)) {
+                    if (PRS.state.dice(S, "blanket:" + b.smothers).chance(0.35)) {
                         b.scorched = (b.scorched || 0) + 1;
                         if (b.scorched >= 2) {
                             S.inventory = S.inventory.filter((s) => s !== b);

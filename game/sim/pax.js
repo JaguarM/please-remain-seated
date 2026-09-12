@@ -544,7 +544,7 @@
         const near = S.pax.filter((q) => canHelp(q) && Math.abs(q.x - p.x) <= 3 &&
             q.traits.indexOf("hostile") < 0);
         if (!near.length) return;
-        const q = PRS.state.dice(S, "spread:pick:" + p.id + ":" + p.spreadN, "mid").pick(near);
+        const q = PRS.state.dice(S, "spread:pick:" + p.id + ":" + p.spreadN).pick(near);
         // A helper asking is a friendlier ask than yours, and it meets the same mood yours would.
         if (resistance(S, q) > persuasion(S, 24) + q.mood + 5) return;
         recruit(S, q, p.name + " asked them, which is not something you had to do.");
