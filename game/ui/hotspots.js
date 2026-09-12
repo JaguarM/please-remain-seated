@@ -458,8 +458,8 @@
 
     function youHeader(S) {
         const Pl = S.player;
-        const fear = Pl.panic + Pl.smokeDose * 0.55;
-        const face = !Pl.alive ? "pax_down" : fear > 62 ? "pax_afraid" : fear > 27 ? "pax_worried" : "pax";
+        const face = !Pl.alive ? "pax_down" : Pl.smokeDose > 40 ? "pax_afraid"
+                   : Pl.smokeDose > 15 ? "pax_worried" : "pax";
         const lungs = Pl.smokeDose > 70 ? T("lungs failing") : Pl.smokeDose > 40 ? T("lungs bad")
                     : Pl.smokeDose > 15 ? T("coughing") : T("breathing fine");
         const i = cabin.idx(Pl.x, Pl.y);

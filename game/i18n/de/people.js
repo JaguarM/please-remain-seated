@@ -276,11 +276,6 @@
          "kannst jetzt Dinge anfassen, die brennen, und das ist, wie sich zeigt, bei fast allem " +
          "die Einschränkung."],
 
-        ["Get your own breathing under control", "Eigene Atmung unter Kontrolle bringen"],
-        ["Four in, seven hold, eight out, twice. It works. It always works and it is the last " +
-         "thing anybody thinks of.",
-         "Vier ein, sieben halten, acht aus, zweimal. Es funktioniert. Es funktioniert immer, " +
-         "und es ist das Letzte, woran irgendwer denkt."],
 
         ["Put burn gel on your own hands", "Brandgel auf die eigenen Hände"],
         ["Gel, then a dressing, then the glove back over the top of it. Eighteen seconds and " +

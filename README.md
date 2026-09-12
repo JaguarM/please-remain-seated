@@ -132,7 +132,7 @@ conversation that recruits them.
 What is in it
 -------------
 
-- **82 actions** across seven decks, each with a cost, a condition and a line of text. Every one
+- **81 actions** across seven decks, each with a cost, a condition and a line of text. Every one
   changes a number the score depends on. The ones that did not are in git history.
 - **Nine characters, six outfits and a bag of three from a pool of nine.** Two characters are
   free; the rest are earned by playing a particular way. The outfits open with the souls total.

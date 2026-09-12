@@ -43,7 +43,6 @@
                 x: cabin.xOfRow(seatRow), y: cabin.AISLE_Y,
                 seat: ch.seat,
                 homeX: cabin.xOfRow(seatRow), homeY: seatY,
-                panic: 12,
                 smokeDose: 0,
                 burns: 0,
                 crouching: false,

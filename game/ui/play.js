@@ -647,7 +647,6 @@
         box.appendChild(meter(T("HELPING"), helping,
                               Math.max(1, helping + PRS.pax.helperCap(S)), "m-good",
                               String(helping)));
-        box.appendChild(meter(T("THEY BELIEVE YOU"), S.credibility, 100, "m-cred"));
         box.appendChild(meter(T("CABIN PANIC"), S.cabinPanic, 100, "m-panic"));
         // There is no fire meter and no smoke meter. The cabin is on the screen; how bad it is
         // is a thing you look at, the way everybody else on this aeroplane has to.
@@ -680,7 +679,9 @@
         box.appendChild(meter(T("YOUR LUNGS"), 100 - P.smokeDose, 100, "m-lungs",
                               P.smokeDose > 70 ? T("failing") : P.smokeDose > 40 ? T("bad")
                               : P.smokeDose > 15 ? T("coughing") : T("fine")));
-        box.appendChild(meter(T("YOUR PANIC"), P.panic, 100, "m-panic"));
+        // Your credibility, and not the cabin's: it lives next to your face because it is the
+        // one number on the screen that is nobody's but yours, and every social action reads it.
+        box.appendChild(meter(T("THEY BELIEVE YOU"), S.credibility, 100, "m-cred"));
         box.appendChild(meter(T("BURNS"), P.burns, 100, "m-burn",
                               P.burns > 40 ? T("severe") : P.burns > 15 ? T("bad")
                               : P.burns > 3 ? T("sore") : T("none")));

@@ -135,7 +135,6 @@ function build(opts) {
     }
     S.player.burns = opts.burns === undefined ? 25 : opts.burns;
     S.player.smokeDose = 25;
-    S.player.panic = opts.panic === undefined ? 55 : opts.panic;
     if (opts.wearHood) S.player.wearing.hood = true;
     if (opts.seated) { S.player.x = S.player.homeX; S.player.y = S.player.homeY; }
     PRS.state.reindex(S);
@@ -170,12 +169,11 @@ const SCENARIOS = [
     { name: "late",         opts: { elapsed: 700, crewPhase: 5, detector: true } },
     { name: "sat down",     opts: { elapsed: 240, seated: true } },
     { name: "calm start",   opts: { elapsed: 20, crewPhase: 0, credibility: 5, fire: false,
-                                    panic: 20, burns: 0, cartOut: true } },
+                                    burns: 0, cartOut: true } },
     { name: "hooded",       opts: { elapsed: 300, wearHood: true } },
     { name: "declared",     opts: { elapsed: 300, crewPhase: 4 } },
     { name: "bare",         opts: { elapsed: 240, bare: true, crewPhase: 2, cartOut: true } },
-    { name: "bare late",    opts: { elapsed: 820, bare: true, crewPhase: 4, detector: true,
-                                    panic: 90 } },
+    { name: "bare late",    opts: { elapsed: 820, bare: true, crewPhase: 4, detector: true } },
     { name: "empty bag",    opts: { elapsed: 300, bare: true, noBag: true, crewPhase: 3 } },
     { name: "asked around", opts: { elapsed: 300, bare: true, noBag: true,
                                     revealAll: true, crewPhase: 3 } },

@@ -1,5 +1,7 @@
 // Deck: YOURSELF. You are also a person on this aeroplane, and the game keeps a smoke dose and a
-// burn total and a panic level for you exactly the way it keeps them for the other sixty.
+// burn total for you the way it keeps them for the other sixty. It does not keep a panic level.
+// Everybody on board is frightened; you are the one who is allowed to be frightened and work
+// anyway, and there is no number here that can take that off you.
 //
 // Almost everything here is a trade of seconds for capability: a hood is thirty seconds now and
 // four minutes of working lungs later, and sitting down is forty-six seconds for nothing at all,
@@ -87,15 +89,6 @@
           } },
 
         // ------------------------------------------------------------------------ your state ---
-
-        { id: "self.calm", deck: "self", tags: ["self"],
-          label: K("Get your own breathing under control"), cost: 14,
-          when: (S) => S.player.panic > 35,
-          run(S) {
-              S.player.panic = Math.max(0, S.player.panic - 26);
-              return T("Four in, seven hold, eight out, twice. It works. It always works and " +
-                       "it is the last thing anybody thinks of.");
-          } },
 
         { id: "self.burn_gel_self", item: "first_aid", deck: "self", tags: ["self"], danger: "good",
           label: K("Put burn gel on your own hands"), cost: 18,

@@ -86,7 +86,6 @@
         "bad": "schlecht",
         "coughing": "Husten",
         "fine": "in Ordnung",
-        "YOUR PANIC": "DEINE PANIK",
         "BURNS": "VERBRENNUNGEN",
         "severe": "schwer",
         "sore": "wund",

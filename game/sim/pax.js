@@ -634,7 +634,6 @@
         let v = 32 * S.derived.voiceMul;
         v += S.credibility * 0.45;
         if (st.wearing(S, "hivis")) v += 12;
-        if (S.player.panic > 80) v -= 14;
         if (S.player.burns > 20) v += 8;         // a burn on your hand is an argument
         return v + (extra || 0);
     }

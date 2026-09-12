@@ -84,10 +84,11 @@
         if (tags.indexOf("carry") < 0 && tags.indexOf("move") < 0) c *= d.actionMul;
         if (tags.indexOf("social") >= 0) c *= (2.0 - d.voiceMul) * 0.72 + 0.5;
 
-        // Being in smoke slows everything, and being frightened slows the fiddly things.
+        // Being in smoke slows everything. Being frightened does not: you are allowed to be
+        // frightened and get on with it, and there is no number on this aeroplane that says you
+        // are too afraid to work.
         const smoke = S.fire.smoke[cabin.idx(S.player.x, S.player.y)];
         if (!st.wearing(S, "hood")) c *= 1 + clamp01(smoke / 100) * 0.42;
-        if (S.player.panic > 70 && tags.indexOf("fiddly") >= 0) c *= 1.3;
         if (S.player.burns > 30 && tags.indexOf("hands") >= 0) c *= 1.35;
         if (S.player.carrying.length) c *= 1 + 0.28 * S.player.carrying.length;
         // Somebody you have soaked has hold of your arm. Everything you do to the fire with them
@@ -365,10 +366,6 @@
             const shield = st.wearing(S, "gloves") ? 0.6 : 1;
             p.burns += (inten - 16) * dt * 0.0014 * shield;
         }
-
-        let fear = (smoke * 0.035 + (inten > 8 ? 0.9 : 0) + S.cabinPanic * 0.012) * 0.7;
-        if (st.wearing(S, "goggles")) fear *= 0.7;   // you can see, which is most of it
-        p.panic = clamp(p.panic + fear * dt * 0.11 - dt * 0.035, 0, 100);
 
         // Smoke puts you on the floor, and so, a little more slowly, do your hands.
         if (p.smokeDose + p.burns * 0.35 > 92 && p.alive) {

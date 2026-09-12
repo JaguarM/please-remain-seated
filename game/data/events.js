@@ -120,7 +120,6 @@
               const p = r.pick(S.pax.filter((q) => q.traits.indexOf("hostile") >= 0 &&
                                                    q.state !== "down" && q.state !== "dead"));
               if (!p) return null;
-              S.player.panic = Math.min(100, S.player.panic + 4);
               (S.stats.sitDownBy = S.stats.sitDownBy || {})[p.id] = true;
               const lines = [
                   T("“Will you SIT DOWN.”"),

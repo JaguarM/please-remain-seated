@@ -69,9 +69,8 @@
         const P = S.player;
         if (!P.alive) return "pax_down";
         if (P.crouching) return "pax_low";
-        const fear = P.panic + P.smokeDose * 0.55;
-        if (fear > 62) return "pax_afraid";
-        if (fear > 27) return "pax_worried";
+        if (P.smokeDose > 40) return "pax_afraid";
+        if (P.smokeDose > 15) return "pax_worried";
         return "pax";
     }
 

@@ -43,7 +43,7 @@ function digest(S) {
         S.clock.remaining.toFixed(4), S.clock.elapsed.toFixed(4), S.clock.total, S.clock.landed,
         S.credibility.toFixed(4), S.cabinAwareness.toFixed(4), S.cabinPanic.toFixed(4),
         S.crewPhase, S.crewPhaseAt,
-        S.player.x, S.player.y, S.player.panic.toFixed(4), S.player.smokeDose.toFixed(4),
+        S.player.x, S.player.y, S.player.smokeDose.toFixed(4),
         S.player.burns.toFixed(4), S.player.carrying.join("|"), S.player.dragging, S.player.alive,
         Object.keys(S.player.wearing).sort().join("|"),
         S.inventory.map((s) => s.id + ":" + s.uses + ":" + s.spent + ":" + s.wet).join("|"),
