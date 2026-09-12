@@ -1,12 +1,11 @@
 // Nine people who could be in seat 9C. Two are free; the rest unlock as the log book fills.
 //
-// Five numbers each, one to ten, and every one of them is a multiplier on something the player
+// Four numbers each, one to ten, and every one of them is a multiplier on something the player
 // feels within a minute:
 //
 //   strength  how long a carry takes, who can be carried at all, and at ten, two at once
 //   speed     the cost of every step and most actions
 //   lungs     how fast smoke fills you up
-//   nerve     how fast your own panic rises
 //   voice     whether anybody does what you say
 //
 // There are no perks. What a character can do is what the numbers say, plus what is on them when
@@ -30,7 +29,7 @@
             title: K("Veterinary surgeon"),
             blurb: K("Small animals, mostly. Airways are airways, oxygen is oxygen, and she has " +
                    "resuscitated a great many things that were not people."),
-            stats: { strength: 5, speed: 6, lungs: 6, nerve: 8, voice: 8 },
+            stats: { strength: 5, speed: 6, lungs: 6, voice: 8 },
             lean: K("Talks people out of their seats, and treats the ones who are hurt. Cannot " +
                   "lift the heavy ones."),
             kit: ["first_aid"], bag: ["water_big", "phone", "first_aid"], seat: "9C",
@@ -43,7 +42,7 @@
             title: K("Competitive strongman"),
             blurb: K("Fourth in Europe, twice. He can pick up two adults at once, and he is about " +
                    "to find out that this is the least of it."),
-            stats: { strength: 10, speed: 5, lungs: 4, nerve: 6, voice: 5 },
+            stats: { strength: 10, speed: 5, lungs: 4, voice: 5 },
             lean: K("Carries two at a time, and nobody is too heavy. Nobody listens to him."),
             kit: [], bag: ["water_big", "phone", "blanket"], seat: "9C", unlock: null,
             hair: "#4a3220", skin: "#e5b791", shirt: "#8a4526",
@@ -55,7 +54,7 @@
             blurb: K("Thirty-one years in the fire service, eleven of them on the aerodrome crew. " +
                    "She has done this before, on the ground, with a hose, with a team, and with " +
                    "her knees."),
-            stats: { strength: 6, speed: 3, lungs: 9, nerve: 10, voice: 6 },
+            stats: { strength: 6, speed: 3, lungs: 9, voice: 6 },
             lean: K("Boards with gloves and tape and lungs that last. The slowest person in the " +
                   "cast."),
             kit: ["gloves", "tape"], bag: ["water_big", "gloves", "tape"], seat: "9C",
@@ -69,7 +68,7 @@
             title: K("Sister of the Order of St Brigid"),
             blurb: K("Forty years of getting people to do things they do not want to do, in a " +
                    "voice that has never once been raised."),
-            stats: { strength: 4, speed: 4, lungs: 6, nerve: 10, voice: 10 },
+            stats: { strength: 4, speed: 4, lungs: 6, voice: 10 },
             lean: K("Voice ten. Cannot lift most adults. Everything she achieves, she achieves " +
                   "through other people."),
             kit: [], bag: ["water_big", "phone", "wet_towel"], seat: "9C",
@@ -82,7 +81,7 @@
             title: K("Energy drink athlete"),
             blurb: K("Four hundred thousand followers, a sponsorship with a taurine company, and " +
                    "the fastest hands in row 9."),
-            stats: { strength: 4, speed: 10, lungs: 7, nerve: 4, voice: 5 },
+            stats: { strength: 4, speed: 10, lungs: 7, voice: 5 },
             lean: K("Speed ten: every step and most things cost him less. Frightens easily and " +
                   "cannot lift the heavy ones."),
             kit: [], bag: ["water_big", "phone", "wet_towel"], seat: "9C",
@@ -96,7 +95,7 @@
             title: K("Deadheading captain"),
             blurb: K("Type rated on this airframe, in row 22, in a jumper, going home. It is not " +
                    "her aeroplane. She is about to make it her aeroplane."),
-            stats: { strength: 5, speed: 5, lungs: 7, nerve: 9, voice: 8 },
+            stats: { strength: 5, speed: 5, lungs: 7, voice: 8 },
             lean: K("Starts in row 22: two rows from the aft galley, eight from the fire, and " +
                   "twenty from the front."),
             kit: [], bag: ["water_big", "phone", "blanket"], seat: "22B",
@@ -110,7 +109,7 @@
             title: K("Air marshal"),
             blurb: K("Seat 20A, back to the bulkhead, eleven years of watching people, and a " +
                    "sidearm that is about to be of no use whatsoever."),
-            stats: { strength: 8, speed: 6, lungs: 6, nerve: 8, voice: 7 },
+            stats: { strength: 8, speed: 6, lungs: 6, voice: 7 },
             lean: K("Strong, calm, and wearing the vest. Starts in row 20, six from the fire."),
             kit: ["hivis"], bag: ["water_big", "phone", "hivis"], seat: "20A",
             unlock: { medal: "jammed", text: K("Be told to sit down by three different passengers.") },
@@ -122,7 +121,7 @@
             title: K("Unaccompanied minor"),
             blurb: K("A lanyard, a plastic wallet, and a flight attendant who was supposed to be " +
                    "checking on her every twenty minutes and has not, for fifty."),
-            stats: { strength: 1, speed: 9, lungs: 8, nerve: 5, voice: 3 },
+            stats: { strength: 1, speed: 9, lungs: 8, voice: 3 },
             lean: K("Eight years old. Fast and low, cannot lift an adult, and nobody believes a " +
                   "word she says."),
             kit: [], bag: ["phone", "goggles", "blanket"], seat: "3C",
@@ -137,7 +136,7 @@
             blurb: K("Thirty-eight years, four airlines, two evacuations and one thing in 1998 " +
                    "that she does not talk about. Travelling as a passenger for the first time " +
                    "since."),
-            stats: { strength: 6, speed: 6, lungs: 8, nerve: 10, voice: 9 },
+            stats: { strength: 6, speed: 6, lungs: 8, voice: 9 },
             lean: K("Knows the aeroplane, the kit and how little time there is. Boards with a " +
                   "hood and the tool that opens the mask panels, in row 1."),
             kit: ["hood", "multitool"], bag: ["hood", "multitool", "water_big"], seat: "1B",
@@ -152,7 +151,7 @@
         return CHARACTERS.filter((c) => c.id === id)[0] || CHARACTERS[0];
     }
 
-    /** The character's five numbers with the outfit added, and everything derived from them. */
+    /** The character's four numbers with the outfit added, and everything derived from them. */
     function derive(ch, outfit) {
         const s = outfit && PRS.data.outfits ? PRS.data.outfits.apply(ch.stats, outfit) : ch.stats;
         return {
@@ -165,7 +164,6 @@
             carryMul: 1.75 - s.strength * 0.115,
             actionMul: 1.18 - s.speed * 0.03,
             smokeMul: 1.60 - s.lungs * 0.11,
-            panicMul: 1.70 - s.nerve * 0.13,
             voiceMul: 0.40 + s.voice * 0.10,
             maxCarry: s.strength >= 10 ? 2 : 1,
             carryCap: s.strength >= 10 ? 999 : 40 + s.strength * 9,

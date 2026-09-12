@@ -28,7 +28,7 @@
             id: "suit", name: K("The suit you flew in"), unlock: 40, sprite: "outfit_suit",
             blurb: K("There is a meeting at four. There is not going to be a meeting at four. The " +
                    "jacket is on the hook by the door and the tie is still done up."),
-            mod: { voice: 2, nerve: 1, speed: -2 },
+            mod: { voice: 2, speed: -2 },
             note: K("People do what a suit says. A suit cannot climb over a row of seats."),
         },
         {
@@ -42,8 +42,8 @@
             id: "comfort", name: K("Dressed for a long flight"), unlock: 180, sprite: "outfit_comfort",
             blurb: K("Fleece, compression socks, an eye mask pushed up onto your forehead since " +
                    "somewhere over the Alps."),
-            mod: { nerve: 2, lungs: 1, strength: -2 },
-            note: K("Nothing frightens you and you cannot lift anybody. Layers are a filter."),
+            mod: { lungs: 2, strength: -2 },
+            note: K("You can breathe in there and you cannot lift anybody. Layers are a filter."),
         },
         {
             id: "hill", name: K("Straight off a hill"), unlock: 320, sprite: "outfit_hill",
@@ -56,7 +56,7 @@
             id: "beach", name: K("Shorts and flip-flops"), unlock: 500, sprite: "outfit_beach",
             blurb: K("It was thirty-one degrees when you got on. You have not thought about your " +
                    "feet once and you are going to think about them a great deal shortly."),
-            mod: { speed: 2, nerve: 1, strength: -1, lungs: -1 },
+            mod: { speed: 2, strength: -1, lungs: -1 },
             note: K("Quick, cheerful, and about to walk through something hot in flip-flops."),
         },
     ];
@@ -67,7 +67,7 @@
     /** The outfit, or null for what you flew in. */
     function byId(id) { return BY_ID[id] || null; }
 
-    /** The character's five numbers with the outfit added, clamped where they have to be. */
+    /** The character's four numbers with the outfit added, clamped where they have to be. */
     function apply(stats, outfit) {
         const out = {};
         for (const key in stats) {
@@ -84,10 +84,10 @@
         return PRS.atlas.icon("outfit", scale || 3, { c: c, l: PRS.util.shade(c, 1.3) });
     }
 
-    // The five, spelled out on a card rather than abbreviated on a bar.
+    // The four, spelled out on a card rather than abbreviated on a bar.
     const STAT = {
         strength: () => T("strength"), speed: () => T("speed"), lungs: () => T("lungs"),
-        nerve: () => T("nerve"), voice: () => T("voice"),
+        voice: () => T("voice"),
     };
 
     /** "+2 speed, −1 voice", for the card. */

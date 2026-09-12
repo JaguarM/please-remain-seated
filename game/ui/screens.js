@@ -536,14 +536,13 @@
         window.scrollTo(0, y);
     }
 
-    /** Five bars. With an outfit passed, the changed ones are coloured and the numbers move. */
+    /** Four bars. With an outfit passed, the changed ones are coloured and the numbers move. */
     function statBars(ch, outfit) {
         // Three letters each, and a language picks its own three. The note is what the bar
         // measures, because a bare "SPD" tells a translator nothing.
         const names = { strength: X("STR", "strength, on a stat bar"),
                         speed: X("SPD", "speed, on a stat bar"),
                         lungs: X("LNG", "lungs, on a stat bar"),
-                        nerve: X("NRV", "nerve, on a stat bar"),
                         voice: X("VOI", "voice, on a stat bar") };
         const base = ch.stats;
         const now = outfit ? PRS.data.outfits.apply(base, outfit) : base;
@@ -929,25 +928,77 @@
         });
     }
 
-    /** The souls total, as a bar that fills from where the book was to where it is now. */
+    /**
+     * The souls total, as the wardrobe laid out end to end: one pip per outfit, in the order the
+     * book opens them, and a bar running under them from where the book was to where it is now.
+     *
+     * Two colours, because two different things happened. Everything you had walking on is the
+     * settled one; what this flight added is the bright one, and it is the part that moves. A
+     * single-colour bar that grows says only "more", and the question on this screen is "how
+     * much of that was today".
+     *
+     * The scale is one equal slice per outfit rather than souls-to-pixels: five hundred souls at
+     * the far end would leave a first flight with a bar too short to see it move, and the pips
+     * are what the bar is measured against now, not the number.
+     */
     function soulBar(L) {
-        const next = L.next;
+        const OUT = PRS.data.outfits.OUTFITS.slice().sort((a, b) => a.unlock - b.unlock);
         const now = L.after.souls, was = L.before.souls;
-        const target = next ? next.unlock : Math.max(now, 1);
-        const pct = (n) => Math.max(0, Math.min(100, (n / target) * 100));
-        const grown = el("div", { class: "soul-grown", style: { width: pct(was) + "%" } });
-        // Painted where the book was and then let go, so the thing that moves is what you added.
+
+        // souls -> percent across the track, piecewise so each outfit gets an equal slice.
+        function pct(n) {
+            const step = 100 / OUT.length;
+            for (let i = 0; i < OUT.length; i++) {
+                const lo = i === 0 ? 0 : OUT[i - 1].unlock, hi = OUT[i].unlock;
+                if (n <= hi) return (i * step) + ((n - lo) / (hi - lo)) * step;
+            }
+            return 100;
+        }
+
+        const wasPct = Math.max(0, Math.min(100, pct(was)));
+        const nowPct = Math.max(0, Math.min(100, pct(now)));
+        // One track, two bars, both measured from the left. The gain runs the whole way to
+        // where the book is now and lies underneath; what you walked on with sits on top of it
+        // and covers all but the end. So the only part of the gain you ever see is the part
+        // that is actually new, and it opens out from under the bar as it grows.
+        const grown = el("div", { class: "soul-grown", style: { width: wasPct + "%" } });
+        const held = el("div", { class: "soul-held", style: { width: wasPct + "%" } });
+        const pips = OUT.map((o) => {
+            const open = o.unlock <= now, fresh = open && o.unlock > was;
+            const pip = el("div", {
+                class: "soul-pip" + (open ? " open" : "") + (fresh ? " fresh" : ""),
+                // Nudged in by half an icon at the ends, so the first and last pips sit inside
+                // the track instead of hanging off it.
+                style: { left: "calc(" + pct(o.unlock) + "% + " +
+                               (13 - 0.26 * pct(o.unlock)) + "px)" },
+                title: T(o.name) + " · " + o.unlock,
+            }, [
+                PRS.data.outfits.icon(o, null, 2),
+                el("u", { text: String(o.unlock) }),
+            ]);
+            return pip;
+        });
         requestAnimationFrame(() => requestAnimationFrame(() => {
-            grown.style.width = pct(now) + "%";
+            grown.style.width = nowPct + "%";
+            // The pips this flight turned over light with the bar rather than before it, so the
+            // eye arrives at them the way the souls did.
+            for (const pip of pips) {
+                if (pip.classList.contains("fresh")) {
+                    setTimeout(() => pip.classList.add("lit"), 300 + 1100 * 0.7);
+                }
+            }
         }));
+
+        const next = L.next;
         return el("div", { class: "souls" }, [
             el("div", { class: "soul-top" }, [
                 el("b", { text: T("+{n} in the log book",
                                   { n: PRS.util.plural(L.saved, K("soul"), K("souls")) }) }),
-                el("i", { text: next ? T("{now} of {target}", { now: now, target: target })
+                el("i", { text: next ? T("{now} of {target}", { now: now, target: next.unlock })
                                      : T("{n} in all", { n: now }) }),
             ]),
-            el("div", { class: "soul-track" }, [grown]),
+            el("div", { class: "soul-ladder" }, pips),
+            el("div", { class: "soul-track" }, [grown, held]),
             el("i", { class: "soul-next", text: next
                 ? T("Next: {what}", { what: T(next.name) })
                 : T("Every outfit in the wardrobe is yours.") }),

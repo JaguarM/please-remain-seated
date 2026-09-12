@@ -73,7 +73,12 @@
         { id: "cart_rolls", weight: 10, luck: -2,
           when: (S) => S.cabinFlags.cartOut && S.cabinPanic > 40,
           run(S) {
-              const x = clamp(S.cabinFlags.cartX + 3, cabin.FWD_ROWS.x0, cabin.AFT_ROWS.x1);
+              // Three rows aft, or up against you if you are in the aisle before that: two
+              // hundred kilos stops at the person, it does not pass through them.
+              let x = clamp(S.cabinFlags.cartX + 3, cabin.FWD_ROWS.x0, cabin.AFT_ROWS.x1);
+              if (S.player.y === cabin.AISLE_Y &&
+                  S.player.x > S.cabinFlags.cartX && S.player.x <= x) x = S.player.x - 1;
+              if (x <= S.cabinFlags.cartX) return null;
               delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
               S.cabinFlags.cartX = x;
               S.cabinFlags.aisleBlocked[x] = 9999;

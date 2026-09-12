@@ -356,8 +356,7 @@
             p.burns += (inten - 16) * dt * 0.0014 * shield;
         }
 
-        let fear = smoke * 0.035 + (inten > 8 ? 0.9 : 0) + S.cabinPanic * 0.012;
-        fear *= d.panicMul;
+        let fear = (smoke * 0.035 + (inten > 8 ? 0.9 : 0) + S.cabinPanic * 0.012) * 0.7;
         if (st.wearing(S, "goggles")) fear *= 0.7;   // you can see, which is most of it
         p.panic = clamp(p.panic + fear * dt * 0.11 - dt * 0.035, 0, 100);
 

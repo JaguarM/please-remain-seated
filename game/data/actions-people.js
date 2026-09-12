@@ -23,8 +23,16 @@
     function reach(S) {
         return st.reachable(S).map((p) => ({ key: p.id, p: p }));
     }
+    // Bruno is a dog in a bag. He is a person for the purposes of carrying him out and for
+    // nothing else: you cannot tell him about the fire, calm him down, hand him a bottle of
+    // water or fit him with a chemical oxygen generator. Everything that talks to somebody or
+    // treats somebody goes through here, and the two things that only need hands - lifting the
+    // bag, and putting something wet over the grille - use `reach` directly.
+    function reachPeople(S) {
+        return reach(S).filter((c) => !P.isPet(c.p));
+    }
     function reachAwake(S) {
-        return reach(S).filter((c) => c.p.state !== "down" && c.p.state !== "dead");
+        return reachPeople(S).filter((c) => c.p.state !== "down" && c.p.state !== "dead");
     }
     function carried(S) {
         return S.player.carrying.map((id) => ({ key: id, p: st.paxById(S, id) }))
@@ -324,7 +332,7 @@
 
         {
             id: "people.shake", deck: "people", tags: ["hands"],
-            targets: (S) => reach(S).filter((c) => c.p.state === "asleep"),
+            targets: (S) => reachPeople(S).filter((c) => c.p.state === "asleep"),
             label: (S, c) => T("Shake {who} awake", { who: who(c) }),
             cost: 9,
             run(S, c) {
@@ -337,7 +345,7 @@
 
         {
             id: "people.burn_gel", item: "first_aid", deck: "people", tags: ["hands"], danger: "good",
-            targets: (S) => reach(S).filter((c) => c.p.burns > 8),
+            targets: (S) => reachPeople(S).filter((c) => c.p.burns > 8),
             when: (S) => { const s = st.slotOf(S, "first_aid"); return s && s.uses > 0; },
             label: (S, c) => T("Put burn gel on {who}", { who: who(c) }),
             cost: 20,
@@ -353,7 +361,7 @@
 
         {
             id: "people.inhaler", item: "inhaler", deck: "people", tags: ["hands"], danger: "good",
-            targets: (S) => reach(S).filter((c) => c.p.smokeDose > 20),
+            targets: (S) => reachPeople(S).filter((c) => c.p.smokeDose > 20),
             when: (S) => { const s = st.slotOf(S, "inhaler"); return s && s.uses > 0; },
             label: (S, c) => T("Give {who} the inhaler", { who: who(c) }),
             cost: 10,
@@ -369,7 +377,7 @@
 
         {
             id: "people.mask", deck: "people", tags: ["hands"],
-            targets: (S) => reach(S).filter((c) => !c.p.masked),
+            targets: (S) => reachPeople(S).filter((c) => !c.p.masked),
             when: (S) => S.cabinFlags.masksDropped,
             label: (S, c) => T("Put the oxygen mask on {who}", { who: who(c) }),
             detail: K("It is not oxygen for smoke. It is better than smoke."),
@@ -402,7 +410,7 @@
 
         {
             id: "people.headphones_off", deck: "people", tags: ["hands"],
-            targets: (S) => reach(S).filter((c) => c.p.traits.indexOf("headphones") >= 0 &&
+            targets: (S) => reachPeople(S).filter((c) => c.p.traits.indexOf("headphones") >= 0 &&
                                                    !c.p.deafened),
             label: (S, c) => T("Take {who}'s headphones off", { who: who(c) }),
             detail: K("They have not heard one word of any of this."),
@@ -418,7 +426,7 @@
 
         {
             id: "people.floor", deck: "people", tags: ["hands"], danger: "good",
-            targets: (S) => reach(S).filter((c) => c.p.state !== "carried" && !c.p.helper &&
+            targets: (S) => reachPeople(S).filter((c) => c.p.state !== "carried" && !c.p.helper &&
                                                    !c.p.braced),
             label: (S, c) => T("Get {who} down onto the floor", { who: who(c) }),
             detail: K("The smoke is at the ceiling. A person on the floor is in different air."),

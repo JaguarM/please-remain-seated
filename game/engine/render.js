@@ -87,6 +87,11 @@
     const CARRY = [[[0, "carried"]], [[-1, "carried"], [2, "carried_b"]]];   // rows down, by how many
     const DRAG_ROW = 4;
 
+    /** What somebody in your arms is drawn as. The dog is his bag, whichever arm he is under. */
+    function heldSprite(q, name) {
+        return PRS.pax.isPet(q) ? "carried_pet" : name;
+    }
+
     function drawYou(ctx, S, ppx, ppy, scale, alpha, ring) {
         const P = S.player;
         atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale, ring);
@@ -95,12 +100,13 @@
         const held = P.carrying.map((id) => PRS.state.paxById(S, id)).filter((q) => q);
         const bodies = CARRY[Math.min(held.length, CARRY.length) - 1] || [];
         bodies.forEach(([dy, name], k) => {
-            atlas.blitAlpha(ctx, name, ppx, ppy + dy * scale, scale, alpha, paletteOf(held[k]));
+            atlas.blitAlpha(ctx, heldSprite(held[k], name), ppx, ppy + dy * scale, scale, alpha,
+                            paletteOf(held[k]));
         });
         if (P.dragging) {
             const q = PRS.state.paxById(S, P.dragging);
-            if (q) atlas.blitAlpha(ctx, "carried", ppx, ppy + DRAG_ROW * scale, scale, alpha,
-                                   paletteOf(q));
+            if (q) atlas.blitAlpha(ctx, heldSprite(q, "carried"), ppx, ppy + DRAG_ROW * scale,
+                                   scale, alpha, paletteOf(q));
         }
     }
 

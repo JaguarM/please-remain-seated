@@ -70,7 +70,6 @@
         ["strength", "Kraft"],
         ["speed", "Tempo"],
         ["lungs", "Lunge"],
-        ["nerve", "Nerven"],
         ["voice", "Stimme"],
 
         // ---------------------------------------------------------------------------- the bag ---
@@ -139,11 +138,10 @@
          "Eine gesperrte Karte sagt, was sie umdreht: Menschen durch etwas, das du im Flugzeug " +
          "tust, Kleidung durch die Seelen im Buch."],
 
-        // Three letters on a bar three letters wide. Kraft, Tempo, Lunge, Nerven, Stimme.
+        // Three letters on a bar three letters wide. Kraft, Tempo, Lunge, Stimme.
         ["STR␟strength, on a stat bar", "KRF"],
         ["SPD␟speed, on a stat bar", "TMP"],
         ["LNG␟lungs, on a stat bar", "LUN"],
-        ["NRV␟nerve, on a stat bar", "NRV"],
         ["VOI␟voice, on a stat bar", "STM"],
 
         // ---------------------------------------------------------------------------- the help ---

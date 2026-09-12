@@ -642,14 +642,40 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .soul-top b { font-size: 15px; color: var(--gold); }
 .soul-top i { font-style: normal; font: 12px var(--mono); color: var(--ink-faint); }
 .soul-track {
-  height: 10px; margin: 7px 0 6px; border-radius: 5px; overflow: hidden;
+  position: relative; height: 10px; margin: 7px 0 6px; border-radius: 5px; overflow: hidden;
   background: #12151a; border: 1px solid var(--line);
 }
-/* It starts where the book was and grows to where it is, so the gain is what the eye follows. */
+/* Two bars from the same left edge, one hidden under the other. The gain runs all the way to
+   where the book is now; what you walked on with lies on top and covers all of it but the end,
+   so the only gold on the track is the part this flight put there. */
 .soul-grown {
-  height: 100%; background: var(--gold); border-radius: 5px;
+  position: absolute; left: 0; top: 0; height: 100%; border-radius: 5px;
+  background: var(--gold);
   transition: width 1100ms cubic-bezier(.2, .8, .3, 1);
 }
+.soul-held {
+  position: absolute; left: 0; top: 0; height: 100%; border-radius: 5px;
+  background: var(--great);
+}
+
+/* The wardrobe along the bar: one pip per outfit, at the souls it opens on. Locked ones are
+   there and grey, because a ladder you can see the top of is the reason to fly again. */
+.soul-ladder { position: relative; height: 40px; margin-top: 10px; }
+.soul-pip {
+  position: absolute; bottom: 0; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+}
+.soul-pip img {
+  width: 26px; height: 26px; image-rendering: pixelated;
+  opacity: .3; filter: grayscale(1); transition: opacity 280ms, filter 280ms;
+}
+.soul-pip u { font: 9px var(--mono); color: var(--ink-faint); text-decoration: none; }
+.soul-pip.open img { opacity: 1; filter: none; }
+.soul-pip.open u { color: var(--great); }
+/* Turned over on this flight: dark until the bar reaches it, then it comes up. */
+.soul-pip.fresh img { opacity: .3; filter: grayscale(1); }
+.soul-pip.fresh.lit img { opacity: 1; filter: none; }
+.soul-pip.fresh.lit u { color: var(--gold); }
 .soul-next { display: block; font-style: normal; font-size: 13px; color: var(--ink-dim); }
 .unlocked { color: var(--great); font-size: 14px; margin: 14px 0 0; }
 

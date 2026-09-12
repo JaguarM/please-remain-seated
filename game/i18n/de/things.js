@@ -117,8 +117,8 @@
          "over the Alps.",
          "Fleecejacke, Kompressionsstrümpfe, eine Schlafmaske, die seit irgendwo über den Alpen " +
          "auf der Stirn sitzt."],
-        ["Nothing frightens you and you cannot lift anybody. Layers are a filter.",
-         "Nichts macht dir Angst, und heben kannst du niemanden. Schichten sind ein Filter."],
+        ["You can breathe in there and you cannot lift anybody. Layers are a filter.",
+         "Da drin atmest du noch, und heben kannst du niemanden. Schichten sind ein Filter."],
 
         ["Straight off a hill", "Direkt vom Berg"],
         ["Boots, a hardshell, and a week at altitude that has left you with lungs that are going " +

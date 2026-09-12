@@ -110,11 +110,11 @@ locker and look inside, recruit four helpers, carry five people yourself, get th
 declare inside five minutes, be told to sit down by three different passengers, get a child out of
 the rows, get fifty-two people off alive.
 
-There are no perks. Each person is five numbers, one to ten, and every number is a multiplier on
+There are no perks. Each person is four numbers, one to ten, and every number is a multiplier on
 something you feel inside a minute: strength (how long a carry takes, who can be carried at all,
-and at ten, two at once), speed, lungs, nerve, voice. What else makes them different is data the
+and at ten, two at once), speed, lungs, voice. What else makes them different is data the
 game already understands: what is on them when they board, and which row they are sitting in.
-Six outfits move the five numbers by a point or two; they unlock as the souls total in the log
+Six outfits move the four numbers by a point or two; they unlock as the souls total in the log
 book climbs, ten for the first and five hundred for the last.
 
 **The log book** is the only thing that carries over between flights: flights flown, souls saved

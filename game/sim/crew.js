@@ -194,7 +194,11 @@
                 if (c.id === "fa1" && S.cabinFlags.cartOut) {
                     c.busy = 22;
                     const next = S.cabinFlags.cartX - 1;
-                    if (cabin.rowAt(next) !== null) {
+                    // A trolley does not walk through you. If you are standing in the aisle
+                    // where the next row is, it waits there until you are not: without this the
+                    // cart moves onto your square and you are drawn standing on top of it.
+                    const inTheWay = S.player.y === cabin.AISLE_Y && S.player.x === next;
+                    if (cabin.rowAt(next) !== null && !inTheWay) {
                         delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
                         S.cabinFlags.cartX = next;
                         S.cabinFlags.aisleBlocked[next] = 9999;

@@ -68,6 +68,12 @@ for (let y = 0; y < cabin.H; y++) {
     tiles.push(row);
 }
 
+/** Somebody in your arms or at your feet: what to draw them as, and in what colours. */
+function held(q) {
+    if (!q) return null;
+    return { sprite: PRS.pax.isPet(q) ? "carried_pet" : null, palette: PRS.pax.palette(q) };
+}
+
 const frame = {
     meta: {
         seed: S.seed, character: S.character.name, bot: opt("bot", "good"),
@@ -88,12 +94,12 @@ const frame = {
     // Everybody comes out with the sprite and the eight-colour palette already resolved, by the
     // same two functions the browser uses. The Python side has no opinions about who looks
     // frightened, so it cannot come to a different one.
-    // You, with whoever is in your arms and whoever is being dragged, as palettes, because that
-    // is all the drawing needs: a carried body is one sprite in the carried person's colours.
+    // You, with whoever is in your arms and whoever is being dragged. Each of them is a sprite
+    // and a palette, the same pair as everybody else, because the dog in your arms is his bag
+    // and not a body, and a null palette means "the colours the art was drawn in".
     player: { x: S.player.x, y: S.player.y, sprite: "pax", palette: PRS.pax.palette(S.character),
-              carrying: S.player.carrying.map((id) => PRS.pax.palette(PRS.state.paxById(S, id))),
-              dragging: S.player.dragging
-                  ? PRS.pax.palette(PRS.state.paxById(S, S.player.dragging)) : null },
+              carrying: S.player.carrying.map((id) => held(PRS.state.paxById(S, id))),
+              dragging: held(PRS.state.paxById(S, S.player.dragging)) },
     crew: S.crew.map((c) => ({
         x: c.x, y: c.y,
         sprite: S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax",

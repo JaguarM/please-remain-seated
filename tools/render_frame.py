@@ -121,11 +121,13 @@ def draw_player(img, sprites, P, scale, alpha):
     blit(img, sprites, P["sprite"], ox, oy, scale, P["palette"], alpha=alpha)
     held = P.get("carrying") or []
     bodies = CARRY[min(len(held), len(CARRY)) - 1] if held else []
-    for (dy, name), palette in zip(bodies, held):
-        blit(img, sprites, name, ox, oy + dy * scale, scale, palette, alpha=alpha)
-    if P.get("dragging"):
-        blit(img, sprites, "carried", ox, oy + DRAG_ROW * scale, scale, P["dragging"],
-             alpha=alpha)
+    for (dy, name), who in zip(bodies, held):
+        blit(img, sprites, who.get("sprite") or name, ox, oy + dy * scale, scale,
+             who.get("palette"), alpha=alpha)
+    dragged = P.get("dragging")
+    if dragged:
+        blit(img, sprites, dragged.get("sprite") or "carried", ox, oy + DRAG_ROW * scale, scale,
+             dragged.get("palette"), alpha=alpha)
 
 
 def render(frame, sprites, scale):
