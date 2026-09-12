@@ -39,6 +39,13 @@
         "GALLEY␟written down the side of a galley, one short word": "BORDKÜCHE",
         "LAV␟written across a lavatory door, three letters at most": "WC",
         "CLEAR␟the air by a door, painted on the floor": "FREI",
+
+        // The readout along the top of the cabin. Four labels in a row across the width of an
+        // aeroplane: they are written short in English and they stay short here.
+        "OUT OF SEATS␟readout along the top of the cabin": "AUS DEN SITZEN",
+        "HELPING␟readout along the top of the cabin": "HILFT",
+        "PANIC␟readout along the top of the cabin": "PANIK",
+        "CREW␟readout along the top of the cabin": "CREW",
         "SMOKE␟the air by a door, painted on the floor": "RAUCH",
         "GONE␟the air by a door, painted on the floor": "TOT",
 
@@ -76,14 +83,11 @@
         "HELPING": "HILFT",
         "BELIEVED": "GEGLAUBT",
         "Backspace · {what}": "Rücktaste · {what}",
-        "OUT OF THEIR SEATS": "AUS DEN SITZEN",
         "CREDIBILITY": "GLAUBWÜRDIGKEIT",
         "they listen": "sie hören zu",
         "most of them": "die meisten",
         "some of them": "einige",
         "nobody": "niemand",
-        "CABIN PANIC": "PANIK IN DER KABINE",
-        "CREW": "CREW",
         "What you can do here, and to yourself": "Was du hier tun kannst, und mit dir selbst",
         "YOUR LUNGS": "DEINE LUNGE",
         "failing": "versagt",

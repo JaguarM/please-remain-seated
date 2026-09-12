@@ -32,9 +32,14 @@
      */
     const DRAW_SCALE = 3;
 
+    // A strip of canvas above the aeroplane, in tiles, where the state of the cabin is written.
+    // It is part of the picture and not part of the aeroplane: nothing lives in it and no tile
+    // is under it, so every coordinate in this file is still a cabin coordinate.
+    const BAND = 1.5;
+
     function fit(canvas) {
         canvas.width = cabin.W * TILE * DRAW_SCALE;
-        canvas.height = cabin.H * TILE * DRAW_SCALE;
+        canvas.height = Math.round((cabin.H + BAND) * TILE * DRAW_SCALE);
         canvas.style.width = "100%";
         canvas.style.height = "auto";
         return DRAW_SCALE;
@@ -47,8 +52,10 @@
      */
     function tileAt(canvas, scale, clientX, clientY) {
         const r = canvas.getBoundingClientRect();
-        const tw = r.width / cabin.W, th = r.height / cabin.H;
-        const px = (clientX - r.left) / tw, py = (clientY - r.top) / th;
+        // The readout is above the aeroplane and takes its share of the height with it.
+        const band = r.height * (BAND / (cabin.H + BAND));
+        const tw = r.width / cabin.W, th = (r.height - band) / cabin.H;
+        const px = (clientX - r.left) / tw, py = (clientY - r.top - band) / th;
         const x = Math.floor(px), y = Math.floor(py);
         if (!cabin.inBounds(x, y)) return null;
         return { x: x, y: y, fx: px - x, fy: py - y };
@@ -447,6 +454,10 @@
         const dt = frameStep(t);
         const youAt = drawnAt("you", P.x, P.y, dt);
 
+        // Everything the aeroplane is drawn with sits below the readout, so the whole picture
+        // is moved down by it once, here, and every draw after this is in cabin coordinates.
+        const OY = Math.round(BAND * T);
+
         ctx.imageSmoothingEnabled = false;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.fillStyle = "#20242c";
@@ -458,9 +469,10 @@
             const a = fx.shakeAmp * scale * Math.min(1, left);
             ctx.setTransform(1, 0, 0, 1,
                              Math.round(Math.sin(t * 0.09) * a),
-                             Math.round(Math.cos(t * 0.13) * a * 0.6));
+                             OY + Math.round(Math.cos(t * 0.13) * a * 0.6));
         } else {
             fx.shakeAmp = 0;
+            ctx.setTransform(1, 0, 0, 1, 0, OY);
         }
 
         // ---- the aeroplane -----------------------------------------------------------------
@@ -691,6 +703,9 @@
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         drawVeil(ctx, S, t);
+        // Last of all, above the smoke and above whatever just happened to you, because it is
+        // the one part of the picture that has to be legible in a cabin nobody can see through.
+        drawStatus(ctx, S, T, scale, t);
     }
 
     /**
@@ -1023,6 +1038,76 @@
         }
         ctx.restore();
         fx.items = keep;
+    }
+
+    // ------------------------------------------------------------------------------ state ---
+
+    /**
+     * What the cabin is doing, written along the top of the cabin.
+     *
+     * It used to be a panel of bars beside the aeroplane, which meant the two halves of the same
+     * question - how many are up, and how bad is it in here - were in two places and you had to
+     * look away from the fire to read one of them. It is four numbers and they belong on the
+     * picture: how many are out of their seats out of sixty, how many of those are working for
+     * you, how frightened the cabin is, and how far the crew have got.
+     *
+     * Drawn in canvas pixels, after everything else, so neither the smoke nor a shove touches it.
+     */
+    const BAR_GOOD = "#5fd67a", BAR_PANIC = ["#5fd67a", "#e8c53a", "#d4483a"];
+
+    function drawStatus(ctx, S, T, scale, t) {
+        const st = PRS.state;
+        const W = ctx.canvas.width, h = Math.round(BAND * T);
+        const moved = st.movedCount(S);
+        const helping = st.helperCount(S);
+        // Against the people still sitting down who would ever get up: a full bar means this
+        // cabin has nobody left in it to ask.
+        const cap = Math.max(1, helping + PRS.pax.helperCap(S));
+        const panic = S.cabinPanic;
+        const phase = PRS.crew.PHASES[S.crewPhase];
+        const tier = panic > 66 ? 2 : panic > 33 ? 1 : 0;
+
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = "#12151b";
+        ctx.fillRect(0, 0, W, h);
+        ctx.fillStyle = "rgba(255,255,255,0.08)";
+        ctx.fillRect(0, h - scale, W, scale);
+
+        const cells = [
+            { label: X("OUT OF SEATS", "readout along the top of the cabin"),
+              value: moved + " / 60", frac: moved / 60, colour: BAR_GOOD },
+            { label: X("HELPING", "readout along the top of the cabin"),
+              value: String(helping), frac: helping / cap, colour: BAR_GOOD },
+            { label: X("PANIC", "readout along the top of the cabin"),
+              value: Math.round(panic) + "%", frac: panic / 100, colour: BAR_PANIC[tier] },
+            { label: X("CREW", "readout along the top of the cabin"),
+              value: PRS.t(phase.name), frac: (S.crewPhase + 1) / PRS.crew.PHASES.length,
+              colour: "#7fb0e8" },
+        ];
+        const pad = Math.round(T * 0.35);
+        const cw = (W - pad * 2) / cells.length;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "alphabetic";
+        for (let i = 0; i < cells.length; i++) {
+            const c = cells[i];
+            const x = Math.round(pad + i * cw);
+            const w = Math.round(cw - pad);
+            ctx.fillStyle = "rgba(190,200,214,0.72)";
+            ctx.font = "700 " + Math.round(T * 0.30) + "px ui-monospace, monospace";
+            ctx.fillText(c.label, x, Math.round(h * 0.30));
+            ctx.fillStyle = c.colour;
+            ctx.font = "700 " + Math.round(T * 0.42) + "px ui-monospace, monospace";
+            ctx.fillText(c.value, x, Math.round(h * 0.70));
+            // The bar under the number, so the number has a scale without being asked to carry
+            // one. Past the end of the track it stays the width of the track.
+            const by = Math.round(h * 0.80), bh = Math.max(scale, Math.round(T * 0.09));
+            ctx.fillStyle = "rgba(255,255,255,0.10)";
+            ctx.fillRect(x, by, w, bh);
+            ctx.fillStyle = c.colour;
+            ctx.fillRect(x, by, Math.round(w * clamp01(c.frac)), bh);
+        }
+        ctx.restore();
     }
 
     /**

@@ -102,7 +102,6 @@
                                    text: T("SETTINGS"), onclick: openSettings }),
                 ]),
             ]),
-            el("div", { class: "hud-meters", id: "meters" }),
             el("div", { class: "hud-you", id: "youbox" }),
         ]);
 
@@ -536,7 +535,6 @@
         lastAll = A.available(S, true);
         trail = PRS.undo.trail(S);
         if (hover) target = H.targetAt(S, hover.x, hover.y, hover.fx, hover.fy);
-        paintMeters();
         paintYou();
         paintHere();
         paintUndo();
@@ -546,7 +544,6 @@
     /** The parts of the screen that move while an action's seconds are going by. */
     function paintLive() {
         if (!root || !root.isConnected) return;
-        paintMeters();
         paintYou();
     }
 
@@ -643,28 +640,10 @@
         ]);
     }
 
-    function paintMeters() {
-        const box = clear($("#meters", root));
-        // Not the score. The score is who is alive when the doors open, and nobody knows that
-        // yet; this is how many people are off their seats and on the floor because of you.
-        box.appendChild(meter(T("OUT OF THEIR SEATS"), st.movedCount(S), 60, "m-good",
-                              st.movedCount(S) + " / 60"));
-        // Against the people still sitting down who would ever get up, not against a ceiling:
-        // there is no ceiling, and a full bar means this cabin has nobody left in it to ask.
-        const helping = st.helperCount(S);
-        box.appendChild(meter(T("HELPING"), helping,
-                              Math.max(1, helping + PRS.pax.helperCap(S)), "m-good",
-                              String(helping)));
-        box.appendChild(meter(T("CABIN PANIC"), S.cabinPanic, 100, "m-panic"));
-        // There is no fire meter and no smoke meter. The cabin is on the screen; how bad it is
-        // is a thing you look at, the way everybody else on this aeroplane has to.
-        const phase = PRS.crew.PHASES[S.crewPhase];
-        box.appendChild(el("div", { class: "crewphase" }, [
-            el("span", { class: "tag", text: T("CREW") }),
-            el("b", { text: T(phase.name) }),
-            el("i", { text: T(phase.desc) }),
-        ]));
-    }
+    // There is no panel of bars up here any more. How many are out of their seats, how many are
+    // helping, how frightened the cabin is and how far the crew have got are painted along the
+    // top of the aeroplane itself - see drawStatus in engine/render.js - so that the state of the
+    // cabin and the cabin are one thing you look at. What is left in the HUD is you.
 
     /**
      * You, and what is on you. Your name is a button and so is every thing in the bag, and they

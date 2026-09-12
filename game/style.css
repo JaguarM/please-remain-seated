@@ -90,7 +90,7 @@ button.big:hover { background: #4b6191; }
 .play { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
 
 .hud {
-  display: grid; grid-template-columns: 190px 1fr 300px; gap: 16px;
+  display: grid; grid-template-columns: 190px 1fr; gap: 16px;
   padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line);
 }
 @media (max-width: 1100px) { .hud { grid-template-columns: 140px 1fr; } .hud-you { display: none; } }
@@ -100,7 +100,6 @@ button.big:hover { background: #4b6191; }
 .clock.urgent { color: var(--fire); animation: pulse 1s infinite; }
 @keyframes pulse { 50% { opacity: .55; } }
 
-.hud-meters { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 4px 14px; align-content: center; }
 .meter-label { display: flex; justify-content: space-between; font: 9px var(--mono); color: var(--ink-faint); letter-spacing: .08em; }
 .meter-label b { color: var(--ink-dim); font-weight: 400; }
 .meter-track { height: 3px; background: #2c323c; border-radius: 2px; overflow: hidden; margin-top: 2px; }
@@ -111,12 +110,9 @@ button.big:hover { background: #4b6191; }
 .meter.over .meter-fill { background: linear-gradient(90deg, var(--gold) 55%, var(--warn) 100%);
                           box-shadow: 0 0 5px var(--warn); }
 .meter.over .meter-label b { color: var(--warn); }
-.m-panic .meter-fill { background: #b45ad0; }
 .m-lungs .meter-fill { background: #5ac8d0; }
 .m-burn .meter-fill { background: var(--bad); }
-.crewphase { grid-column: 1 / -1; display: flex; gap: 8px; align-items: baseline; font-size: 11px; margin-top: 2px; }
-.crewphase .tag, .carrying .tag { font: 9px var(--mono); color: var(--ink-faint); letter-spacing: .1em; }
-.crewphase b { color: var(--warn); } .crewphase i { color: var(--ink-faint); font-style: normal; }
+.carrying .tag { font: 9px var(--mono); color: var(--ink-faint); letter-spacing: .1em; }
 
 .hud-you { border-left: 1px solid var(--line); padding-left: 14px; }
 .you-name { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
@@ -373,7 +369,7 @@ button.big:hover { background: #4b6191; }
    you clicked with the handful of things you could do about it. Everything else is floor. */
 
 .play { position: relative; }
-.hud { grid-template-columns: 230px 1fr auto; }
+.hud { grid-template-columns: 230px 1fr; }
 .hud-buttons { display: flex; gap: 4px; margin-top: 4px; }
 /* You on the left, the bag on the right, so the bar stays a bar. */
 .hud-you { display: grid; grid-template-columns: 180px auto; gap: 4px 14px; align-content: start; }
