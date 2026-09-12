@@ -14,6 +14,7 @@
     "use strict";
     const PRS = global.PRS = global.PRS || {};
     const cabin = PRS.cabin;
+    const T = PRS.t;
     const st = PRS.state;
     const A = PRS.actions;
     const P = PRS.pax;
@@ -165,11 +166,12 @@
                  name: c.name, short: c.name.split(" ")[0] };
     }
     function fireThing(x, y) {
-        return { kind: "fire", key: "fire", x: x, y: y, name: "The fire", short: "the fire" };
+        return { kind: "fire", key: "fire", x: x, y: y,
+                 name: T("The fire"), short: T("the fire") };
     }
     function youThing(S) {
         return { kind: "you", key: "you", x: S.player.x, y: S.player.y,
-                 name: S.character.name, short: "you" };
+                 name: S.character.name, short: T("you") };
     }
 
     /** Is there a fire on this tile worth clicking. Embers count; a warm carpet does not. */
@@ -254,7 +256,7 @@
             thing.x = p.x; thing.y = p.y;
             R.header = personHeader(S, p);
             if (p.state === "dead") {
-                R.empty = "There is nothing more to be done for " + p.name + ".";
+                R.empty = T("There is nothing more to be done for {who}.", { who: p.name });
                 return R;
             }
             let now = groups[thing.key] || [];
@@ -263,9 +265,11 @@
             }
             R.near = p.state === "carried" || st.reachable(S).indexOf(p) >= 0;
             const then = R.near ? [] : remote(S, R, p.x, p.y, [thing.key], now,
-                { avoidSelf: true, label: "Walk over to " + thing.short });
+                { avoidSelf: true, label: T("Walk over to {who}", { who: thing.short }) });
             split(R, now, then);
-            if (!now.length && !R.walk) R.empty = "Nothing you can do for " + p.name + " from here.";
+            if (!now.length && !R.walk) {
+                R.empty = T("Nothing you can do for {who} from here.", { who: p.name });
+            }
             return R;
         }
 
@@ -277,14 +281,16 @@
                 icon: c.sprite || "crew", palette: P.palette(c), iconScale: 2, title: c.name,
                 sub: c.role + (c.refusals ? " · has said no " + c.refusals +
                                (c.refusals === 1 ? " time" : " times") : ""),
-                traits: c.hasSeenIt ? "has seen the locker" : null,
+                traits: c.hasSeenIt ? T("has seen the locker") : null,
             };
             const now = pick(groups, [thing.key, "crew"]);
             R.near = PRS.crew.adjacentCrew(S).some((q) => q.id === c.id);
             const then = R.near ? [] : remote(S, R, c.x, c.y, [thing.key, "crew"], now,
-                { avoidSelf: true, label: "Walk over to " + thing.short });
+                { avoidSelf: true, label: T("Walk over to {who}", { who: thing.short }) });
             split(R, now, then);
-            if (!now.length && !R.walk) R.empty = "You cannot get to " + c.name + " from here.";
+            if (!now.length && !R.walk) {
+                R.empty = T("You cannot get to {who} from here.", { who: c.name });
+            }
             return R;
         }
 
@@ -298,9 +304,9 @@
             const now = groups.fire || [];
             R.near = Math.abs(thing.x - S.player.x) + Math.abs(thing.y - S.player.y) <= 1;
             const then = R.near ? [] : remote(S, R, thing.x, thing.y, ["fire"], now,
-                { avoidSelf: true, label: "Walk to the fire" });
+                { avoidSelf: true, label: T("Walk to the fire") });
             split(R, now, then);
-            if (!now.length && !R.walk) R.empty = "You cannot get near it from here.";
+            if (!now.length && !R.walk) R.empty = T("You cannot get near it from here.");
             return R;
         }
 
@@ -323,15 +329,15 @@
                     if (e.id === "people.put_down" || e.id === "people.stop_drag") held.push(e);
                 }
             }
-            if (held.length) R.sections.push({ title: "In your arms", rows: held });
-            if (you.length) R.sections.push({ title: "Yourself", rows: you });
-            if (prim.length) R.sections.push({ title: "Here", rows: prim });
+            if (held.length) R.sections.push({ title: T("In your arms"), rows: held });
+            if (you.length) R.sections.push({ title: T("Yourself"), rows: you });
+            if (prim.length) R.sections.push({ title: T("Here"), rows: prim });
             if (rest.length) {
-                R.sections.push(prim.length ? { title: "More", rows: rest, more: true }
-                                            : { title: "Here", rows: rest });
+                R.sections.push(prim.length ? { title: T("More"), rows: rest, more: true }
+                                            : { title: T("Here"), rows: rest });
             }
             for (const sec of bagHints(S, you.concat(here))) R.sections.push(sec);
-            if (!R.sections.length) R.empty = "Nothing here but you.";
+            if (!R.sections.length) R.empty = T("Nothing here but you.");
             return R;
         }
         return null;
@@ -343,7 +349,7 @@
         if (!ap) return [];
         if (ap.here) { R.near = true; return []; }
         R.walk = { x: ap.x, y: ap.y, cost: ap.cost, path: ap.path,
-                   label: opts.label || "Walk there", detail: cabin.placeName(ap.x, ap.y) };
+                   label: opts.label || T("Walk there"), detail: cabin.placeName(ap.x, ap.y) };
         const seen = {};
         for (const e of now) seen[e.key] = true;
         return pick(group(previewAt(S, ap.x, ap.y)), keys).filter((e) => !seen[e.key]);
@@ -358,14 +364,15 @@
         const prim = now.filter((e) => rank(e) <= 1).slice(0, PRIMARY);
         const rest = now.filter((e) => prim.indexOf(e) < 0);
         if (prim.length) R.sections.push({ rows: prim });
-        if (rest.length) R.sections.push({ title: prim.length ? "More" : null, rows: rest,
+        if (rest.length) R.sections.push({ title: prim.length ? T("More") : null, rows: rest,
                                            more: prim.length > 0 });
         if (R.walk) R.sections.push(walkSection(R.walk, then));
     }
 
     /** A walk, priced, and what would be possible at the end of it. */
     function walkSection(walk, then) {
-        return { title: then.length ? "Walk there, then" : "Out of reach", walk: walk, then: true,
+        return { title: then.length ? T("Walk there, then") : T("Out of reach"),
+                 walk: walk, then: true,
                  rows: then.slice(0, PRIMARY), hidden: Math.max(0, then.length - PRIMARY) };
     }
 
@@ -390,10 +397,12 @@
         });
         const stops = [];
         const h = hottest(S);
-        if (h && wantsFire) stops.push({ x: h.x, y: h.y, label: "Walk to the fire", avoidSelf: true });
+        if (h && wantsFire) {
+            stops.push({ x: h.x, y: h.y, label: T("Walk to the fire"), avoidSelf: true });
+        }
         if (wantsTap) {
-            stops.push({ x: cabin.AFT_GALLEY_X, y: 7, label: "Walk to the aft lavatory",
-                         exact: true, detail: "There is a tap in there." });
+            stops.push({ x: cabin.AFT_GALLEY_X, y: 7, label: T("Walk to the aft lavatory"),
+                         exact: true, detail: T("There is a tap in there.") });
         }
         for (const stop of stops) {
             const ap = approach(S, stop.x, stop.y, stop);
@@ -418,24 +427,31 @@
         const dist = Math.abs(p.x - S.player.x) + Math.abs(p.y - S.player.y);
         return {
             icon: P.face(p), palette: P.palette(p), iconScale: 2, title: p.name,
-            sub: p.seat + " · " + p.kg + "kg · " + P.displayState(p) + " · " + cond.label,
-            traits: p.traits.length ? p.traits.join(", ") : null,
-            flag: p.helper ? "working with you" : p.state === "carried" ? "in your arms"
-                : dist > 1 ? dist + " tiles away" : null,
+            sub: T("{seat} · {kg}kg · {state} · {condition}",
+                   { seat: p.seat, kg: p.kg, state: P.displayState(p),
+                     condition: T(cond.label) }),
+            traits: p.traits.length
+                ? p.traits.map(PRS.data.passengers.traitName).join(", ") : null,
+            flag: p.helper ? T("working with you")
+                : p.state === "carried" ? T("in your arms")
+                : dist > 1 ? T("{n} tiles away", { n: dist }) : null,
         };
     }
 
     function fireHeader(S, x, y) {
         const c = S.fire.core;
         const i = cabin.idx(x, y);
-        const seat = c.inSink ? "The case is in the lavatory basin, under water."
-            : "The seat of it is the locker above " + cabin.ORIGIN.row + cabin.ORIGIN.letter + "." +
-              (c.exposed ? " You have seen inside it." : " Nobody has looked inside it.");
+        const seat = c.inSink
+            ? T("The case is in the lavatory basin, under water.")
+            : T("The seat of it is the locker above {seat}.",
+                { seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }) +
+              (c.exposed ? T(" You have seen inside it.") : T(" Nobody has looked inside it."));
         return {
             icon: PRS.fire.fireSprite(Math.max(S.fire.intensity[i], 1)) || "ember", iconScale: 2,
-            title: "The fire",
-            sub: PRS.fire.describe(S.fire, x, y) + " · " + cabin.placeName(x, y) +
-                 " · smoke " + PRS.fire.describeSmoke(S.fire.smoke[i]),
+            title: T("The fire"),
+            sub: T("{fire} · {where} · smoke {smoke}",
+                   { fire: PRS.fire.describe(S.fire, x, y), where: cabin.placeName(x, y),
+                     smoke: PRS.fire.describeSmoke(S.fire.smoke[i]) }),
             traits: seat,
         };
     }
@@ -444,20 +460,26 @@
         const Pl = S.player;
         const fear = Pl.panic + Pl.smokeDose * 0.55;
         const face = !Pl.alive ? "pax_down" : fear > 62 ? "pax_afraid" : fear > 27 ? "pax_worried" : "pax";
-        const lungs = Pl.smokeDose > 70 ? "lungs failing" : Pl.smokeDose > 40 ? "lungs bad"
-                    : Pl.smokeDose > 15 ? "coughing" : "breathing fine";
+        const lungs = Pl.smokeDose > 70 ? T("lungs failing") : Pl.smokeDose > 40 ? T("lungs bad")
+                    : Pl.smokeDose > 15 ? T("coughing") : T("breathing fine");
         const i = cabin.idx(Pl.x, Pl.y);
         const bits = [cabin.placeName(Pl.x, Pl.y), lungs];
-        if (S.fire.intensity[i] > 0.5) bits.push("fire " + PRS.fire.describe(S.fire, Pl.x, Pl.y));
-        if (S.fire.smoke[i] > 6) bits.push("smoke " + PRS.fire.describeSmoke(S.fire.smoke[i]));
-        if (Pl.burns > 15) bits.push("burned");
-        if (Pl.carrying.length) bits.push("carrying " + Pl.carrying.length);
-        if (Pl.dragging) bits.push("dragging somebody");
-        const worn = Object.keys(Pl.wearing).filter((k) => Pl.wearing[k]);
+        if (S.fire.intensity[i] > 0.5) {
+            bits.push(T("fire {what}", { what: PRS.fire.describe(S.fire, Pl.x, Pl.y) }));
+        }
+        if (S.fire.smoke[i] > 6) {
+            bits.push(T("smoke {what}", { what: PRS.fire.describeSmoke(S.fire.smoke[i]) }));
+        }
+        if (Pl.burns > 15) bits.push(T("burned"));
+        if (Pl.carrying.length) bits.push(T("carrying {n}", { n: Pl.carrying.length }));
+        if (Pl.dragging) bits.push(T("dragging somebody"));
+        // What you have on, by the name of the thing rather than its id.
+        const worn = Object.keys(Pl.wearing).filter((k) => Pl.wearing[k])
+            .map((k) => { const it = PRS.data.items.byId(k); return T(it ? it.name : k); });
         return {
             icon: face, palette: P.palette(S.character), iconScale: 2,
-            title: S.character.name + " — you", sub: bits.join(" · "),
-            traits: worn.length ? "wearing " + worn.map((k) => k.replace(/_/g, " ")).join(", ") : null,
+            title: T("{name} — you", { name: S.character.name }), sub: bits.join(" · "),
+            traits: worn.length ? T("wearing {what}", { what: worn.join(", ") }) : null,
         };
     }
 

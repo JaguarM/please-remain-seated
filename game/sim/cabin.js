@@ -22,6 +22,7 @@
     "use strict";
 
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, X = PRS.tx, K = PRS.k;
 
     const W = 30;
     const H = 9;
@@ -33,15 +34,15 @@
 
     // Tile kinds. `walk` is the base cost in seconds for an average person to cross the tile.
     const KIND = {
-        wall:    { walk: Infinity, fuel: 0.05, solid: true,  label: "hull" },
-        seat:    { walk: 3.4,      fuel: 1.00, solid: false, label: "seat" },
-        aisle:   { walk: 1.0,      fuel: 0.18, solid: false, label: "aisle" },
-        cross:   { walk: 1.0,      fuel: 0.14, solid: false, label: "cross-aisle" },
-        galley:  { walk: 1.6,      fuel: 0.75, solid: false, label: "galley" },
-        lav:     { walk: 2.2,      fuel: 0.55, solid: false, label: "lavatory" },
-        exit:    { walk: 1.4,      fuel: 0.10, solid: false, label: "exit door" },
-        cockpit: { walk: Infinity, fuel: 0.10, solid: true,  label: "flight deck door" },
-        bulkhead:{ walk: Infinity, fuel: 0.20, solid: true,  label: "bulkhead" },
+        wall:    { walk: Infinity, fuel: 0.05, solid: true,  label: K("hull") },
+        seat:    { walk: 3.4,      fuel: 1.00, solid: false, label: K("seat") },
+        aisle:   { walk: 1.0,      fuel: 0.18, solid: false, label: K("aisle") },
+        cross:   { walk: 1.0,      fuel: 0.14, solid: false, label: K("cross-aisle") },
+        galley:  { walk: 1.6,      fuel: 0.75, solid: false, label: K("galley") },
+        lav:     { walk: 2.2,      fuel: 0.55, solid: false, label: K("lavatory") },
+        exit:    { walk: 1.4,      fuel: 0.10, solid: false, label: K("exit door") },
+        cockpit: { walk: Infinity, fuel: 0.10, solid: true,  label: K("flight deck door") },
+        bulkhead:{ walk: Infinity, fuel: 0.20, solid: true,  label: K("bulkhead") },
     };
 
     // Where the rows are. Row 13 is the first one aft of the wing, which is why 14C is where it
@@ -119,33 +120,92 @@
         return rowAt(x) === null ? "cross" : "seat";
     }
 
-    /** The name a human would use for where you are standing. The HUD says this constantly. */
-    function placeName(x, y) {
+    /**
+     * The name a human would use for a place on this aeroplane. The HUD says this constantly.
+     *
+     * `towards` asks for the form that follows "go to" rather than the one that follows "you
+     * are at". In English they are the same words and the second argument changes nothing; in
+     * German they are not, because standing somewhere takes the dative and going there takes
+     * the accusative - "im Gang" against "in den Gang" - and a sentence built out of the wrong
+     * one reads like a translation. So both forms are keys, told apart by a note, and a
+     * language that does not need the distinction simply writes the same line twice.
+     */
+    function placeName(x, y, towards) {
+        return towards ? placeTo(x, y) : placeAt(x, y);
+    }
+
+    /** Which of the nine places this tile is, as something the two namers can switch on. */
+    function placeKind(x, y) {
         const seat = seatName(x, y);
-        if (seat) return "seat " + seat;
+        if (seat) return { what: "seat", seat: seat };
         const kind = kindAt(x, y);
-        if (kind === "cockpit") return "the flight deck door";
+        if (kind === "cockpit") return { what: "cockpit" };
         if (kind === "exit") {
+            // L1, R2: the door numbering is the aircraft's, and it is the same in every language.
             const side = y === WALL_TOP ? "L" : "R";
             const n = x === FWD_CROSS_X ? 1 : x === OVERWING_X ? 3 : 2;
-            return "door " + side + n;
+            return { what: "door", door: side + n };
         }
-        if (x === FWD_GALLEY_X) return "the forward galley";
-        if (x === AFT_GALLEY_X) return kind === "lav" ? "the aft lavatory" : "the aft galley";
+        if (x === FWD_GALLEY_X) return { what: "fwdGalley" };
+        if (x === AFT_GALLEY_X) return { what: kind === "lav" ? "aftLav" : "aftGalley" };
         if (kind === "aisle") {
             const row = rowAt(x);
-            if (row) return "the aisle at row " + row;
-            if (x === FWD_CROSS_X) return "the forward cross-aisle";
-            if (x === OVERWING_X) return "the overwing exit row";
-            if (x === AFT_CROSS_X) return "the aft cross-aisle";
-            return "the aisle";
+            if (row) return { what: "row", row: row };
+            if (x === FWD_CROSS_X) return { what: "fwdCross" };
+            if (x === OVERWING_X) return { what: "overwing" };
+            if (x === AFT_CROSS_X) return { what: "aftCross" };
+            return { what: "aisle" };
         }
         if (kind === "cross") {
-            if (x === FWD_CROSS_X) return "the forward cross-aisle";
-            if (x === OVERWING_X) return "the overwing exit row";
-            if (x === AFT_CROSS_X) return "the aft cross-aisle";
+            if (x === FWD_CROSS_X) return { what: "fwdCross" };
+            if (x === OVERWING_X) return { what: "overwing" };
+            if (x === AFT_CROSS_X) return { what: "aftCross" };
         }
-        return "the cabin";
+        return { what: "cabin" };
+    }
+
+    /** Somewhere to be: "You are at the aisle at row 14". */
+    function placeAt(x, y) {
+        const p = placeKind(x, y);
+        switch (p.what) {
+            case "seat": return T("seat {seat}", { seat: p.seat });
+            case "cockpit": return T("the flight deck door");
+            case "door": return T("door {door}", { door: p.door });
+            case "fwdGalley": return T("the forward galley");
+            case "aftLav": return T("the aft lavatory");
+            case "aftGalley": return T("the aft galley");
+            case "row": return T("the aisle at row {row}", { row: p.row });
+            case "fwdCross": return T("the forward cross-aisle");
+            case "overwing": return T("the overwing exit row");
+            case "aftCross": return T("the aft cross-aisle");
+            case "aisle": return T("the aisle");
+            default: return T("the cabin");
+        }
+    }
+
+    /**
+     * Somewhere to go: "Go to the aisle at row 14". The same words in English and the reason
+     * this function exists is that they are not the same words in German, so every line is a
+     * key of its own with a note saying which of the two it is.
+     */
+    function placeTo(x, y) {
+        // The note is written out at every one of them, because tools/i18n_scan.js reads
+        // literals and a note held in a variable is a key it cannot see.
+        const p = placeKind(x, y);
+        switch (p.what) {
+            case "seat": return X("seat {seat}", "as a destination", { seat: p.seat });
+            case "cockpit": return X("the flight deck door", "as a destination");
+            case "door": return X("door {door}", "as a destination", { door: p.door });
+            case "fwdGalley": return X("the forward galley", "as a destination");
+            case "aftLav": return X("the aft lavatory", "as a destination");
+            case "aftGalley": return X("the aft galley", "as a destination");
+            case "row": return X("the aisle at row {row}", "as a destination", { row: p.row });
+            case "fwdCross": return X("the forward cross-aisle", "as a destination");
+            case "overwing": return X("the overwing exit row", "as a destination");
+            case "aftCross": return X("the aft cross-aisle", "as a destination");
+            case "aisle": return X("the aisle", "as a destination");
+            default: return X("the cabin", "as a destination");
+        }
     }
 
     // There are no safe zones. There are doors, and the floor in front of them: the galley and
@@ -233,7 +293,7 @@
         W, H, AISLE_Y, WALL_TOP, WALL_BOTTOM, KIND, SEAT_LETTERS,
         FWD_ROWS, AFT_ROWS, OVERWING_X, FWD_CROSS_X, AFT_CROSS_X, FWD_GALLEY_X, AFT_GALLEY_X,
         ORIGIN, originTile,
-        rowAt, xOfRow, seatLetter, yOfLetter, seatPos, seatName, kindAt, placeName,
+        rowAt, xOfRow, seatLetter, yOfLetter, seatPos, seatName, kindAt, placeName, placeTo,
         DOOR_ENDS, byTheDoors, doorDistance, solid, inBounds, baseFuel, baseWalk, eachSeat, neighbours,
         idx, xOf, yOf, binOf, binKey,
     };

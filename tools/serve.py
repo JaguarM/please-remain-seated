@@ -35,7 +35,8 @@ class NoCache(http.server.SimpleHTTPRequestHandler):
 
 
 def main():
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8731
+    # An argument wins; then $PORT, which is how a harness hands one over; then the default.
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT") or 8731)
     root = os.path.join(ROOT, sys.argv[2]) if len(sys.argv) > 2 else ROOT
     handler = functools.partial(NoCache, directory=root)
     http.server.ThreadingHTTPServer.allow_reuse_address = True

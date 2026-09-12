@@ -8,6 +8,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -36,56 +37,61 @@
         { id: "extra.sceptic_evidence", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("sceptic"),
           when: (S) => S.fire.core.exposed || !!S.flags.havePhoto,
-          label: (S, c) => "Make " + who(c) + " look at the open bin",
-          detail: "A sceptic does not need persuading. A sceptic needs seeing.",
+          label: (S, c) => T("Make {who} look at the open bin", { who: who(c) }),
+          detail: K("A sceptic does not need persuading. A sceptic needs seeing."),
           cost: 15,
           run(S, c) {
               c.p.trust = Math.min(100, c.p.trust + 55);
               c.p.awareness = 100;
               c.p.traits = c.p.traits.filter((t) => t !== "sceptic");
               S.credibility = Math.min(100, S.credibility + 6);
-              return { text: c.p.name + " looks at it for about four seconds and something goes " +
-                  "out of their face. They are not a sceptic any more and they never will be " +
-                  "again about anything.", kind: "great" };
+              return { text: T("{who} looks at it for about four seconds and something goes " +
+                               "out of their face. They are not a sceptic any more and they " +
+                               "never will be again about anything.", { who: c.p.name }),
+                       kind: "great" };
           } },
 
         { id: "extra.hostile_job", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("hostile"),
           when: (S, c) => P.helperCap(S) > 0 && P.worthAsking(S, c.p, 22),
-          label: (S, c) => "Give " + who(c) + " a job",
-          detail: "The obstructive ones obstruct because nobody has given them anything to do.",
+          label: (S, c) => T("Give {who} a job", { who: who(c) }),
+          detail: K("The obstructive ones obstruct because nobody has given them anything to do."),
           cost: 20,
           run(S, c) {
               const roll = P.convince(S, c.p, 22);
               if (roll.ok) {
-                  P.recruit(S, c.p, "The man who was telling you to sit down is now carrying " +
-                      "people forward.");
-                  return { text: "“Fine. Fine! What do you want me to do.” And then " + c.p.name +
-                      " does it, faster and better than anybody, because being useful is all " +
-                      "they ever wanted.", kind: "great" };
+                  P.recruit(S, c.p, T("The man who was telling you to sit down is now " +
+                                      "carrying people forward."));
+                  return { text: T("“Fine. Fine! What do you want me to do.” And then {who} " +
+                                   "does it, faster and better than anybody, because being " +
+                                   "useful is all they ever wanted.", { who: c.p.name }),
+                           kind: "great" };
               }
               c.p.trust -= 8;
-              return { text: "“I'm not taking instructions from you.”", kind: "bad" };
+              return { text: T("“I'm not taking instructions from you.”"), kind: "bad" };
           } },
 
         // ------------------------------------------------------------------ the off-duty crew ---
         { id: "extra.offduty", deck: "people", tags: ["social"], danger: "good",
           targets: withTrait("crew"),
           when: (S, c) => P.helperCap(S) > 0 && P.worthAsking(S, c.p, 34),
-          label: (S, c) => "Tell " + who(c) + " to act like crew",
-          detail: "They know the aeroplane, the drill and the kit. They are in seat 15E.",
+          label: (S, c) => T("Tell {who} to act like crew", { who: who(c) }),
+          detail: K("They know the aeroplane, the drill and the kit. They are in seat 15E."),
           cost: 20,
           run(S, c) {
               const roll = P.convince(S, c.p, 34);
-              if (!roll.ok) return { text: "“It isn't my aeroplane and it isn't my licence.”",
-                                     kind: "bad" };
-              P.recruit(S, c.p, "They know where everything is stowed, which you do not.");
+              if (!roll.ok) {
+                  return { text: T("“It isn't my aeroplane and it isn't my licence.”"),
+                           kind: "bad" };
+              }
+              P.recruit(S, c.p, T("They know where everything is stowed, which you do not."));
               S.credibility = Math.min(100, S.credibility + 20);
               PRS.crew.setPhase(S, Math.max(S.crewPhase, 2));
-              return { text: c.p.name + " stands up and stops being a passenger. Inside twenty " +
-                  "seconds they have the aft galley open, a bottle in their hand and two rows " +
-                  "moving. This is what the training is for and it does not care whose aeroplane " +
-                  "it is.", kind: "great" };
+              return { text: T("{who} stands up and stops being a passenger. Inside twenty " +
+                               "seconds they have the aft galley open, a bottle in their hand " +
+                               "and two rows moving. This is what the training is for and it " +
+                               "does not care whose aeroplane it is.", { who: c.p.name }),
+                       kind: "great" };
           } },
 
         { id: "extra.child_carry_pair", deck: "people", tags: ["carry"], danger: "good",
@@ -96,8 +102,8 @@
                        (S.derived.maxCarry > 1 || S.player.carrying.length === 0 ||
                         S.player.carrying.every((id) => {
                             const q = st.paxById(S, id); return q && P.isChild(q); })),
-          label: (S, c) => "Take " + who(c) + " under the other arm",
-          detail: "Children weigh nothing. You can do two.",
+          label: (S, c) => T("Take {who} under the other arm", { who: who(c) }),
+          detail: K("Children weigh nothing. You can do two."),
           cost: (S, c) => 8 + c.p.kg * 0.12,
           run(S, c) {
               c.p.state = "carried";
@@ -106,15 +112,16 @@
               S.player.carrying.push(c.p.id);
               S.player.crouching = false;
               st.reindex(S);
-              return { text: "One under each arm. " + c.p.name + " weighs " + c.p.kg + " kilos " +
-                  "and does not struggle, which is somehow worse than struggling.", kind: "good" };
+              return { text: T("One under each arm. {who} weighs {kg} kilos and does not " +
+                               "struggle, which is somehow worse than struggling.",
+                               { who: c.p.name, kg: c.p.kg }), kind: "good" };
           } },
 
         // --------------------------------------------------------- the ones with names -------
         { id: "extra.chip", deck: "people", tags: ["reveal", "social"], danger: "good",
           targets: named("Chip Vanterpool"),
-          label: "Ask Chip Vanterpool what is in the bag",
-          detail: "It is his bag. He knows. He has known for eleven minutes.",
+          label: K("Ask Chip Vanterpool what is in the bag"),
+          detail: K("It is his bag. He knows. He has known for eleven minutes."),
           cost: 16,
           once: true,
           run(S, c) {
@@ -123,32 +130,36 @@
               S.credibility = Math.min(100, S.credibility + 34);
               c.p.trust = 40;
               c.p.traits = c.p.traits.filter((t) => t !== "hostile" && t !== "sceptic");
-              return { text: "“It's a vape.”\n\nHe says it to the tray table. “It's a vape, it " +
-                  "got wet in Málaga, it's been getting hot in my pocket all week and I put it " +
-                  "in the case so I'd stop thinking about it.”\n\nYou now know exactly what this " +
-                  "is, eleven minutes before anybody else was going to.", kind: "great" };
+              return { text: T("“It's a vape.”") + "\n\n" +
+                       T("He says it to the tray table. “It's a vape, it got wet in Málaga, " +
+                         "it's been getting hot in my pocket all week and I put it in the case " +
+                         "so I'd stop thinking about it.”") + "\n\n" +
+                       T("You now know exactly what this is, eleven minutes before anybody else " +
+                         "was going to."), kind: "great" };
           } },
 
         { id: "extra.wilbur", deck: "people", tags: ["reveal", "social"],
           targets: named("Wilbur Ansty"),
-          label: "Ask Wilbur Ansty what he thinks it is",
-          detail: "He flew Vulcans. He has smelled this before, on an aeroplane, on purpose.",
+          label: K("Ask Wilbur Ansty what he thinks it is"),
+          detail: K("He flew Vulcans. He has smelled this before, on an aeroplane, on purpose."),
           cost: 13,
           once: true,
           run(S, c) {
               S.credibility = Math.min(100, S.credibility + 14);
               st.setFlag(S, "wilburSaid");
-              return { text: "“Lithium. It's lithium. You can't put it out and you mustn't try to " +
-                  "smother it, you have to cool it, and the only thing on this aeroplane that " +
-                  "cools anything is the tap in the lavatory.”\n\nHe is eighty-six and he has " +
-                  "just told you the answer.", kind: "great" };
+              return { text: T("“Lithium. It's lithium. You can't put it out and you mustn't " +
+                               "try to smother it, you have to cool it, and the only thing on " +
+                               "this aeroplane that cools anything is the tap in the " +
+                               "lavatory.”") + "\n\n" +
+                       T("He is eighty-six and he has just told you the answer."),
+                       kind: "great" };
           } },
 
         // -------------------------------------------------------------------- more of the fire ---
         { id: "extra.cool_bin", item: "water_big", deck: "fire", tags: ["fire", "hands"], danger: "good",
-          label: "Keep pouring water on the same spot", cost: 30,
-          detail: "Not to put it out. To keep the case below the temperature the next cell needs, " +
-                  "and everybody in the row is going to get wet.",
+          label: K("Keep pouring water on the same spot"), cost: 30,
+          detail: K("Not to put it out. To keep the case below the temperature the next cell needs, " +
+                  "and everybody in the row is going to get wet."),
           when: (S) => Math.abs(S.player.x - S.fire.core.x) <= 1 &&
                        have(S, "water_big") && slot(S, "water_big").uses > 0,
           run(S) {
@@ -157,10 +168,10 @@
               S.stats.agentsUsed++;
               P.annoy(S, 1);
               PRS.audio.play("pour");
-              return { text: "Thirty seconds of pouring the same bottle onto the same seam. " +
-                  "Nothing looks different. The next cell is now " +
-                  PRS.util.mmss(F.ventEta(S.fire)) + " away instead of thirty seconds away, and " +
-                  "that is what cooling means.", kind: "great" };
+              return { text: T("Thirty seconds of pouring the same bottle onto the same " +
+                               "seam. Nothing looks different. The next cell is now {eta} away " +
+                               "instead of thirty seconds away, and that is what cooling means.",
+                               { eta: PRS.util.mmss(F.ventEta(S.fire)) }), kind: "great" };
           } },
 
         // ------------------------------------------------------------------ more of the crew ---
@@ -168,26 +179,27 @@
         { id: "extra.crew_water", deck: "crew", tags: ["social"], danger: "good",
           targets: (S) => PRS.crew.adjacentCrew(S).map((c) => ({ key: c.id, c: c })),
           when: (S) => (!!S.flags.wilburSaid || S.fire.core.exposed) && !S.flags.crewUseWater,
-          label: (S, t) => "Tell " + t.c.name + " it is a lithium battery: water, not halon",
-          detail: "There is a specific drill for this and it is not the drill they are doing. " +
-                  "You only know it because you looked, or because Wilbur told you.",
+          label: (S, t) => T("Tell {who} it is a lithium battery: water, not halon",
+                             { who: t.c.name }),
+          detail: K("There is a specific drill for this and it is not the drill they are doing. " +
+                  "You only know it because you looked, or because Wilbur told you."),
           cost: 20,
           run(S, t) {
               st.setFlag(S, "crewUseWater");
               S.credibility = Math.min(100, S.credibility + 20);
               S.fire.core.rate *= 0.72;
               PRS.crew.setPhase(S, Math.max(S.crewPhase, 3));
-              return { text: "“Lithium?” Everything in " + t.c.name + "'s training reorders " +
-                  "itself in about a second and a half. “Water. Not the BCF. Water, and keep " +
-                  "putting water on it.” Which is right, and which the next cell is going to " +
-                  "notice.", kind: "great" };
+              return { text: T("“Lithium?” Everything in {who}'s training reorders itself in " +
+                               "about a second and a half. “Water. Not the BCF. Water, and keep " +
+                               "putting water on it.” Which is right, and which the next cell " +
+                               "is going to notice.", { who: t.c.name }), kind: "great" };
           } },
 
 
         // ---------------------------------------------------------------------- the cabin ---
         { id: "people.speech", deck: "people", tags: ["social"], danger: "good",
-          label: "Stand on a seat and address the cabin", cost: 30,
-          detail: "Everybody within six rows, once, and you only get one of these.",
+          label: K("Stand on a seat and address the cabin"), cost: 30,
+          detail: K("Everybody within six rows, once, and you only get one of these."),
           when: (S) => cabin.rowAt(S.player.x) !== null && !S.flags.gaveSpeech &&
                        st.withinEarshot(S, 6).some((p) => P.worthAsking(S, p, 6)),
           run(S) {
@@ -201,10 +213,11 @@
                   }
               }
               S.credibility = Math.min(100, S.credibility + 10);
-              return { text: "You stand on an armrest and give thirty seconds of the worst and " +
-                  "most sincere speech of your life. " + convinced + " people are moved by it. " +
-                  "The rest of them are embarrassed, which is a thing people can still be eleven " +
-                  "minutes into this.", kind: convinced > 3 ? "great" : "plain" };
+              return { text: T("You stand on an armrest and give thirty seconds of the worst " +
+                               "and most sincere speech of your life. {n} people are moved by " +
+                               "it. The rest of them are embarrassed, which is a thing people " +
+                               "can still be eleven minutes into this.", { n: convinced }),
+                       kind: convinced > 3 ? "great" : "plain" };
           } },
     ]);
 })(window);

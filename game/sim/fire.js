@@ -20,6 +20,7 @@
 
     const PRS = global.PRS = global.PRS || {};
     const cabin = PRS.cabin;
+    const T = PRS.t, K = PRS.k;
     const { clamp, clamp01 } = PRS.util;
 
     const N = cabin.W * cabin.H;
@@ -35,11 +36,11 @@
     // turns into steam over whoever is sitting under it, and what makes fighting it worth doing
     // is what it does to the air everybody else is breathing, not the flame.
     const AGENTS = {
-        water:     { knock: 20, hold: 28, decay: 0.020, smoke: +20, coolsCore: 0.55, name: "water" },
-        halon:     { knock: 74, hold: 82, decay: 0.014, smoke: -8,  coolsCore: 0.10, name: "halon" },
-        smother:   { knock: 20, hold: 34, decay: 0.016, smoke: -8,  coolsCore: 0.12, name: "smothering" },
-        wetcloth:  { knock: 28, hold: 42, decay: 0.013, smoke: +4,  coolsCore: 0.30, name: "a wet cloth" },
-        beat:      { knock: 10, hold: 6,  decay: 0.060, smoke: +22, coolsCore: 0.02, name: "beating" },
+        water:     { knock: 20, hold: 28, decay: 0.020, smoke: +20, coolsCore: 0.55, name: K("water") },
+        halon:     { knock: 74, hold: 82, decay: 0.014, smoke: -8,  coolsCore: 0.10, name: K("halon") },
+        smother:   { knock: 20, hold: 34, decay: 0.016, smoke: -8,  coolsCore: 0.12, name: K("smothering") },
+        wetcloth:  { knock: 28, hold: 42, decay: 0.013, smoke: +4,  coolsCore: 0.30, name: K("a wet cloth") },
+        beat:      { knock: 10, hold: 6,  decay: 0.060, smoke: +22, coolsCore: 0.02, name: K("beating") },
         // Opening the bin is an agent too, and it is in the same table so the code cannot pretend
         // it did not know that it makes things worse.
         air:       { knock: -22, hold: 0, decay: 0.10, smoke: +8,  coolsCore: 0.00, name: "air" },
@@ -372,22 +373,22 @@
     function describe(f, x, y) {
         const i = cabin.idx(x, y);
         const v = f.intensity[i];
-        if (v <= 0.5) return f.burnt[i] > 0.25 ? "charred and cold" : "nothing";
-        if (v < 8) return "smouldering";
-        if (v < 22) return "alight";
-        if (v < 45) return "burning properly";
-        if (v < 70) return "burning hard";
-        if (v < 88) return "an inferno";
-        return "not survivable";
+        if (v <= 0.5) return f.burnt[i] > 0.25 ? T("charred and cold") : T("nothing");
+        if (v < 8) return T("smouldering");
+        if (v < 22) return T("alight");
+        if (v < 45) return T("burning properly");
+        if (v < 70) return T("burning hard");
+        if (v < 88) return T("an inferno");
+        return T("not survivable");
     }
 
     function describeSmoke(v) {
-        if (v < 3) return "clear";
-        if (v < 12) return "hazy";
-        if (v < 30) return "thick";
-        if (v < 55) return "you cannot see the seat in front";
-        if (v < 80) return "black";
-        return "solid";
+        if (v < 3) return T("clear");
+        if (v < 12) return T("hazy");
+        if (v < 30) return T("thick");
+        if (v < 55) return T("you cannot see the seat in front");
+        if (v < 80) return T("black");
+        return T("solid");
     }
 
     /** The four-sprite fire, picked by intensity. */

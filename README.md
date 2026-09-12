@@ -10,7 +10,7 @@ who has noticed. The plane lands in fifteen minutes, and the clock only moves wh
 ![The cabin four minutes out](docs/cabin.png)
 
 *Four minutes to touchdown. The fire has the left bank from row 8 to row 22 and has already
-burnt through the seats in the middle of it, the aisle is full of people who stood up, thirteen
+burnt through the seats in the middle of it, the aisle is full of people who stood up, twelve
 have been moved to the floor by the doors, eight are down, and the flight deck has declared.
 Drawn by `tools/render_frame.py` from the game's own simulation and sprite maps, so
 `--seed=606 --at=540` gives you this picture and not one like it: every die in the flight is
@@ -46,6 +46,29 @@ The rules
   undone is a refusal again, whatever you do first. Anything that told you something new stays
   done.
 
+Languages
+---------
+
+The game is in English and in German, and **Einstellungen** on the title screen (or Escape, in
+the air) has the picker, next to a volume slider. It opens in the language your browser is set
+to, and the choice outlives the tab. Changing it mid-flight redraws the cabin, the cards and the
+tooltips at once; the lines already in the log stay in the language they were written in,
+because the log is a record of what happened and rewriting it underneath you would be a strange
+thing to do.
+
+A new language is a folder of catalogues and no changes to the game. The key is the English
+sentence itself, so a missing line is the English and never an empty box, and
+
+    node tools/i18n_scan.js          what each language has and has not
+    node tools/i18n_scan.js de       the lines still to write, as a stub catalogue
+    node tools/i18n_scan.js de --stale   lines the game no longer says
+
+reads the source rather than a play-through, which means a sentence changed in the game shows up
+as a line to rewrite in every language the next time anybody looks. The parts of a language that
+are rules rather than sentences - "eine Rauchhaube" against "ein Inhalator", where to stand
+against where to go - are registered by the catalogue itself through `PRS.i18n.grammar`, so the
+game never has to guess at a grammar it does not have.
+
 Controls
 --------
 
@@ -55,42 +78,50 @@ prices the walk and lists what you could do once there, and one click does both.
 is floor, and clicking floor walks you there.
 
 Arrow keys or WASD step, and a step back onto the trail behind you is a step back in time. 1–9
-pick a row of the open card. Backspace undoes. M mutes. ? shows the help again.
+pick a row of the open card. Backspace undoes. M mutes. Escape closes whatever is open over the
+cabin, and opens the settings when there is nothing left to close. The settings hold the sound,
+the language, the help card and the way out of a flight, which asks first, because a flight is
+saved nowhere and leaving one is leaving it.
 
 Who you are
 -----------
 
-The title is a boarding pass. One click puts you on the aeroplane as whoever you were last time,
-and the first time that is Dr Priya Ansel, who talks people out of their seats and cannot lift
-the heavy ones. Under the name is the loadout: what you are wearing and the three things on you,
-each a box that opens a page of choices, except the ones that are part of who the character is,
-which have a lock in the corner. Deidre Volk always boards with her gloves and her tape; the
-other slot is yours.
+The title is a boarding pass and nothing else: a face, a name, a seat, one line about what that
+person is for, and the button. One click puts you on the aeroplane as whoever you were last
+time, and the first time that is Dr Priya Ansel, who talks people out of their seats and cannot
+lift the heavy ones.
+
+"Change who you are" appears from the second flight and holds everything you can change. The
+loadout is there: what you are wearing and the three things on you, each a box that opens a page
+of choices, except the ones that are part of who the character is, which have a lock in the
+corner. Deidre Volk always boards with her gloves and her tape; the other slot is yours.
 
 The fifth box is the seed. Leave it and every flight is a new one; type a number or a word and it
 is the same aeroplane, the same moods and the same fire until you clear it, which is how two
-people compare what they did with one fifteen minutes, and `index.html?seed=606` opens the pass
-with it filled in. The same page has the dice. **Perfect luck** is for testing a plan: every coin
-lands your way and everything on a timer, the fire included, happens at its middle time, so what
-is left to vary is what you do. Nothing from a flight like that goes in the log book.
+people compare what they did with one fifteen minutes, and `index.html?seed=606` opens with it
+filled in. The same page has the dice. **Perfect luck** is for testing a plan: every coin lands
+your way and everything on a timer, the fire included, happens at its middle time, so what is
+left to vary is what you do. Nothing from a flight like that goes in the log book.
 
-"Change who you are" appears from the second flight and opens the roster: nine people, two of
-them free. Gordy Mach carries two at a time and nobody listens to him. Each of the other seven is
-locked behind something you do on the aeroplane, printed on the card, and each one makes you play
-a different way to earn it: open the locker and look inside, recruit four helpers, carry five
-people yourself, get the flight deck to declare inside five minutes, be told to sit down by three
-different passengers, get a child out of the rows, get fifty-two people off alive.
+The same screen opens the roster: nine people, two of them free. Gordy Mach carries two at a time
+and nobody listens to him. Each of the other seven is locked behind something you do on the
+aeroplane, printed on the card, and each one makes you play a different way to earn it: open the
+locker and look inside, recruit four helpers, carry five people yourself, get the flight deck to
+declare inside five minutes, be told to sit down by three different passengers, get a child out of
+the rows, get fifty-two people off alive.
 
 There are no perks. Each person is five numbers, one to ten, and every number is a multiplier on
 something you feel inside a minute: strength (how long a carry takes, who can be carried at all,
 and at ten, two at once), speed, lungs, nerve, voice. What else makes them different is data the
 game already understands: what is on them when they board, and which row they are sitting in.
 Six outfits move the five numbers by a point or two; they unlock as the souls total in the log
-book climbs, fifty for the first and a thousand for the last.
+book climbs, ten for the first and five hundred for the last.
 
-**The log book** is the only thing that carries over between flights: flights flown, souls who
-got off alive across all of them, every medal ever awarded, and the last sixty flights one line
-each. Nothing is bought. Everything else in the aeroplane, from the galley drawers to what other
+**The log book** is the only thing that carries over between flights: flights flown, souls saved
+across all of them, every medal ever awarded, and the last sixty flights one line each. Saved,
+not survived: forty-odd people get off this aeroplane whatever you do, so the book credits the
+difference between the flight you flew and the same aeroplane with you asleep in 9C, which is the
+number the screen after the report is about and the only number that fills the bar. Nothing is bought. Everything else in the aeroplane, from the galley drawers to what other
 passengers have in their laps, is found in flight, and asking somebody what they have is the same
 conversation that recruits them.
 
@@ -109,9 +140,14 @@ What is in it
 - Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
 - Seven events, 26 medals that each say one thing about the arithmetic, six endings, and an
   **incident report** in the flat voice of an air accident investigator: every soul by seat,
-  your own actions quoted back in order, and where the fifteen minutes went.
+  your own actions quoted back in order, and where the fifteen minutes went. Then one more
+  screen: what you changed, what the book credited for it, and the locked person you came
+  nearest to.
 - A **flight recorder** on the report, which keeps your last thirty flights and plays them back.
 - 31 synthesised sounds and no audio files.
+- **English and German**, every word of both, from the title screen to the sixty passengers'
+  refusals to the incident report: 1,062 lines, and a scanner that says what a language is
+  missing before a player finds out.
 
 How it is built
 ---------------
@@ -126,7 +162,9 @@ How it is built
                           flight recorder
       data/               characters, outfits, items, the roster, events, medals, endings, the
                           action decks
-      ui/                 hotspots (what a click means), the play screen, the other screens
+      i18n/               the translator, and one folder of catalogues per language
+      ui/                 hotspots (what a click means), the play screen, the other screens,
+                          the settings panel
       style.css
     pixel-workshop/       the art generator: every sprite is an ASCII map plus a palette, and
                           --preview draws the whole set on one sheet, in context and by name
@@ -141,6 +179,12 @@ by. Nothing else may call `fire.advance`, `pax.advance` or `crew.advance`.
 An action is data:
 
     { id, deck, label, detail, cost, when, run, tags, danger, once, targets, item }
+
+Every string a player can read goes through `T()`, keyed on the English sentence. A `label` that
+is a plain string is that English, marked `K()`, and is translated where the card is built; a
+`label` that is a function runs with the state in front of it and calls `T()` on its own pieces.
+Interpolation is `{name}`, never `+`, because German does not put the pieces of a sentence in
+the order English does and a translator has to be able to move them.
 
 `targets` makes one definition appear once per person you can reach. `item` names the thing in
 your bag it uses, which is how clicking the bottle finds everything the bottle can do. Add one to
@@ -159,6 +203,7 @@ Testing it
     node tools/coverage.js                    # every action performed at least once
     node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll,
                                               # and a second played slowly is the same second
+    node tools/i18n_scan.js                   # what each language has, and what it is missing
     node tools/dump_frame.js --at=540 --seed=606 && python tools/render_frame.py --out=docs/cabin.png
     python tools/trim_actions.py --list       # every action id; pass ids to remove them cleanly
 
@@ -193,7 +238,7 @@ The game is on itch.io at <https://jaguarm.itch.io/please-remain-seated>, and it
     python tools/serve.py 8745 dist/web       # play the build, not the working tree
 
 `tools/build_web.py` reads index.html and copies exactly the files index.html loads into
-`dist/web`, which is thirty-eight files and 580 kB. That is not tidiness. itch.io refuses an
+`dist/web`, which is fifty files and 790 kB. That is not tidiness. itch.io refuses an
 HTML5 upload with more than a thousand files in it, and this folder zipped whole is twelve
 hundred: nine hundred of them are git objects, and the rest are the sprite generator, the frame
 renderer, `__pycache__` and a README with a picture in it. None of that is the aeroplane.

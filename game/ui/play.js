@@ -22,6 +22,7 @@
     "use strict";
     const PRS = global.PRS = global.PRS || {};
     const { el, $, $$, clear, mmss, costLabel, clamp01, store } = PRS.util;
+    const T = PRS.t, X = PRS.tx, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -60,12 +61,15 @@
         return Math.max(PACE.least, Math.min(PACE.most, seconds * PACE.perSecond));
     }
 
-    // What a thing in your bag is called under a forty-eight pixel icon.
+    // What a thing in your bag is called under a forty-eight pixel icon. One or two words,
+    // and a language that cannot do it in two has to pick the two it can: there is no more room
+    // under the icon in German than there is in English.
     const SHORT = {
-        water_big: "water", wet_towel: "towel", blanket: "blanket", gloves: "gloves",
-        hood: "hood", goggles: "goggles", multitool: "multi-tool", tape: "tape",
-        binbag: "bin liners", first_aid: "first aid", inhaler: "inhaler", strap: "strap",
-        hivis: "hi-vis", phone: "phone", halon_bottle: "halon", water_ext: "extinguisher",
+        water_big: K("water"), wet_towel: K("towel"), blanket: K("blanket"), gloves: K("gloves"),
+        hood: K("hood"), goggles: K("goggles"), multitool: K("multi-tool"), tape: K("tape"),
+        binbag: K("bin liners"), first_aid: K("first aid"), inhaler: K("inhaler"),
+        strap: K("strap"), hivis: K("hi-vis"), phone: K("phone"), halon_bottle: K("halon"),
+        water_ext: K("extinguisher"),
     };
 
     function build(container, state) {
@@ -84,15 +88,13 @@
 
         const bar = el("div", { class: "hud" }, [
             el("div", { class: "hud-clock" }, [
-                el("div", { class: "clock-label", text: "TO TOUCHDOWN" }),
+                el("div", { class: "clock-label", text: T("TO TOUCHDOWN") }),
                 el("div", { class: "clock", id: "clock", text: mmss(S.clock.remaining) }),
                 el("div", { class: "clock-plan", id: "clockplan" }),
                 el("div", { class: "undo-bar", id: "undobar" }),
                 el("div", { class: "hud-buttons" }, [
-                    el("button", { class: "sound", id: "sound", title: "Sound (M)",
-                                   onclick: toggleSound }),
-                    el("button", { class: "sound", title: "How to play (?)", text: "HOW TO PLAY",
-                                   onclick: showHelp }),
+                    el("button", { class: "sound", title: T("Settings (Esc)"),
+                                   text: T("SETTINGS"), onclick: openSettings }),
                 ]),
             ]),
             el("div", { class: "hud-meters", id: "meters" }),
@@ -132,18 +134,17 @@
         S.onLog = pushLog;
         for (const entry of S.log) pushLog(entry);
 
-        st.log(S, S.character.open, "open");
-        st.log(S, "Transnational 447, thirty-one thousand feet, beginning the descent. " +
-                  "Sixty-one souls. There is something burning in the locker above " +
-                  cabin.ORIGIN.row + cabin.ORIGIN.letter + " and you are the only person on this " +
-                  "aeroplane who has noticed.", "open");
-        st.log(S, "The clock only moves when you do. Every action costs seconds. " +
-                  "You cannot put this fire out.", "rule");
-        st.log(S, "Click a person, the fire, or yourself to see what you can do. " +
-                  "Click anywhere else to walk there, and back onto your own trail to take a " +
-                  "walk back.", "rule");
+        st.log(S, T(S.character.open), "open");
+        st.log(S, T("Transnational 447, thirty-one thousand feet, beginning the descent. " +
+                    "Sixty-one souls. There is something burning in the locker above {seat} " +
+                    "and you are the only person on this aeroplane who has noticed.",
+                    { seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }), "open");
+        st.log(S, T("The clock only moves when you do. Every action costs seconds. " +
+                    "You cannot put this fire out."), "rule");
+        st.log(S, T("Click a person, the fire, or yourself to see what you can do. " +
+                    "Click anywhere else to walk there, and back onto your own trail to take a " +
+                    "walk back."), "rule");
 
-        paintSound();
         paint();
         loop();
         if (!store.get("seenHelp", false)) showHelp();
@@ -152,24 +153,29 @@
     function showHelp() { PRS.screens.help(root, S.character); }
 
     /**
-     * Every action in the game makes a noise now, so there has to be a way to stop it. The
-     * setting outlives the flight; nothing else on this screen does.
+     * The panel, over the cabin. Everything on the screen is rebuilt afterwards because the
+     * language may have changed under it: the HUD, the bag, the card and the words painted on
+     * the aeroplane are all written fresh every frame or on the next paint.
+     */
+    function openSettings() {
+        PRS.settings.open(root, paint);
+    }
+
+    /**
+     * Every action in the game makes a noise now, so there has to be a way to stop it. There is
+     * no button for it up here any more - the settings panel has the sound in one place, with
+     * the volume - but M still does it without opening anything, and you can hear which way it
+     * went. The setting outlives the flight; nothing else on this screen does.
      */
     function toggleSound() {
         PRS.audio.unlock();
         PRS.audio.setEnabled(!PRS.audio.isEnabled());
         store.set("sound", PRS.audio.isEnabled());
         if (PRS.audio.isEnabled()) { PRS.audio.startRoar(); PRS.audio.play("select"); }
-        paintSound();
     }
 
-    function paintSound() {
-        const b = root && $("#sound", root);
-        if (!b) return;
-        const on = PRS.audio.isEnabled();
-        b.textContent = on ? "SOUND ON" : "SOUND OFF";
-        b.className = "sound" + (on ? "" : " off");
-    }
+    /** Whether there is a flight on the screen right now: the settings panel's way out asks. */
+    function aloft() { return !!(S && root && root.isConnected); }
 
     function destroy() {
         cancelAnimationFrame(raf);
@@ -181,6 +187,9 @@
         document.removeEventListener("mousedown", onPress);
         window.removeEventListener("resize", onResize);
         if (S) S.onLog = null;
+        // The screen is gone even though the node it was built in is not: the next screen is
+        // built in the same one. Letting go of it here is what makes `aloft` tell the truth.
+        root = null;
     }
 
     function onResize() {
@@ -288,7 +297,7 @@
     function endAction() {
         const b = busy;
         busy = null;
-        root.classList.remove("busy");
+        if (root) root.classList.remove("busy");
         // Anything priced while the seconds were going by was priced on a cabin half way through
         // them. The route field is cheap to rebuild and wrong to keep.
         S._field = null;
@@ -322,12 +331,12 @@
         said = said || { moved: before.moved, helpers: before.helpers };
         const gained = now.moved - said.moved;
         if (gained > 0) {
-            fx.say(S.player.x, S.player.y, "+" + gained + " MOVED", "#8ae8a0",
+            fx.say(S.player.x, S.player.y, T("+{n} MOVED", { n: gained }), "#8ae8a0",
                    { ms: 1900, rise: 22, size: 0.32 });
             fx.flash("#5fd67a", 0.1);
         }
         if (now.helpers > said.helpers) {
-            fx.say(focus.x, focus.y, "HELPING", "#5fd67a", { ms: 1800, rise: 20, size: 0.3 });
+            fx.say(focus.x, focus.y, T("HELPING"), "#5fd67a", { ms: 1800, rise: 20, size: 0.3 });
         }
         if (!said.burns && now.burns > before.burns + 0.6) {
             fx.flash("#d4483a", 0.22);
@@ -344,7 +353,8 @@
             said.fire = true;
         }
         if (!said.cred && now.cred > before.cred + 4) {
-            fx.say(S.player.x, S.player.y, "BELIEVED", "#ffd54a", { ms: 1500, rise: 18, size: 0.3 });
+            fx.say(S.player.x, S.player.y, T("BELIEVED"), "#ffd54a",
+                   { ms: 1500, rise: 18, size: 0.3 });
             said.cred = true;
         }
         said.moved = now.moved;
@@ -544,15 +554,15 @@
         const box = clear($("#undobar", root));
         const back = PRS.undo.peek(S);
         if (!back.ok) {
-            box.appendChild(el("div", { class: "undo off", title: back.why }, [
+            box.appendChild(el("div", { class: "undo off", title: T(back.why) }, [
                 el("span", { class: "undo-mark", text: "↶" }),
-                el("i", { text: back.why }),
+                el("i", { text: T(back.why) }),
             ]));
             return;
         }
         box.appendChild(el("button", {
             class: "undo",
-            title: "Backspace · " + back.label,
+            title: T("Backspace · {what}", { what: back.label }),
             onclick: function () { doUndo(); },
             onmouseenter: function () {
                 planKey = "undo";
@@ -562,6 +572,8 @@
             onmouseleave: clearPlan,
         }, [
             el("span", { class: "undo-mark", text: "↶" }),
+            // Already in the language it was done in: the label was recorded when the action
+            // was taken, the way the log lines were.
             el("b", { text: back.label }),
             el("span", { class: "undo-back",
                          text: "+" + costLabel(Math.abs(back.seconds)) +
@@ -627,19 +639,19 @@
         const box = clear($("#meters", root));
         // Not the score. The score is who is alive when the doors open, and nobody knows that
         // yet; this is how many people are off their seats and on the floor because of you.
-        box.appendChild(meter("OUT OF THEIR SEATS", st.movedCount(S), 60, "m-good",
+        box.appendChild(meter(T("OUT OF THEIR SEATS"), st.movedCount(S), 60, "m-good",
                               st.movedCount(S) + " / 60"));
-        box.appendChild(meter("HELPING", st.helperCount(S), 10, "m-good",
+        box.appendChild(meter(T("HELPING"), st.helperCount(S), 10, "m-good",
                               String(st.helperCount(S))));
-        box.appendChild(meter("THEY BELIEVE YOU", S.credibility, 100, "m-cred"));
-        box.appendChild(meter("CABIN PANIC", S.cabinPanic, 100, "m-panic"));
+        box.appendChild(meter(T("THEY BELIEVE YOU"), S.credibility, 100, "m-cred"));
+        box.appendChild(meter(T("CABIN PANIC"), S.cabinPanic, 100, "m-panic"));
         // There is no fire meter and no smoke meter. The cabin is on the screen; how bad it is
         // is a thing you look at, the way everybody else on this aeroplane has to.
         const phase = PRS.crew.PHASES[S.crewPhase];
         box.appendChild(el("div", { class: "crewphase" }, [
-            el("span", { class: "tag", text: "CREW" }),
-            el("b", { text: phase.name }),
-            el("i", { text: phase.desc }),
+            el("span", { class: "tag", text: T("CREW") }),
+            el("b", { text: T(phase.name) }),
+            el("i", { text: T(phase.desc) }),
         ]));
     }
 
@@ -652,30 +664,32 @@
         const box = clear($("#youbox", root));
         const P = S.player;
         box.appendChild(el("button", {
-            class: "you-name opens", title: "What you can do here, and to yourself",
+            class: "you-name opens", title: T("What you can do here, and to yourself"),
             onclick: (ev) => openThing(H.youThing(S), ev.currentTarget.getBoundingClientRect(), true),
         }, [
             PRS.atlas.icon("pax", 2, PRS.render.paletteOf(S.character)),
             el("div", {}, [
                 el("b", { text: S.character.name }),
-                el("i", { text: S.character.title + (S.luck === "perfect" ? " · perfect luck" : "") }),
+                el("i", { text: T(S.character.title) +
+                                (S.luck === "perfect" ? T(" · perfect luck") : "") }),
             ]),
         ]));
-        box.appendChild(meter("YOUR LUNGS", 100 - P.smokeDose, 100, "m-lungs",
-                              P.smokeDose > 70 ? "failing" : P.smokeDose > 40 ? "bad"
-                              : P.smokeDose > 15 ? "coughing" : "fine"));
-        box.appendChild(meter("YOUR PANIC", P.panic, 100, "m-panic"));
-        box.appendChild(meter("BURNS", P.burns, 100, "m-burn",
-                              P.burns > 40 ? "severe" : P.burns > 15 ? "bad"
-                              : P.burns > 3 ? "sore" : "none"));
+        box.appendChild(meter(T("YOUR LUNGS"), 100 - P.smokeDose, 100, "m-lungs",
+                              P.smokeDose > 70 ? T("failing") : P.smokeDose > 40 ? T("bad")
+                              : P.smokeDose > 15 ? T("coughing") : T("fine")));
+        box.appendChild(meter(T("YOUR PANIC"), P.panic, 100, "m-panic"));
+        box.appendChild(meter(T("BURNS"), P.burns, 100, "m-burn",
+                              P.burns > 40 ? T("severe") : P.burns > 15 ? T("bad")
+                              : P.burns > 3 ? T("sore") : T("none")));
         // Whoever is in your arms, as a button, because putting them down is on their card.
-        const held = P.carrying.map((id) => [id, "CARRYING"])
-            .concat(P.dragging ? [[P.dragging, "DRAGGING"]] : []);
+        const held = P.carrying.map((id) => [id, T("CARRYING")])
+            .concat(P.dragging ? [[P.dragging, T("DRAGGING")]] : []);
         for (const [id, tag] of held) {
             const p = st.paxById(S, id);
             if (!p) continue;
             box.appendChild(el("button", {
-                class: "carrying opens", title: "What you can do with " + p.name,
+                class: "carrying opens",
+                title: T("What you can do with {who}", { who: p.name }),
                 onclick: (ev) => openThing(H.personThing(p),
                                            ev.currentTarget.getBoundingClientRect(), true),
             }, [
@@ -689,32 +703,34 @@
     function paintBag() {
         const wrap = el("div", { class: "bagbar" });
         wrap.appendChild(el("div", { class: "bag-head" }, [
-            el("b", { text: "YOUR BAG" }),
-            el("i", { text: "used from your card" }),
+            el("b", { text: T("YOUR BAG") }),
+            el("i", { text: T("used from your card") }),
         ]));
         const row = el("div", { class: "bag-items" });
         // An empty bottle stays, because it refills; an empty air horn does not.
         const shown = S.inventory.filter((s) => !s.spent || s.item.refill);
         if (!shown.length) {
-            row.appendChild(el("div", { class: "bag-empty", text:
-                "Nothing on you. Everything else is in the aeroplane, and in other people's laps." }));
+            row.appendChild(el("div", { class: "bag-empty", text: T("Nothing on you. " +
+                "Everything else is in the aeroplane, and in other people's laps.") }));
         }
         for (const s of shown) {
             const item = s.item;
             const empty = s.spent || (s.uses !== null && s.uses <= 0);
             const worn = st.wearing(S, s.id);
-            const status = empty ? "empty" : s.wet ? "wet" : worn ? "on"
-                         : s.uses === null ? "" : s.uses + " left";
+            const status = empty ? T("empty") : s.wet ? T("wet") : worn ? T("on")
+                         : s.uses === null ? "" : T("{n} left", { n: s.uses });
             row.appendChild(el("button", {
                 class: "bag-item opens" + (empty ? " empty" : "") +
                        (s.wet ? " wet" : "") + (worn ? " worn" : ""),
-                title: item.name + (status ? " — " + status : "") + " · click for what it can do",
+                title: (status ? T("{name} — {status}", { name: T(item.name), status: status })
+                               : T(item.name)) + T(" · click for what it can do"),
                 dataset: { item: s.id },
                 onclick: (ev) => openThing(H.youThing(S),
                                            ev.currentTarget.getBoundingClientRect(), true),
             }, [
                 PRS.atlas.icon(H.itemSprite(s), 3),
-                el("b", { text: SHORT[s.id] || PRS.loot.short(item.name) }),
+                el("b", { text: SHORT[s.id] ? T(SHORT[s.id])
+                                            : PRS.loot.short(T(item.name)) }),
                 el("i", { text: status }),
             ]));
         }
@@ -729,11 +745,15 @@
         const i = cabin.idx(P.x, P.y);
         const bits = [cabin.placeName(P.x, P.y)];
         const inten = S.fire.intensity[i], smoke = S.fire.smoke[i];
-        if (inten > 0.5) bits.push("fire: " + PRS.fire.describe(S.fire, P.x, P.y));
-        if (smoke > 6) bits.push("smoke: " + PRS.fire.describeSmoke(smoke));
-        box.appendChild(el("span", { class: "here-place", text: "You are at " + bits.join(" · ") }));
-        box.appendChild(el("span", { class: "here-hint", text: S.clock.landed ? "It has landed."
-            : "Click a person, the fire, or yourself. Anywhere else is a walk." }));
+        if (inten > 0.5) {
+            bits.push(T("fire: {what}", { what: PRS.fire.describe(S.fire, P.x, P.y) }));
+        }
+        if (smoke > 6) bits.push(T("smoke: {what}", { what: PRS.fire.describeSmoke(smoke) }));
+        box.appendChild(el("span", { class: "here-place",
+                                     text: T("You are at {where}", { where: bits.join(" · ") }) }));
+        box.appendChild(el("span", { class: "here-hint", text: S.clock.landed
+            ? T("It has landed.")
+            : T("Click a person, the fire, or yourself. Anywhere else is a walk.") }));
     }
 
     // ------------------------------------------------------------------------- the tooltip ---
@@ -777,7 +797,7 @@
         const inten = S.fire.intensity[i], smoke = S.fire.smoke[i];
         const air = [];
         if (inten > 0.5) air.push(PRS.fire.describe(S.fire, tile.x, tile.y));
-        if (smoke > 6) air.push("smoke " + PRS.fire.describeSmoke(smoke));
+        if (smoke > 6) air.push(T("smoke {what}", { what: PRS.fire.describeSmoke(smoke) }));
 
         if (tg.kind === "person" || tg.kind === "crew") {
             const p = tg.kind === "person" ? st.paxById(S, tg.thing.id) : PRS.crew.byId(S, tg.thing.id);
@@ -789,18 +809,24 @@
                 el("div", {}, [
                     el("b", { text: p.name }),
                     el("i", { text: tg.kind === "person"
-                        ? p.seat + " · " + p.kg + "kg · " + PRS.pax.displayState(p) + " · " + cond.label
-                        : p.role }),
-                    p.traits && p.traits.length ? el("u", { text: p.traits.join(", ") }) : null,
-                    p.helper ? el("em", { text: "working with you" }) : null,
+                        ? T("{seat} · {kg}kg · {state} · {condition}",
+                            { seat: p.seat, kg: p.kg, state: PRS.pax.displayState(p),
+                              condition: T(cond.label) })
+                        : T(p.role) }),
+                    p.traits && p.traits.length
+                        ? el("u", { text: p.traits.map(PRS.data.passengers.traitName)
+                                                  .join(", ") }) : null,
+                    p.helper ? el("em", { text: T("working with you") }) : null,
                 ]),
             ]));
             if (air.length) tip.appendChild(el("div", { class: "tip-air", text: air.join(" · ") }));
         } else if (tg.kind === "you") {
-            tip.appendChild(el("div", { class: "tip-place", text: "You, at " + cabin.placeName(tile.x, tile.y) }));
+            tip.appendChild(el("div", { class: "tip-place",
+                text: T("You, at {where}", { where: cabin.placeName(tile.x, tile.y) }) }));
             if (air.length) tip.appendChild(el("div", { class: "tip-air", text: air.join(" · ") }));
         } else if (tg.kind === "fire") {
-            tip.appendChild(el("div", { class: "tip-place", text: "The fire · " + cabin.placeName(tile.x, tile.y) }));
+            tip.appendChild(el("div", { class: "tip-place",
+                text: T("The fire · {where}", { where: cabin.placeName(tile.x, tile.y) }) }));
             tip.appendChild(el("div", { class: "tip-air", text: air.join(" · ") }));
         } else {
             tip.appendChild(el("div", { class: "tip-place", text: cabin.placeName(tile.x, tile.y) }));
@@ -814,20 +840,23 @@
     function tipHint(tile, tg) {
         if (S.clock.landed) return null;
         if (tg.kind === "person" || tg.kind === "crew") {
-            return "Click for what you can do with " + tg.thing.short;
+            return T("Click for what you can do with {who}", { who: tg.thing.short });
         }
-        if (tg.kind === "fire") return "Click the fire for what you can do about it";
-        if (tg.kind === "you") return "Click yourself for what you can do here";
+        if (tg.kind === "fire") return T("Click the fire for what you can do about it");
+        if (tg.kind === "you") return T("Click yourself for what you can do here");
         if (tg.kind === "walk") {
             if (tile.x === S.player.x && tile.y === S.player.y) return null;
             const stop = trailStop(tile);
             if (stop) {
-                return "You walked from here. Click to take that back · +" +
-                       costLabel(stop.seconds);
+                return T("You walked from here. Click to take that back · +{secs}",
+                         { secs: costLabel(stop.seconds) });
             }
             const r = A.route(S, tile.x, tile.y);
-            if (r) return "Click to walk here · " + costLabel(Math.max(1, Math.round(r.cost)));
-            return "You cannot stand there. A click walks you to the nearest tile you can.";
+            if (r) {
+                return T("Click to walk here · {secs}",
+                         { secs: costLabel(Math.max(1, Math.round(r.cost))) });
+            }
+            return T("You cannot stand there. A click walks you to the nearest tile you can.");
         }
         return null;
     }
@@ -873,7 +902,7 @@
         for (const sec of R.sections) {
             if (sec.more && !cardMore) {
                 body.appendChild(el("button", { class: "card-more",
-                    text: "▸ " + sec.rows.length + " more…",
+                    text: T("▸ {n} more…", { n: sec.rows.length }),
                     onclick: () => { cardMore = true; paintCard(); } }));
                 continue;
             }
@@ -885,12 +914,12 @@
                     : {}));
             }
             if (sec.hidden) {
-                body.appendChild(el("div", { class: "card-empty", text:
-                    "…and " + sec.hidden + " more once you are there." }));
+                body.appendChild(el("div", { class: "card-empty",
+                    text: T("…and {n} more once you are there.", { n: sec.hidden }) }));
             }
         }
         if (!R.near && !R.walk && !R.empty) {
-            body.appendChild(el("div", { class: "card-empty", text: "Out of reach." }));
+            body.appendChild(el("div", { class: "card-empty", text: T("Out of reach.") }));
         }
         card.appendChild(body);
         card.classList.add("on");
@@ -908,7 +937,7 @@
                 h.traits ? el("u", { text: h.traits }) : null,
                 h.flag ? el("em", { text: h.flag }) : null,
             ]),
-            el("button", { class: "card-close", text: "×", title: "Close (Esc)",
+            el("button", { class: "card-close", text: "×", title: T("Close (Esc)"),
                            onclick: closeCard }),
         ]);
     }
@@ -1060,7 +1089,9 @@
                 el("b", { text: e.label }),
                 e.detail ? el("i", { text: e.detail }) : null,
             ]),
-            el("span", { class: "act-cost", text: over ? "over" : costLabel(e.cost) }),
+            el("span", { class: "act-cost",
+                         text: over ? X("over", "an action that costs more time than is left")
+                                    : costLabel(e.cost) }),
         ]);
     }
 
@@ -1166,12 +1197,19 @@
         const tag = (ev.target.tagName || "").toLowerCase();
         if (tag === "input" || tag === "textarea") return;
 
+        // Something over the cabin has already dealt with this key: the settings panel closing
+        // on Escape must not be the same Escape that opens it again.
+        if (ev.prsHandled) return;
+
         // The three that are about the screen rather than the aeroplane, and work at any time.
         if (ev.key === "m" || ev.key === "M") { toggleSound(); return; }
         if (ev.key === "?") { showHelp(); return; }
+        // Escape unwinds whatever is over the cabin, innermost first, and opens the settings
+        // when there is nothing left to close. The settings panel handles its own Escape.
         if (ev.key === "Escape") {
             if ($(".help-veil", root)) PRS.screens.hideHelp(root);
-            else closeCard();
+            else if (selected) closeCard();
+            else openSettings();
             return;
         }
 
@@ -1216,5 +1254,5 @@
         box.scrollTop = box.scrollHeight;
     }
 
-    PRS.play = { build, destroy, paint, openThing, closeCard };
+    PRS.play = { build, destroy, paint, openThing, closeCard, aloft };
 })(window);

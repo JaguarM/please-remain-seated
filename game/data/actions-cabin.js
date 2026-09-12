@@ -7,6 +7,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -23,89 +24,92 @@
     A.register([
         // ------------------------------------------------------------------- the lavatory ------
         { id: "cabin.fill_bottle", item: "water_big", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Fill the bottle at the tap", cost: 9,
-          detail: "The tap runs for four seconds a press. You will press it three times.",
+          label: K("Fill the bottle at the tap"), cost: 9,
+          detail: K("The tap runs for four seconds a press. You will press it three times."),
           when: (S) => atLav(S) && !!slot(S, "water_big") && slot(S, "water_big").uses < 3,
           run(S) {
               const s = slot(S, "water_big");
               s.uses = 3; s.spent = false;
-              return { text: "Three presses of a tap that gives you four seconds each time. The " +
-                  "bottle is full. There is no limit on this and almost nobody comes back for a " +
-                  "second one.", kind: "good" };
+              return { text: T("Three presses of a tap that gives you four seconds each " +
+                               "time. The bottle is full. There is no limit on this and almost " +
+                               "nobody comes back for a second one."), kind: "good" };
           } },
 
         { id: "cabin.wet_blanket", item: "blanket", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Soak the blanket in the sink", cost: 14,
-          detail: "A wet blanket is a completely different object to a dry one.",
+          label: K("Soak the blanket in the sink"), cost: 14,
+          detail: K("A wet blanket is a completely different object to a dry one."),
           when: (S) => atLav(S) && !!slot(S, "blanket") && !slot(S, "blanket").wet,
           run(S) {
               slot(S, "blanket").wet = true;
-              return { text: "You fill the basin and push the whole blanket under it. It comes " +
-                  "out four times heavier and worth about six times as much.", kind: "good" };
+              return { text: T("You fill the basin and push the whole blanket under it. It " +
+                               "comes out four times heavier and worth about six times as " +
+                               "much."), kind: "good" };
           } },
 
         { id: "cabin.wet_towel", item: "wet_towel", deck: "cabin", tags: ["hands"],
-          label: "Wet the towel again", cost: 8,
+          label: K("Wet the towel again"), cost: 8,
           when: (S) => atLav(S) && !!slot(S, "wet_towel") && slot(S, "wet_towel").uses < 4,
           run(S) {
               const s = slot(S, "wet_towel"); s.uses = 4; s.spent = false;
-              return "The towel goes back to being a wet towel, which is its whole job.";
+              return T("The towel goes back to being a wet towel, which is its whole job.");
           } },
 
         { id: "cabin.fill_bag", item: "binbag", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Fill a bin liner with water", cost: 20,
-          detail: "Nine litres. Four times the bottle. It is awkward and it is worth it.",
+          label: K("Fill a bin liner with water"), cost: 20,
+          detail: K("Nine litres. Four times the bottle. It is awkward and it is worth it."),
           when: (S) => atLav(S) && !!slot(S, "binbag") && !S.flags.bagFull,
           run(S) {
               st.useCharge(S, slot(S, "binbag"));
               st.setFlag(S, "bagFull");
-              return { text: "You hold a bin liner under a tap that gives four seconds a press for " +
-                  "twenty seconds and come out with nine litres of water in a bag. Do not put " +
-                  "this down.", kind: "great" };
+              return { text: T("You hold a bin liner under a tap that gives four seconds a " +
+                               "press for twenty seconds and come out with nine litres of water " +
+                               "in a bag. Do not put this down."), kind: "great" };
           } },
 
         { id: "cabin.trigger_detector", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Set off the lavatory smoke detector", cost: 10,
-          detail: "It is a hard-wired alarm on the flight deck and you can make it happen now.",
+          label: K("Set off the lavatory smoke detector"), cost: 10,
+          detail: K("It is a hard-wired alarm on the flight deck and you can make it happen now."),
           when: (S) => atLav(S) && !S.cabinFlags.detectorSounded,
           run(S) {
               PRS.events.force(S, "detector");
-              return { text: "You hold the wet towel over the detector, wring the smoke out of it, " +
-                  "and wave. It takes eleven seconds and it puts a light on the flight deck panel " +
-                  "that two pilots are contractually unable to ignore.", kind: "great" };
+              return { text: T("You hold the wet towel over the detector, wring the smoke out " +
+                               "of it, and wave. It takes eleven seconds and it puts a light on " +
+                               "the flight deck panel that two pilots are contractually unable " +
+                               "to ignore."), kind: "great" };
           } },
 
         // ---------------------------------------------------------------------- the galley ------
 
         { id: "cabin.galley_ext", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Take the extinguisher out of the galley stowage", cost: 16,
-          detail: "It is behind a placard and a clip. It is not locked.",
+          label: K("Take the extinguisher out of the galley stowage"), cost: 16,
+          detail: K("It is behind a placard and a clip. It is not locked."),
           when: (S) => atGalley(S) && !slot(S, "water_ext"),
           run(S) {
               st.give(S, "water_ext");
               S.credibility = Math.max(0, S.credibility - 6);
-              return { text: "You unclip nine litres of water under pressure from the galley wall. " +
-                  "A member of crew sees you do it and does not have time to have a view about it.",
-                  kind: "great" };
+              return { text: T("You unclip nine litres of water under pressure from the " +
+                               "galley wall. A member of crew sees you do it and does not have " +
+                               "time to have a view about it."), kind: "great" };
           } },
 
         { id: "cabin.stow_trolley", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Push the trolley into the galley yourself", cost: 26,
-          detail: "Nobody has told you that you can. Nobody has told you that you cannot.",
+          label: K("Push the trolley into the galley yourself"), cost: 26,
+          detail: K("Nobody has told you that you can. Nobody has told you that you cannot."),
           when: (S) => S.cabinFlags.cartOut && Math.abs(S.player.x - S.cabinFlags.cartX) <= 1,
           run(S) {
               S.cabinFlags.cartOut = false;
               delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
               S.credibility = Math.max(0, S.credibility - 4);
-              return { text: "Two hundred kilos of trolley, six rows, into the galley, brake on. " +
-                  "The aisle is clear from the flight deck door to the tail.", kind: "great" };
+              return { text: T("Two hundred kilos of trolley, six rows, into the galley, " +
+                               "brake on. The aisle is clear from the flight deck door to the " +
+                               "tail."), kind: "great" };
           } },
 
         // -------------------------------------------------------------------- bins and masks ---
 
         { id: "cabin.masks_manual", item: (S) => { const s = st.inventoryHas(S, "tool") || st.inventoryHas(S, "cut"); return s ? s.id : null; }, deck: "cabin", tags: ["hands", "fiddly"], danger: "good",
-          label: "Force the oxygen mask panel open", cost: 18,
-          detail: "There is a manual release. It is a hole and a pin and it is on the safety card.",
+          label: K("Force the oxygen mask panel open"), cost: 18,
+          detail: K("There is a manual release. It is a hole and a pin and it is on the safety card."),
           when: (S) => inRow(S) && !S.cabinFlags.masksDropped &&
                        (!!st.inventoryHas(S, "tool") || !!st.inventoryHas(S, "cut")),
           run(S) {
@@ -113,13 +117,14 @@
               PRS.audio.play("masksDrop");
               S.cabinAwareness = Math.min(100, S.cabinAwareness + 24);
               S.cabinPanic = Math.min(100, S.cabinPanic + 14);
-              return { text: "You find the pinhole in the panel and put the multi-tool spike into " +
-                  "it. The panel drops and four masks come out on their tubes. Then you do the " +
-                  "next one.", kind: "great" };
+              return { text: T("You find the pinhole in the panel and put the multi-tool " +
+                               "spike into it. The panel drops and four masks come out on their " +
+                               "tubes. Then you do the next one."), kind: "great" };
           } },
 
         { id: "cabin.masks_row", deck: "cabin", tags: ["hands"], danger: "good",
-          label: (S) => "Pull down the masks for row " + cabin.rowAt(S.player.x),
+          label: (S) => T("Pull down the masks for row {row}",
+                          { row: cabin.rowAt(S.player.x) }),
           when: (S) => S.cabinFlags.masksDropped && inRow(S),
           cost: 16,
           run(S) {
@@ -129,16 +134,16 @@
                   if (p.row !== row || p.masked) continue;
                   p.masked = true; n++;
               }
-              if (!n) return "Everybody in row " + row + " already has one on.";
-              return { text: "You pull the masks down and get them over " + n + " faces in row " +
-                  row + ". You have to tug them to start the generator and nobody knows that.",
-                  kind: "good" };
+              if (!n) return T("Everybody in row {row} already has one on.", { row: row });
+              return { text: T("You pull the masks down and get them over {n} faces in row " +
+                               "{row}. You have to tug them to start the generator and nobody " +
+                               "knows that.", { n: n, row: row }), kind: "good" };
           } },
 
         // ---------------------------------------------------------------------- doors and exits ---
 
         { id: "cabin.bags_out", deck: "cabin", tags: ["hands"], danger: "good",
-          label: "Clear the bags out of the aisle", cost: 18,
+          label: K("Clear the bags out of the aisle"), cost: 18,
           when: (S) => Object.keys(S.cabinFlags.aisleBlocked)
                              .some((x) => S.cabinFlags.aisleBlocked[x] < 9999),
           run(S) {
@@ -148,14 +153,14 @@
                   S.cabinFlags.aisleBlocked[x] = Math.max(0, S.cabinFlags.aisleBlocked[x] - 25);
                   if (!S.cabinFlags.aisleBlocked[x]) { delete S.cabinFlags.aisleBlocked[x]; n++; }
               }
-              return { text: "You throw " + (n * 2 + 1) + " cabin bags over the seat backs into " +
-                  "rows that are not using their footwells. Somebody objects. They are wrong.",
-                  kind: "good" };
+              return { text: T("You throw {n} cabin bags over the seat backs into rows that " +
+                               "are not using their footwells. Somebody objects. They are wrong.",
+                               { n: n * 2 + 1 }), kind: "good" };
           } },
 
         { id: "cabin.pa_handset", deck: "cabin", tags: ["social"], danger: "bad",
-          label: "Pick up the crew interphone and use the PA", cost: 20,
-          detail: "It is on the bulkhead. There is no lock on it. There is a diagram.",
+          label: K("Pick up the crew interphone and use the PA"), cost: 20,
+          detail: K("It is on the bulkhead. There is no lock on it. There is a diagram."),
           when: (S) => (S.player.x <= cabin.FWD_GALLEY_X || S.player.x >= cabin.AFT_GALLEY_X) &&
                        !S.flags.usedPA,
           run(S) {
@@ -165,11 +170,13 @@
               S.credibility = Math.min(100, S.credibility + 10);
               for (const p of S.pax) p.awareness = Math.min(100, p.awareness + 40);
               PRS.audio.play("pa");
-              return { text: "You take a handset off a bulkhead, press the button marked PA, and " +
-                  "say the following to sixty-one people at once: “There is a fire in the " +
-                  "overhead locker above row fourteen. If you can walk, walk forward. If you " +
-                  "cannot, put your hand up.”\n\nEleven hands go up. Nine people walk. Everybody " +
-                  "else stands up at the same time.", kind: "neutral" };
+              return { text: T("You take a handset off a bulkhead, press the button marked " +
+                               "PA, and say the following to sixty-one people at once: “There " +
+                               "is a fire in the overhead locker above row fourteen. If you can " +
+                               "walk, walk forward. If you cannot, put your hand up.”") +
+                       "\n\n" +
+                       T("Eleven hands go up. Nine people walk. Everybody else stands up at the " +
+                         "same time."), kind: "neutral" };
           } },
     ]);
 })(window);

@@ -7,8 +7,11 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t;
 
     function boot() {
+        // The language before the first screen, so nothing is drawn in English and redrawn.
+        PRS.i18n.start();
         const n = PRS.atlas.boot();
         const host = document.getElementById("app");
         if (!host) return;
@@ -19,7 +22,7 @@
             host.className = "screen prose";
             const box = document.createElement("div");
             box.className = "prose-inner";
-            box.innerHTML = "<h2>The aeroplane did not load</h2>";
+            box.appendChild(PRS.util.el("h2", { text: T("The aeroplane did not load") }));
             const ul = document.createElement("ul");
             for (const p of problems) {
                 const li = document.createElement("li");
@@ -28,8 +31,8 @@
             }
             box.appendChild(ul);
             const hint = document.createElement("p");
-            hint.textContent = "If you have just regenerated the art, run " +
-                "`python pixel-workshop/make_cabin_textures.py` and reload.";
+            hint.textContent = T("If you have just regenerated the art, run " +
+                "`python pixel-workshop/make_cabin_textures.py` and reload.");
             box.appendChild(hint);
             host.appendChild(box);
             return;
@@ -40,8 +43,9 @@
                     Object.keys(PRS.actions.deckCounts()).length + " decks.");
         console.log(PRS.actions.deckCounts());
 
-        // The sound setting outlives the tab. Everything else about a run does not.
+        // The sound settings outlive the tab. Everything else about a run does not.
         PRS.audio.setEnabled(PRS.util.store.get("sound", true) !== false);
+        PRS.audio.setVolume(PRS.util.store.get("volume", 1));
 
         PRS.screens.mount(host);
         PRS.screens.title();
@@ -52,7 +56,7 @@
         const bad = [];
         if (!spriteCount) bad.push("No sprites loaded. game/art/*.js did not run.");
         for (const key of ["util", "atlas", "audio", "cabin", "fire", "state", "pax", "crew",
-                           "actions", "scoring", "render", "hotspots", "play", "screens", "medals",
+                           "actions", "scoring", "render", "hotspots", "play", "screens", "settings", "medals",
                            "endings", "events"]) {
             if (!PRS[key]) bad.push("Missing module: PRS." + key);
         }

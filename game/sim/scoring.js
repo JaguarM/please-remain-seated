@@ -20,6 +20,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
 
@@ -125,6 +126,8 @@
                 fighting: Math.round(S.stats.timeFighting),
                 wasted: Math.round(S.stats.timeWasted || 0),
             },
+            without: null,
+            saved: null,
             actions: S.actions.length,
             distinctActions: Object.keys(S.counts).length,
             medals: [],
@@ -139,6 +142,16 @@
         // A flight flown only to see what would have happened keeps nothing and says nothing.
         if (S.quiet) return result;
 
+        // The same aeroplane with you asleep in seat 9C, flown now, in silence. Everything the
+        // report and the log book say about you is the difference between that number and this
+        // one, so it is worked out here rather than on the screen that prints it.
+        //
+        // The balance tool turns it off: nothing there reads the number and it is a second
+        // fifteen minutes of physics for every flight simulated.
+        result.without = S.counterfactual === false ? null : withoutYou(S);
+        result.saved = result.without === null ? null
+                     : Math.max(0, result.survivors - result.without);
+
         // Some medals are about how it ended, so they are checked once the manifest exists, and
         // before the log book writes down which ones you have.
         PRS.medals.check(S);
@@ -149,8 +162,9 @@
         result.recording = PRS.recorder ? PRS.recorder.save(S, result) : null;
 
         const accounted = survivors + (you.outcome === "lost" ? 0 : 1);
-        PRS.state.log(S, "SOULS ON BOARD 61. ACCOUNTED FOR " + accounted + ". " +
-            (accounted < 61 ? "NOT ACCOUNTED FOR " + (61 - accounted) + "." : "ALL ACCOUNTED FOR."),
+        PRS.state.log(S, T("SOULS ON BOARD 61. ACCOUNTED FOR {n}. ", { n: accounted }) +
+            (accounted < 61 ? T("NOT ACCOUNTED FOR {n}.", { n: 61 - accounted })
+                            : T("ALL ACCOUNTED FOR.")),
             accounted < 61 ? "bad" : "great");
         return result;
     }
@@ -158,20 +172,21 @@
     // Out of sixty. Nobody is meant to see an A often, and all sixty is not a thing this
     // aeroplane has in it.
     const GRADES = [
-        { key: "A", min: 54, name: "Exceptional",
-          text: "Almost everybody. There is no version of this afternoon that goes better, and " +
-                "you found the one that nearly does." },
-        { key: "B", min: 49, name: "Remarkable",
-          text: "Most of a burning aeroplane got off it alive, and a good part of that was what " +
-                "you did in the first five minutes." },
-        { key: "C", min: 43, name: "Considerable",
-          text: "More people lived than would have. That is the job, and it is the whole job." },
-        { key: "D", min: 36, name: "Some",
-          text: "Some. Which is a strange word to have to use." },
-        { key: "E", min: 28, name: "A few",
-          text: "The fire decided most of this. You decided some of it." },
-        { key: "F", min: 0, name: "Almost none",
-          text: "You were the only person on this aeroplane who understood, and it was not enough." },
+        { key: "A", min: 54, name: K("Exceptional"),
+          text: K("Almost everybody. There is no version of this afternoon that goes better, " +
+                  "and you found the one that nearly does.") },
+        { key: "B", min: 49, name: K("Remarkable"),
+          text: K("Most of a burning aeroplane got off it alive, and a good part of that was " +
+                  "what you did in the first five minutes.") },
+        { key: "C", min: 43, name: K("Considerable"),
+          text: K("More people lived than would have. That is the job, and it is the whole job.") },
+        { key: "D", min: 36, name: K("Some"),
+          text: K("Some. Which is a strange word to have to use.") },
+        { key: "E", min: 28, name: K("A few"),
+          text: K("The fire decided most of this. You decided some of it.") },
+        { key: "F", min: 0, name: K("Almost none"),
+          text: K("You were the only person on this aeroplane who understood, and it was not " +
+                  "enough.") },
     ];
 
     /** The grade is nothing hidden: how many of the sixty got off alive. */
@@ -183,10 +198,19 @@
     /**
      * The same aeroplane with nobody doing anything: the same seed, the same person in the same
      * seat with the same bag, the same luck, and fifteen minutes spent standing in the aisle.
-     * Thirty people off alive is a failure or a triumph depending entirely on this number, so the
-     * report puts it next to the real one.
+     * Thirty people off alive is a failure or a triumph depending entirely on this number, so it
+     * is what the report prints and what the log book counts.
+     *
+     * Flown in silence. It is not your flight and it must not sound like one.
      */
     function withoutYou(S) {
+        const heard = PRS.audio && PRS.audio.isEnabled();
+        if (PRS.audio) PRS.audio.setEnabled(false);
+        try { return idleFlight(S); }
+        finally { if (PRS.audio) PRS.audio.setEnabled(heard); }
+    }
+
+    function idleFlight(S) {
         const L = S.loadout;
         const B = st.create({ characterId: L.characterId, outfitId: L.outfitId, items: L.items,
                               seed: S.seed, luck: S.luck });

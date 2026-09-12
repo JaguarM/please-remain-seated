@@ -14,6 +14,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -55,15 +56,16 @@
         {
             id: "loot.ask_carrying", deck: "people", tags: ["reveal", "social"], danger: "good",
             targets: (S) => unrevealed(S).filter((c) => c.p.state !== "down"),
-            label: (S, c) => "Ask " + c.p.name + " what they have got",
-            detail: "Seven seconds. Most of the useful objects on this aeroplane are in a lap.",
+            label: (S, c) => T("Ask {who} what they have got", { who: c.p.name }),
+            detail: K("Seven seconds. Most of the useful objects on this aeroplane are in a lap."),
             cost: 7,
             run(S, c) {
                 reveal(S, c.p);
                 const item = D().byId(c.p.carries);
                 c.p.trust = Math.min(100, c.p.trust + 8);
-                return { text: c.p.name + " has " + article(item.name) + ". " + item.note,
-                         kind: "good" };
+                return { text: T("{who} has {what}. {note}",
+                                 { who: c.p.name, what: article(T(item.name)),
+                                   note: T(item.note) }), kind: "good" };
             },
         },
 
@@ -72,43 +74,49 @@
             id: "loot.ask_for", deck: "people", tags: ["reveal", "social"], danger: "good",
             targets: (S) => revealed(S).filter((c) => c.p.state !== "down" &&
                                                       P.worthAsking(S, c.p, 24)),
-            label: (S, c) => "Ask " + c.p.name + " for the " + short(c.item.name),
-            detail: (S, c) => c.item.note,
+            label: (S, c) => T("Ask {who} for the {what}",
+                               { who: c.p.name, what: short(T(c.item.name)) }),
+            detail: (S, c) => T(c.item.note),
             cost: 13,
             run(S, c) {
                 const roll = P.convince(S, c.p, 24);
                 if (!roll.ok) {
                     PRS.audio.play("refuse");
-                    return { text: "“It's mine.” " + c.p.name + " is not being unreasonable and " +
-                        "it is not going to feel that way.", kind: "bad" };
+                    return { text: T("“It's mine.” {who} is not being unreasonable and it is " +
+                                     "not going to feel that way.", { who: c.p.name }),
+                             kind: "bad" };
                 }
                 st.give(S, c.p.carries);
                 c.p.carries = null;
                 c.p.trust = Math.min(100, c.p.trust + 20);
                 PRS.audio.play("good");
-                return { text: c.p.name + " hands it over without being asked twice. " +
-                    "You have " + article(c.item.name) + ".", kind: "great" };
+                return { text: T("{who} hands it over without being asked twice. You have " +
+                                 "{what}.",
+                                 { who: c.p.name, what: article(T(c.item.name)) }),
+                         kind: "great" };
             },
         },
 
         {
             id: "loot.take_down", deck: "people", tags: ["reveal", "hands"], danger: "good",
             targets: (S) => revealed(S).filter((c) => c.p.state === "down" && inReach(S, c.p)),
-            label: (S, c) => "Take the " + short(c.item.name) + " from " + c.p.name,
-            detail: "They are not using it and they are not going to mind.",
+            label: (S, c) => T("Take the {what} from {who}",
+                               { what: short(T(c.item.name)), who: c.p.name }),
+            detail: K("They are not using it and they are not going to mind."),
             cost: 6,
             run(S, c) {
                 st.give(S, c.p.carries);
                 c.p.carries = null;
-                return { text: "You take it out of " + c.p.name + "'s hands. They do not react, " +
-                    "which is the whole reason you are allowed to.", kind: "good" };
+                return { text: T("You take it out of {who}'s hands. They do not react, which " +
+                                 "is the whole reason you are allowed to.", { who: c.p.name }),
+                         kind: "good" };
             },
         },
 
         {
             id: "loot.ask_anyone", deck: "people", tags: ["reveal", "social"], danger: "good",
-            label: (S) => "Ask out loud whether anybody has anything useful",
-            detail: "One question to four rows. It is how you find the things you did not pack.",
+            label: K("Ask out loud whether anybody has anything useful"),
+            detail: K("One question to four rows. It is how you find the things you did not pack."),
             when: (S) => S.credibility > 25 &&
                          st.withinEarshot(S, 3).some((p) => p.carries && P.worthAsking(S, p, 10)),
             cost: 20,
@@ -119,18 +127,19 @@
                     reveal(S, p);
                     if (P.convince(S, p, 10).ok) {
                         st.give(S, p.carries);
-                        offered.push(D().byId(p.carries).name.toLowerCase());
+                        offered.push(T(D().byId(p.carries).name).toLowerCase());
                         p.carries = null;
                     }
                 }
                 if (!offered.length) {
-                    return { text: "Four rows of people look at you and at each other and nobody " +
-                        "says anything, which is what four rows of people do.", kind: "bad" };
+                    return { text: T("Four rows of people look at you and at each other and " +
+                                     "nobody says anything, which is what four rows of people " +
+                                     "do."), kind: "bad" };
                 }
                 PRS.audio.play("good");
-                return { text: "Hands go up. You come away with " +
-                    PRS.util.listSentence(offered) + ", none of which you would have thought to " +
-                    "pack.", kind: "great" };
+                return { text: T("Hands go up. You come away with {what}, none of which you " +
+                                 "would have thought to pack.",
+                                 { what: PRS.util.listSentence(offered) }), kind: "great" };
             },
         },
 
@@ -138,15 +147,16 @@
 
         {
             id: "loot.galley_drawer", deck: "cabin", tags: ["reveal", "hands"], danger: "good",
-            label: "Go through the galley drawers",
-            detail: "Nobody has told you that you cannot and nobody is going to.",
+            label: K("Go through the galley drawers"),
+            detail: K("Nobody has told you that you cannot and nobody is going to."),
             when: (S) => cabin.kindAt(S.player.x, S.player.y) === "galley" &&
                          (S.stash ? S.stash.galley.length > 0 : false),
             cost: 13,
             run(S) {
                 const got = takeFromStash(S, "galley");
-                if (!got) return "Cups, napkins, a hundred and forty sachets of sugar.";
-                return { text: "In the second drawer down: " + article(got.name) + ". " + got.note,
+                if (!got) return T("Cups, napkins, a hundred and forty sachets of sugar.");
+                return { text: T("In the second drawer down: {what}. {note}",
+                                 { what: article(T(got.name)), note: T(got.note) }),
                          kind: "great" };
             },
         },
@@ -179,6 +189,9 @@
      * believing the rest of the writing.
      */
     function article(name) {
+        // A language that declines its articles brings its own rule; see PRS.i18n.grammar.
+        const own = PRS.i18n.rule("article");
+        if (own) return own(name);
         const lower = (name.charAt(0).toLowerCase() + name.slice(1)).split(",")[0].trim();
         if (/^(a |an |the |four |your |two |some )/i.test(lower)) return lower;
         const words = lower.split(" ");
@@ -189,6 +202,8 @@
 
     /** The short form for a button label: the first few words of the item's name. */
     function short(name) {
+        const own = PRS.i18n.rule("short");
+        if (own) return own(name);
         const lower = name.charAt(0).toLowerCase() + name.slice(1);
         return lower.split(",")[0].split(" that ")[0];
     }

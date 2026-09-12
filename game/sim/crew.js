@@ -13,22 +13,24 @@
     "use strict";
     const PRS = global.PRS = global.PRS || {};
     const cabin = PRS.cabin;
+    const T = PRS.t, K = PRS.k;
     const { clamp, clamp01 } = PRS.util;
 
     // The phases, in the order they happen, with what has to be true for the next one to start.
     const PHASES = [
-        { id: 0, name: "Service",
-          desc: "The trolley is out. There is a smell, and smells happen." },
-        { id: 1, name: "Noted",
-          desc: "Somebody has mentioned it to somebody. It has been noted." },
-        { id: 2, name: "Investigating",
-          desc: "A member of crew is coming to look. The trolley is being stowed." },
-        { id: 3, name: "Fighting",
-          desc: "Halon on the visible flame, which is not where the fire is." },
-        { id: 4, name: "Declared",
-          desc: "The flight deck knows. The descent steepens: a runway sooner, ninety seconds fewer." },
-        { id: 5, name: "Secure cabin",
-          desc: "Everybody sits down for landing. Including the ones you were carrying." },
+        { id: 0, name: K("Service"),
+          desc: K("The trolley is out. There is a smell, and smells happen.") },
+        { id: 1, name: K("Noted"),
+          desc: K("Somebody has mentioned it to somebody. It has been noted.") },
+        { id: 2, name: K("Investigating"),
+          desc: K("A member of crew is coming to look. The trolley is being stowed.") },
+        { id: 3, name: K("Fighting"),
+          desc: K("Halon on the visible flame, which is not where the fire is.") },
+        { id: 4, name: K("Declared"),
+          desc: K("The flight deck knows. The descent steepens: a runway sooner, ninety seconds " +
+                  "fewer.") },
+        { id: 5, name: K("Secure cabin"),
+          desc: K("Everybody sits down for landing. Including the ones you were carrying.") },
     ];
 
     function create(S) {
@@ -93,7 +95,8 @@
         S.crewPhaseAt = S.clock.elapsed;
         for (const c of S.crew) c.askedThisPhase = false;
         const p = PHASES[phase];
-        PRS.state.log(S, "CABIN CREW — " + p.name.toUpperCase() + ". " + p.desc, "crew");
+        PRS.state.log(S, T("CABIN CREW — {phase}. {what}",
+                           { phase: T(p.name).toUpperCase(), what: T(p.desc) }), "crew");
         onPhaseEnter(S, phase);
         return true;
     }
@@ -103,31 +106,32 @@
         if (phase === 2) {
             S.cabinFlags.cartOut = false;
             delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
-            log(S, "The trolley goes away. The aisle is yours.", "good");
+            log(S, T("The trolley goes away. The aisle is yours."), "good");
         }
         if (phase === 3) {
-            log(S, "“BCF! BCF, aft galley, now!” Somebody is finally running.", "crew");
+            log(S, T("“BCF! BCF, aft galley, now!” Somebody is finally running."), "crew");
             PRS.audio.play("chime");
         }
         if (phase === 4) {
             S.cabinFlags.paLive = true;
             S.clock.descentCalled = true;
-            log(S, "PA: “Ladies and gentlemen, this is the flight deck. We have a situation in " +
-                   "the cabin and we are going down early. Cabin crew, stations.”", "pa");
+            log(S, T("PA: “Ladies and gentlemen, this is the flight deck. We have a situation " +
+                     "in the cabin and we are going down early. Cabin crew, stations.”"), "pa");
             PRS.audio.play("pa");
             // An emergency descent is faster. Faster is not the same as better.
             const cut = Math.max(0, Math.min(S.clock.remaining - 300, 95));
             if (cut > 0) {
                 S.clock.remaining -= cut;
                 S.clock.total -= cut;
-                log(S, "The nose drops. You have just lost " + Math.round(cut) +
-                       " seconds and gained a runway.", "bad");
+                log(S, T("The nose drops. You have just lost {n} seconds and gained a runway.",
+                         { n: Math.round(cut) }), "bad");
             }
             S.cabinAwareness = Math.max(S.cabinAwareness, 68);
         }
         if (phase === 5) {
-            log(S, "PA: “CABIN CREW, TAKE YOUR STATIONS. BRACE ON MY COMMAND.”", "pa");
-            log(S, "The crew begin putting people back into their seats. Including yours.", "bad");
+            log(S, T("PA: “CABIN CREW, TAKE YOUR STATIONS. BRACE ON MY COMMAND.”"), "pa");
+            log(S, T("The crew begin putting people back into their seats. Including yours."),
+                "bad");
         }
     }
 
@@ -206,8 +210,9 @@
                 if (Math.abs(c.x - core.x) <= 1 && !c.hasSeenIt) {
                     c.hasSeenIt = true;
                     c.busy = 14;
-                    PRS.state.log(S, "“" + c.name.split(" ")[0] + " has eyes on it. It's in the " +
-                        "bin. It's in the bin, it's not the oven.”", "crew");
+                    PRS.state.log(S, T("“{who} has eyes on it. It's in the bin. It's in the " +
+                                       "bin, it's not the oven.”",
+                                       { who: c.name.split(" ")[0] }), "crew");
                     S.credibility = Math.min(100, S.credibility + 22);
                 }
                 continue;
@@ -225,9 +230,10 @@
                             c.busy = 30;
                             PRS.fire.apply(f, target.x, target.y, "halon", 1.0, 0.5);
                             PRS.audio.play("halon");
-                            PRS.state.log(S, "“STAND BACK!” " + c.name + " empties a halon bottle " +
-                                "into row " + (cabin.rowAt(target.x) || "?") + ". The flame goes " +
-                                "out like a light. The bin keeps ticking.", "crew");
+                            PRS.state.log(S, T("“STAND BACK!” {who} empties a halon bottle " +
+                                "into row {row}. The flame goes out like a light. The bin keeps " +
+                                "ticking.",
+                                { who: c.name, row: cabin.rowAt(target.x) || "?" }), "crew");
                         }
                     }
                 } else {
@@ -247,8 +253,9 @@
                         victim.belted = true;
                         victim.x = victim.homeX; victim.y = victim.homeY;
                         PRS.state.reindex(S);
-                        PRS.state.log(S, "“Sit down, please. Sit DOWN.” " + victim.name +
-                            " is put back into " + victim.seat + ".", "bad");
+                        PRS.state.log(S, T("“Sit down, please. Sit DOWN.” {who} is put back " +
+                                           "into {seat}.",
+                                           { who: victim.name, seat: victim.seat }), "bad");
                     }
                 }
                 continue;
@@ -295,19 +302,21 @@
             const r = PRS.pax.refuge(S, c.home);
             PRS.pax.shelter(S, best, r ? r.x : c.home, r ? r.y : cabin.AISLE_Y);
             PRS.state.reindex(S);
-            PRS.state.log(S, c.name + " carries " + best.name + " forward. That is one you " +
-                             "did not have to do.", "good");
+            PRS.state.log(S, T("{who} carries {whom} forward. That is one you did not have " +
+                               "to do.", { who: c.name, whom: best.name }), "good");
         }
     }
 
     /** What this crew member will say to you right now, which is mostly "sit down". */
     function response(S, c) {
-        if (S.crewPhase === 0) return "“Sir. Madam. Please take your seat, we're still serving.”";
-        if (S.crewPhase === 1) return "“We know about the smell. It's being looked at.”";
-        if (S.crewPhase === 2) return "“I am looking at it right now. Please sit down.”";
-        if (S.crewPhase === 3) return "“It's under control. Sit down. SIT DOWN.”";
-        if (S.crewPhase === 4) return "“We're going down. Get in a seat, any seat.”";
-        return "“BRACE POSITION. NOW. IN A SEAT. NOW.”";
+        if (S.crewPhase === 0) {
+            return T("“Sir. Madam. Please take your seat, we're still serving.”");
+        }
+        if (S.crewPhase === 1) return T("“We know about the smell. It's being looked at.”");
+        if (S.crewPhase === 2) return T("“I am looking at it right now. Please sit down.”");
+        if (S.crewPhase === 3) return T("“It's under control. Sit down. SIT DOWN.”");
+        if (S.crewPhase === 4) return T("“We're going down. Get in a seat, any seat.”");
+        return T("“BRACE POSITION. NOW. IN A SEAT. NOW.”");
     }
 
     PRS.crew = { PHASES, create, byId, nearest, adjacentCrew, setPhase, checkPhase, advance,

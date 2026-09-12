@@ -20,20 +20,25 @@
     const PRS = global.PRS = global.PRS || {};
     const cabin = PRS.cabin;
     const st = PRS.state;
+    const T = PRS.t, K = PRS.k;
     const { clamp, clamp01 } = PRS.util;
 
     const REGISTRY = [];
     const BY_ID = {};
 
     const DECKS = {
-        move:      { name: "Move",        order: 0,
-                     hint: "Click the cabin to walk there. Arrows or WASD to step." },
-        fire:      { name: "The fire",    order: 1, hint: "None of this puts it out." },
-        people:    { name: "People",      order: 2, hint: "The only thing that scales." },
-        crew:      { name: "Crew",        order: 3, hint: "They have the equipment and the procedure." },
-        cabin:     { name: "The cabin",   order: 4, hint: "Bins, masks, doors, the trolley, the lav." },
-        self:      { name: "Yourself",    order: 5, hint: "You are also a person on this aeroplane." },
-        items:     { name: "Your bag",    order: 6, hint: "Three things and whatever you have found." },
+        move:      { name: K("Move"),      order: 0,
+                     hint: K("Click the cabin to walk there. Arrows or WASD to step.") },
+        fire:      { name: K("The fire"),  order: 1, hint: K("None of this puts it out.") },
+        people:    { name: K("People"),    order: 2, hint: K("The only thing that scales.") },
+        crew:      { name: K("Crew"),      order: 3,
+                     hint: K("They have the equipment and the procedure.") },
+        cabin:     { name: K("The cabin"), order: 4,
+                     hint: K("Bins, masks, doors, the trolley, the lav.") },
+        self:      { name: K("Yourself"),  order: 5,
+                     hint: K("You are also a person on this aeroplane.") },
+        items:     { name: K("Your bag"),  order: 6,
+                     hint: K("Three things and whatever you have found.") },
     };
 
     function register(list) {
@@ -107,6 +112,15 @@
         return out;
     }
 
+    /**
+     * One row of a card, made now.
+     *
+     * This is where an action's words are put into the language being played in, and which of
+     * the two ways depends on how the deck wrote them. A plain string is the English the deck
+     * was written in, marked with K(), and it is translated here. A function is evaluated now,
+     * with the state in front of it, and has already called T() on its own pieces - so it is
+     * left alone, because translating a translated sentence is a lookup that can only miss.
+     */
     function make(S, def, ctx) {
         return {
             key: def.id + (ctx && ctx.key ? "#" + ctx.key : ""),
@@ -114,8 +128,8 @@
             def: def,
             ctx: ctx,
             deck: def.deck,
-            label: resolve(def.label, S, ctx),
-            detail: resolve(def.detail, S, ctx),
+            label: typeof def.label === "function" ? def.label(S, ctx) : T(def.label),
+            detail: typeof def.detail === "function" ? def.detail(S, ctx) : T(def.detail),
             cost: costOf(S, def, ctx),
             danger: resolve(def.danger, S, ctx),
             tags: def.tags,
@@ -176,7 +190,7 @@
             result = def.run ? def.run(S, entry.ctx) : null;
         } catch (err) {
             console.error("action failed", def.id, err);
-            result = "Something in the cabin does not work the way you expected.";
+            result = T("Something in the cabin does not work the way you expected.");
         }
         if (result && typeof result === "object") {
             text = result.text;
@@ -351,7 +365,7 @@
         if (p.smokeDose + p.burns * 0.35 > 92 && p.alive) {
             p.alive = false;
             p.downedAt = S.clock.elapsed;
-            st.log(S, "You go down in the aisle. You do not get up.", "bad");
+            st.log(S, T("You go down in the aisle. You do not get up."), "bad");
             PRS.audio.play("bad");
         }
     }
@@ -416,8 +430,8 @@
         S.clock.landed = true;
         PRS.audio.play("landing");
         st.log(S, "—", "rule");
-        st.log(S, "The gear comes down. The cabin lights come up. Whatever is happening now is " +
-                  "what is going to have happened.", "pa");
+        st.log(S, T("The gear comes down. The cabin lights come up. Whatever is happening now " +
+                    "is what is going to have happened."), "pa");
         PRS.scoring.settle(S);
     }
 

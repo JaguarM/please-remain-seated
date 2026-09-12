@@ -197,16 +197,6 @@ button.big:hover { background: #4b6191; }
 .t-unhurt b { color: var(--good); } .t-treated b { color: var(--warn); }
 .t-serious b { color: #e08a2a; } .t-lost b { color: var(--bad); }
 
-.grade { margin-top: 14px; padding: 14px 16px; border-left: 3px solid var(--blue); background: var(--panel); }
-.grade b { display: block; font-size: 18px; }
-.grade i { display: block; font-style: normal; color: var(--ink-dim); margin: 4px 0; }
-.grade span { font: 11px var(--mono); color: var(--ink-faint); }
-
-.versus { display: flex; flex-wrap: wrap; gap: 8px 26px; align-items: baseline; margin-top: 16px;
-  font: 13px var(--mono); color: var(--ink-dim); }
-.versus b { font-size: 30px; margin-left: 8px; color: var(--ink-dim); }
-.versus .you b { color: var(--great); }
-.versus .delta { font: 13px system-ui, sans-serif; color: var(--ink-faint); }
 .grade-A { border-color: var(--great); } .grade-B { border-color: var(--good); }
 .grade-C { border-color: var(--warn); } .grade-D { border-color: #e08a2a; }
 .grade-E, .grade-F { border-color: var(--bad); }
@@ -217,18 +207,59 @@ button.big:hover { background: #4b6191; }
 .leg { display: inline-flex; gap: 5px; align-items: center; font-size: 11px; color: var(--ink-faint); }
 .leg i { width: 9px; height: 9px; border-radius: 2px; display: block; }
 
-.manifest { border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
-.man-row { display: grid; grid-template-columns: 18px 54px 1fr 1fr 130px; gap: 8px; align-items: center; padding: 4px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
-.man-face { width: 16px; height: 16px; }
-.man-row:nth-child(even) { background: #1b1e25; }
-.man-row.you { background: #232a35; font-weight: 600; }
-.man-seat { font: 11px var(--mono); color: var(--ink-faint); }
-.man-state { color: var(--ink-faint); }
-.man-out { font: 11px var(--mono); text-align: right; }
-.out-unhurt .man-out { color: var(--good); }
-.out-treated .man-out { color: var(--warn); }
-.out-serious .man-out { color: #e08a2a; }
-.out-lost .man-out { color: var(--bad); }
+/* The manifest, which is a photograph. Sixty-one souls packed the way a crew photograph packs
+   them - shoulder behind shoulder, the next rank's heads in the gaps of the one behind - and in
+   the order the report cares about, so it reads green to grey from the top left. Nothing under
+   them says which is which: the face does that, and so does the tooltip. */
+.photo-wrap { position: relative; border: 1px solid var(--line); border-radius: 4px;
+  background: #12151a; padding: 14px 10px 8px; }
+.photo { display: grid; grid-template-columns: repeat(auto-fill, 30px); grid-auto-rows: 36px;
+  justify-content: center; }
+.soul { width: 30px; height: 48px; padding: 0; margin: 0; border: 0; background: none;
+  position: relative; cursor: pointer; display: block; }
+.soul .spr { width: 48px; height: 48px; display: block; margin-left: -9px;
+  image-rendering: pixelated; }
+/* Every other soul stands a little lower, which is what a row of people does. */
+.soul:nth-child(2n) { padding-top: 3px; }
+/* The one being pointed at steps out of the rank and in front of the people beside them. */
+.soul:hover, .soul:focus-visible { z-index: 3; }
+.soul:hover .spr, .soul:focus-visible .spr { transform: translateY(-4px); }
+.soul:focus-visible { outline: none; }
+.soul.you::before { content: ""; position: absolute; left: 2px; right: 2px; top: 8px; bottom: 4px;
+  border: 1px solid #ffd54a; border-radius: 3px; pointer-events: none; }
+
+.soul-tip { position: absolute; z-index: 9; left: 0; top: 0; width: 320px; max-width: calc(100% - 8px);
+  display: none; gap: 12px; padding: 10px 12px; background: var(--panel);
+  border: 1px solid #4a5361; border-radius: 5px; box-shadow: 0 14px 40px rgba(0,0,0,.75);
+  pointer-events: none; }
+.soul-tip.on { display: flex; }
+.soul-face { width: 48px; height: 48px; flex: none; image-rendering: pixelated; }
+.soul-text { min-width: 0; flex: 1; }
+.soul-text b { display: block; font-size: 14px; line-height: 1.2; }
+.soul-text i { display: flex; flex-wrap: wrap; gap: 2px 10px; font: 10px var(--mono);
+  font-style: normal; color: var(--ink-faint); margin: 3px 0 5px; }
+.soul-where { display: block; font-size: 12px; color: var(--ink-dim); }
+.soul-text u { display: block; text-decoration: none; font-size: 10.5px; color: var(--ink-faint);
+  margin-top: 2px; }
+.harm { margin-top: 7px; }
+.harm-row { display: grid; grid-template-columns: 1fr 26px; grid-template-areas: "label value" "track track";
+  gap: 2px 6px; align-items: center; margin-bottom: 4px; font-size: 10.5px; }
+.harm-label { grid-area: label; color: var(--ink-faint); }
+.harm-row .spend-track { grid-area: track; height: 5px; }
+.harm-row b { grid-area: value; font: 10px var(--mono); color: var(--ink-faint); text-align: right; }
+.harm-none { margin-top: 7px; font-size: 11px; color: var(--ink-faint); }
+
+/* A telephone holds ten across instead of twenty-six, and the block reflows in reading order, so
+   the ones who walked off are still the top row and the ones who did not are still the last. The
+   faces come down to thirty-two pixels, which is two whole screen pixels a sprite pixel. */
+@media (max-width: 600px) {
+  .photo { grid-template-columns: repeat(auto-fill, 21px); grid-auto-rows: 25px; }
+  .soul { width: 21px; height: 32px; }
+  .soul .spr { width: 32px; height: 32px; margin-left: -6px; }
+  .soul:nth-child(2n) { padding-top: 2px; }
+  .soul.you::before { top: 5px; bottom: 2px; }
+  .soul-tip { width: 280px; }
+}
 
 .timeline { max-height: 340px; overflow-y: auto; border: 1px solid var(--line); border-radius: 4px; }
 .tl { display: grid; grid-template-columns: 52px 1fr 52px; gap: 8px; padding: 3px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
@@ -453,6 +484,11 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 }
 .pass-who b { display: block; font-size: 15px; line-height: 1.2; }
 .pass-who i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint); }
+/* One sentence about what this person is for, where the five loadout boxes used to be. */
+.pass-who .pass-lean {
+  display: block; text-decoration: none; margin-top: 6px;
+  font-size: 12px; line-height: 1.35; color: var(--ink-dim); max-width: 46ch;
+}
 .pass-go { align-self: center; }
 .logline { margin-top: 6px; color: var(--ink-dim); }
 
@@ -566,8 +602,19 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .book span { font-size: 13px; color: var(--ink-dim); }
 .book .unlocked { color: var(--great); font-weight: 500; }
 
-.rec { margin-top: 10px; padding: 12px 16px; border-left: 3px solid var(--blue); background: var(--panel); }
-.rec b { display: block; font-size: 15px; }
+.fold { margin-top: 10px; }
+.fold-head {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; cursor: pointer;
+  padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  color: var(--ink-dim); font: inherit;
+}
+.fold-head:hover { border-color: var(--ink-faint); color: var(--ink); }
+.fold-head b { font-size: 13px; font-weight: 500; }
+.fold-arrow { font: 700 14px/1 var(--mono); color: var(--ink-faint); width: 10px; }
+.fold.open .fold-head { border-radius: 4px 4px 0 0; border-bottom: none; }
+.fold .timeline, .fold .rec { border: 1px solid var(--line); border-top: none; border-radius: 0 0 4px 4px; }
+
+.rec { margin-top: 0; padding: 12px 16px; background: var(--panel); }
 .rec i { display: block; font-style: normal; font-size: 12px; color: var(--ink-faint); margin: 3px 0 8px; }
 .rec textarea {
   width: 100%; min-height: 64px; box-sizing: border-box; resize: vertical; padding: 8px;
@@ -576,6 +623,43 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 }
 .rec .title-buttons { justify-content: flex-start; margin: 8px 0 0; }
 .rec .done { font: 11px var(--mono); color: var(--great); align-self: center; }
+
+/* -------------------------------------------------------------------- what you changed --- */
+/* The screen after the report: one difference, one bar, one card. Nothing else fits on it. */
+.unlocks .report-inner { max-width: 620px; }
+.unlocks .title-buttons { margin-top: 34px; }
+
+.versus { display: flex; flex-wrap: wrap; gap: 6px 34px; align-items: baseline; margin-top: 14px;
+  font: 13px var(--mono); color: var(--ink-faint); }
+.versus b { font-size: clamp(34px, 9vw, 52px); margin-left: 10px; color: var(--ink-dim); }
+.versus .you b { color: var(--great); }
+.versus .you.worse b { color: var(--bad); }
+.versus .you.same b { color: var(--ink-dim); }
+.delta { font-size: 17px; color: var(--ink); margin: 6px 0 0; }
+
+.souls { margin-top: 30px; }
+.soul-top { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.soul-top b { font-size: 15px; color: var(--gold); }
+.soul-top i { font-style: normal; font: 12px var(--mono); color: var(--ink-faint); }
+.soul-track {
+  height: 10px; margin: 7px 0 6px; border-radius: 5px; overflow: hidden;
+  background: #12151a; border: 1px solid var(--line);
+}
+/* It starts where the book was and grows to where it is, so the gain is what the eye follows. */
+.soul-grown {
+  height: 100%; background: var(--gold); border-radius: 5px;
+  transition: width 1100ms cubic-bezier(.2, .8, .3, 1);
+}
+.soul-next { display: block; font-style: normal; font-size: 13px; color: var(--ink-dim); }
+.unlocked { color: var(--great); font-size: 14px; margin: 14px 0 0; }
+
+.near { margin-top: 32px; }
+.near .rep-kicker { margin-bottom: 8px; }
+/* The face is drawn at eighty, so it gets eighty here rather than leaning on the next line. */
+.near-card { width: 100%; box-sizing: border-box; grid-template-columns: 80px 1fr; padding: 12px; }
+.near-card .char-lock .soul-track { margin: 2px 0 5px; }
+.near-card .char-lock i { color: var(--ink-dim); }
+.near-how { font-size: 13px; color: var(--warn); margin: 8px 0 0; }
 
 .history { border: 1px solid var(--line); border-radius: 4px; margin-bottom: 20px; }
 .hrow { display: grid; grid-template-columns: 16px 1fr 100px 80px 34px 1fr; gap: 8px; align-items: center; padding: 6px 10px; font-size: 12px; border-bottom: 1px solid #22262e; }
@@ -599,3 +683,102 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .play.busy .card { opacity: .6; transition: opacity .2s .12s; }
 .play.busy .undo { opacity: .45; }
 
+
+/* --------------------------------------------------------------------------- languages ---
+
+   German says the same thing in about a third more letters and puts some of it in one word,
+   so the layout has to survive a noun nobody can break. Two rules do most of it: every box of
+   prose may hyphenate (the browser needs the lang attribute for that, which i18n.js sets on
+   <html>), and every box that is a fixed width may break a word rather than push past its own
+   edge. The rest is a few places where the English fitted exactly and nothing longer would. */
+
+.screen, .card, .option, .slot, .fact, .tbox, .medal, .rep-ending, .prose-inner {
+  hyphens: auto;
+  -webkit-hyphens: auto;
+  overflow-wrap: break-word;
+}
+.slot b, .slot i, .fact i, .tbox i, .leg span, .stat span,
+.soul-where, .soul-text b, .card-title, .bag-item b { overflow-wrap: anywhere; }
+
+/* The language picker: the names languages call themselves. */
+.langs { display: flex; gap: 6px; flex-wrap: wrap; }
+.langs .lang {
+  background: none; border: 1px solid transparent; border-radius: 3px;
+  color: var(--ink-faint); font: 11px var(--mono); letter-spacing: .06em;
+  padding: 3px 9px; cursor: pointer;
+}
+.langs .lang:hover { color: var(--ink-dim); border-color: var(--line); }
+.langs .lang.on { color: var(--ink); border-color: var(--line); background: var(--panel-2); cursor: default; }
+
+/* Where the English fitted and a longer word will not. */
+:lang(de) .fact i { font-size: 10px; }
+:lang(de) .tbox i { font-size: 10px; }
+:lang(de) .slot b { font-size: 9px; }
+:lang(de) .hrow { grid-template-columns: 16px 1fr 110px 90px 34px 1fr; }
+
+/* ------------------------------------------------------------------------------ settings ---
+
+   One panel, from the title or from Escape in the air, over whatever is showing. It borrows the
+   help card's veil and box, because it is the same kind of thing: a small page of choices that
+   stops the aeroplane being the thing you are looking at for as long as it is open. */
+
+.settings-veil {
+  position: fixed; inset: 0; z-index: 60;
+  background: rgba(10,12,16,.78);
+  display: grid; place-items: center; padding: 20px;
+}
+.settings {
+  width: 100%; max-width: 420px;
+  background: var(--panel); border: 1px solid #4a5361; border-radius: 6px;
+  padding: 20px 22px 16px; box-shadow: 0 20px 60px rgba(0,0,0,.7);
+}
+.settings h3 { margin: 0 0 16px; font-size: 20px; letter-spacing: -0.02em; }
+.settings .title-buttons { margin: 18px 0 0; justify-content: flex-start; }
+.settings .footnote { margin-top: 10px; }
+
+.set-row { margin-bottom: 16px; }
+.set-head {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font: 10px var(--mono); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-faint); margin-bottom: 7px;
+}
+.set-value { color: var(--ink-dim); font: 10px var(--mono); letter-spacing: .06em; }
+.set-control { display: flex; gap: 10px; align-items: center; }
+
+.set-slider {
+  flex: 1; appearance: none; -webkit-appearance: none;
+  height: 4px; border-radius: 2px; background: #2f3540; outline: none; cursor: pointer;
+}
+.set-slider::-webkit-slider-thumb {
+  appearance: none; -webkit-appearance: none;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--blue); border: 0; cursor: pointer;
+}
+.set-slider::-moz-range-thumb {
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--blue); border: 0; cursor: pointer;
+}
+.set-slider:disabled { opacity: .4; cursor: default; }
+.set-slider:disabled::-webkit-slider-thumb { cursor: default; }
+
+.set-toggle {
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: 3px;
+  color: var(--ink-dim); font: 11px var(--mono); letter-spacing: .06em;
+  padding: 5px 11px; cursor: pointer; white-space: nowrap;
+}
+.set-toggle:hover { color: var(--ink); border-color: #4a5361; }
+.set-toggle.off { color: var(--warn); }
+.set-toggle.leave { color: #c08a80; border-color: #4a3230; }
+.set-toggle.leave:hover { color: var(--warn); border-color: #6b4340; }
+
+/* A question with two answers, over everything, in the game's own furniture - because
+   window.confirm is not always allowed to open, and when it is not it answers no without ever
+   asking, which turns whatever called it into a button that does nothing. The answer that
+   changes something is on the right and dressed as what it does. */
+.ask-veil { z-index: 90; }
+.ask { max-width: 380px; }
+.ask h3 { margin-bottom: 10px; }
+.ask p { margin: 0; color: var(--ink-dim); font-size: 13px; line-height: 1.5; }
+.ask .title-buttons { margin: 18px 0 0; justify-content: flex-end; }
+.ask button.big.warn { background: #6b3a35; border-color: #8a4a42; }
+.ask button.big.warn:hover { background: #7d443e; }

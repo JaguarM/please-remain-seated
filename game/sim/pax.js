@@ -14,6 +14,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const { clamp, clamp01 } = PRS.util;
 
@@ -24,7 +25,10 @@
     function isChild(p) { return p.traits.indexOf("child") >= 0 || p.traits.indexOf("infant") >= 0; }
     function isPet(p) { return p.traits.indexOf("pet") >= 0; }
     function canWalk(p) {
+        // A dog in a carrier is luggage that breathes. Bruno goes where he is carried and
+        // nowhere else, the same as the infant, so nothing may ask him to walk to a door.
         return p.traits.indexOf("immobile") < 0 && p.traits.indexOf("infant") < 0 &&
+               p.traits.indexOf("pet") < 0 &&
                p.state !== "down" && p.state !== "dead";
     }
     function needsCarrying(p) {
@@ -52,17 +56,29 @@
                p.state !== "down" && p.state !== "dead" && p.state !== "carried";
     }
 
+    /**
+     * Their eyes open. `asleep` is a trait because it is how somebody boarded, but the card
+     * reads the trait list as well as the state, and a woman you have just shaken awake should
+     * not still be described as asleep. So waking spends the trait: it has done its job.
+     */
+    function wakeUp(p) {
+        p.state = "seated";
+        if (p.traits.indexOf("asleep") >= 0) {
+            p.traits = p.traits.filter((t) => t !== "asleep");
+        }
+    }
+
     function displayState(p) {
         switch (p.state) {
-            case "asleep": return "asleep";
-            case "seated": return "seated";
-            case "standing": return "standing";
-            case "aisle": return "in the aisle";
-            case "carried": return "in your arms";
-            case "helping": return "helping";
-            case "sheltering": return "on the floor, out of the seats";
-            case "down": return "unconscious";
-            case "dead": return "not moving";
+            case "asleep": return T("asleep");
+            case "seated": return T("seated");
+            case "standing": return T("standing");
+            case "aisle": return T("in the aisle");
+            case "carried": return T("in your arms");
+            case "helping": return T("helping");
+            case "sheltering": return T("on the floor, out of the seats");
+            case "down": return T("unconscious");
+            case "dead": return T("not moving");
             default: return p.state;
         }
     }
@@ -81,7 +97,10 @@
      */
     function face(p) {
         if (isPet(p)) return "pet_carrier";
-        if (p.state === "dead" || p.state === "down") return "pax_down";
+        // Crossed eyes are the report's face and nobody wears it in the air: the flight does not
+        // know who it has lost, so somebody who has stopped moving is drawn slumped and alive.
+        if (p.state === "dead") return isChild(p) ? "child_gone" : "pax_gone";
+        if (p.state === "down") return "pax_down";
         if (p.state === "carried") return "pax_low";
         // A helper has hold of them: out of the seat and on the way to the floor by a door, and
         // drawn low like anybody in somebody's arms, so a helper at work is a thing you can see.
@@ -106,6 +125,11 @@
      */
     const palettes = new Map();
     function palette(who, ashen) {
+        // A dog in a carrier has hair, skin and a shirt on the roster because every row of the
+        // roster does, and painting a plastic case with them turned a blue box with a green dog
+        // behind the grille into a flat tan crate. Nothing overrides the carrier: null means
+        // "the colours the art was drawn in", which every blitter here already understands.
+        if (who.traits && who.traits.indexOf("pet") >= 0) return null;
         const key = who.hair + who.skin + who.shirt + (who.longHair ? "|L" : "") + (ashen ? "|A" : "");
         let pal = palettes.get(key);
         if (pal) return pal;
@@ -126,13 +150,13 @@
 
     /** The one number the triage perk shows and everybody else has to guess at. */
     function condition(p) {
-        if (p.state === "dead") return { label: "gone", tier: 5 };
+        if (p.state === "dead") return { label: K("gone"), tier: 5 };
         const d = p.smokeDose + p.burns * 1.6;
-        if (d > 80) return { label: "critical", tier: 4 };
-        if (d > DOWN_AT) return { label: "unconscious", tier: 3 };
-        if (d > 30) return { label: "in a bad way", tier: 2 };
-        if (d > 12) return { label: "coughing", tier: 1 };
-        return { label: "fine", tier: 0 };
+        if (d > 80) return { label: K("critical"), tier: 4 };
+        if (d > DOWN_AT) return { label: K("unconscious"), tier: 3 };
+        if (d > 30) return { label: K("in a bad way"), tier: 2 };
+        if (d > 12) return { label: K("coughing"), tier: 1 };
+        return { label: K("fine"), tier: 0 };
     }
 
     /** Seconds for the player to pick this person up and put them down again, before distance. */
@@ -269,9 +293,9 @@
         }
         if (grabbed) {
             S.stats.grabbed = (S.stats.grabbed || 0) + 1;
-            PRS.state.log(S, grabbed.name + " has been soaked once too often and gets hold of " +
-                "your arm. “What is WRONG with you?” Everything you do to that fire is now done " +
-                "around them.", "bad");
+            PRS.state.log(S, T("{who} has been soaked once too often and gets hold of your " +
+                               "arm. “What is WRONG with you?” Everything you do to that fire " +
+                               "is now done around them.", { who: grabbed.name }), "bad");
         }
         return grabbed;
     }
@@ -333,11 +357,26 @@
             if (p.state === "asleep") wake *= 0.45;
             p.awareness = clamp(p.awareness + wake * dt * 0.09, 0, 100);
 
+            // ---- a sceptic stops being one ----------------------------------------------------
+            // A sceptic does not need persuading, a sceptic needs seeing - so the trait is not
+            // a personality, it is a state, and it ends the moment they have seen it: smoke on
+            // their own row, flame where they are looking, or you have simply worn them round.
+            // The trait is worth thirty points of resistance, so this is also the moment asking
+            // them for anything starts working, and the card must stop calling them a sceptic
+            // or it is lying about why the ask is suddenly available.
+            if (p.traits.indexOf("sceptic") >= 0 && p.state !== "asleep" &&
+                ((p.awareness > 30 && (smoke > 30 || inten > 3)) || p.trust > 35 || p.helper)) {
+                p.traits = p.traits.filter((t) => t !== "sceptic");
+                PRS.state.log(S, T("{who} ({seat}) has stopped arguing about whether there " +
+                                   "is a fire.", { who: p.name, seat: p.seat }), "good");
+            }
+
             if (p.state === "asleep" && p.awareness > 34) {
-                p.state = "seated";
+                wakeUp(p);
                 p.lastLine = p.refuse;
-                PRS.state.log(S, p.name + " wakes up in " + p.seat + " and does not understand " +
-                                 "anything they can see.", "plain");
+                PRS.state.log(S, T("{who} wakes up in {seat} and does not understand " +
+                                   "anything they can see.",
+                                   { who: p.name, seat: p.seat }), "plain");
             }
 
             // ---- panic ------------------------------------------------------------------------
@@ -436,9 +475,14 @@
                     t.carriedBy = p.id;
                     p.x = r.x; p.y = r.y;
                     S.stats.helperSaves = (S.stats.helperSaves || 0) + 1;
-                    PRS.state.log(S, p.name + " gets " + t.name + " down on the floor at " +
-                        cabin.placeName(r.x, r.y) + (medic ? ", breathing better than they were."
-                                                           : ". You did not have to be there."), "good");
+                    PRS.state.log(S, medic
+                        ? T("{who} gets {whom} down on the floor at {where}, breathing better " +
+                            "than they were.",
+                            { who: p.name, whom: t.name, where: cabin.placeName(r.x, r.y) })
+                        : T("{who} gets {whom} down on the floor at {where}. You did not have " +
+                            "to be there.",
+                            { who: p.name, whom: t.name, where: cabin.placeName(r.x, r.y) }),
+                        "good");
                     PRS.audio.play("secure");
                 }
             }
@@ -528,7 +572,7 @@
         S.stats.helpersRecruited++;
         // Somebody getting up to help is the cabin seeing that something is worth helping with.
         S.credibility = Math.min(100, S.credibility + 3);
-        PRS.state.log(S, p.name + " is helping. " + (reason || ""), "great");
+        PRS.state.log(S, T("{who} is helping. ", { who: p.name }) + (reason || ""), "great");
         PRS.audio.play("good");
         return true;
     }
@@ -598,16 +642,18 @@
 
     function speak(S, p) {
         const data = PRS.data.passengers;
-        if (p.state === "down") return "(" + p.name + " does not answer.)";
-        if (p.smokeDose > 34 || S.cabinAwareness > 70) return PRS.state.line(S, "late", data.LATE);
-        if (p.spokenTo === 0) return p.says;
-        return PRS.state.line(S, "ambient", data.AMBIENT);
+        if (p.state === "down") return T("({who} does not answer.)", { who: p.name });
+        if (p.smokeDose > 34 || S.cabinAwareness > 70) {
+            return T(PRS.state.line(S, "late", data.LATE));
+        }
+        if (p.spokenTo === 0) return T(p.says);
+        return T(PRS.state.line(S, "ambient", data.AMBIENT));
     }
 
     PRS.pax = {
         DOWN_AT, GRAB_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying,
-        displayState, condition, carryOverhead, canCarry, advance, recruit, helperCap, resistance,
-        persuasion, convince, odds, worthAsking, face, palette, speak,
+        displayState, wakeUp, condition, carryOverhead, canCarry, advance, recruit, helperCap,
+        resistance, persuasion, convince, odds, worthAsking, face, palette, speak,
         evacuation, exposure, refuge, moveGain, shelter, annoy, obstructor,
     };
 })(window);

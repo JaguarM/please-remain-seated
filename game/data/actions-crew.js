@@ -8,6 +8,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -49,70 +50,76 @@
         // ------------------------------------------------------------------- the call button ---
 
         { id: "crew.call_button_hold", deck: "crew", tags: ["social"], danger: "neutral",
-          label: "Hold the call button down", cost: 14, once: true,
-          detail: "Fourteen seconds of continuous chime. Somebody will come.",
+          label: K("Hold the call button down"), cost: 14, once: true,
+          detail: K("Fourteen seconds of continuous chime. Somebody will come."),
           when: (S) => S.crewPhase < 2,
           run(S) {
               cred(S, 8);
               S.cabinPanic = Math.min(100, S.cabinPanic + 5);
               PRS.audio.play("chime");
-              return { text: "You hold it down. The chime does not stop. Fourteen seconds is a " +
-                  "very long chime and by the end of it somebody is walking up the aisle with a " +
-                  "particular expression on their face, which is exactly what you wanted.",
-                  kind: "good" };
+              return { text: T("You hold it down. The chime does not stop. Fourteen seconds " +
+                               "is a very long chime and by the end of it somebody is walking " +
+                               "up the aisle with a particular expression on their face, which " +
+                               "is exactly what you wanted."), kind: "good" };
           } },
 
         // ----------------------------------------------------------------------- talking to ---
         { id: "crew.tell", deck: "crew", tags: ["social"],
           targets: near,
           when: (S, t) => S.crewPhase < 2 && worth(S, t.c, 30),
-          label: (S, t) => "Tell " + t.c.name + " about the bin",
-          detail: (S, t) => t.c.role + " · " + (t.c.refusals ? "has said no " +
-                            t.c.refusals + " times" : "has not refused you yet"),
+          label: (S, t) => T("Tell {who} about the bin", { who: t.c.name }),
+          detail: (S, t) => T("{role} · {history}",
+                              { role: T(t.c.role),
+                                history: t.c.refusals
+                                    ? T("has said no {n} times", { n: t.c.refusals })
+                                    : T("has not refused you yet") }),
           cost: 20,
           run(S, t) {
               if (ask(S, t.c, 30)) {
                   cred(S, 14);
                   C.setPhase(S, Math.max(S.crewPhase, 1));
-                  return { text: t.c.name + " actually listens. “Which locker. Which row. Show me.”",
-                           kind: "good" };
+                  return { text: T("{who} actually listens. “Which locker. Which row. Show " +
+                                   "me.”", { who: t.c.name }), kind: "good" };
               }
               cred(S, 4);
-              return { text: t.c.name + ": " + C.response(S, t.c), kind: "bad" };
+              return { text: T("{who}: {said}",
+                               { who: t.c.name, said: C.response(S, t.c) }), kind: "bad" };
           } },
 
         { id: "crew.show_photo", item: "phone", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !!S.flags.havePhoto && !t.c.shownPhoto,
-          label: (S, t) => "Show " + t.c.name + " the photograph",
-          detail: "Evidence beats an account of evidence every time.",
+          label: (S, t) => T("Show {who} the photograph", { who: t.c.name }),
+          detail: K("Evidence beats an account of evidence every time."),
           cost: 10,
           run(S, t) {
               t.c.shownPhoto = true;
               cred(S, 26);
               C.setPhase(S, Math.max(S.crewPhase, 2));
-              return { text: t.c.name + " looks at your phone. The whole conversation you were " +
-                  "about to have does not need to happen.", kind: "great" };
+              return { text: T("{who} looks at your phone. The whole conversation you were " +
+                               "about to have does not need to happen.", { who: t.c.name }),
+                       kind: "great" };
           } },
 
         { id: "crew.show_burn", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => S.player.burns > 12 && !t.c.shownBurn,
-          label: (S, t) => "Show " + t.c.name + " your hand",
+          label: (S, t) => T("Show {who} your hand", { who: t.c.name }),
           cost: 8,
           run(S, t) {
               t.c.shownBurn = true;
               cred(S, 22);
               C.setPhase(S, Math.max(S.crewPhase, 2));
-              return { text: "You hold your hand out. There is no version of that hand that came " +
-                  "from a galley oven. " + t.c.name + " stops talking mid-sentence.", kind: "great" };
+              return { text: T("You hold your hand out. There is no version of that hand " +
+                               "that came from a galley oven. {who} stops talking mid-sentence.",
+                               { who: t.c.name }), kind: "great" };
           } },
 
         { id: "crew.lead", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !t.c.hasSeenIt,
-          label: (S, t) => "Take " + t.c.name + " to the bin",
-          detail: "Do not describe it. Walk them to it.",
+          label: (S, t) => T("Take {who} to the bin", { who: t.c.name }),
+          detail: K("Do not describe it. Walk them to it."),
           cost: 42,
           run(S, t) {
               const r = A.route(S, S.fire.core.x, cabin.AISLE_Y);
@@ -121,85 +128,93 @@
               t.c.hasSeenIt = true;
               cred(S, 34);
               C.setPhase(S, Math.max(S.crewPhase, 2));
-              return { text: "You walk " + t.c.name + " eleven rows and point at the seam of the " +
-                  "locker above " + cabin.ORIGIN.row + cabin.ORIGIN.letter + ". They put the back " +
-                  "of their hand on it for about a quarter of a second. Everything is different " +
-                  "from here.", kind: "great" };
+              return { text: T("You walk {who} eleven rows and point at the seam of the " +
+                               "locker above {seat}. They put the back of their hand on it for " +
+                               "about a quarter of a second. Everything is different from here.",
+                               { who: t.c.name,
+                                 seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }),
+                       kind: "great" };
           } },
 
         { id: "crew.ask_halon", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !st.slotOf(S, "halon_bottle") && t.c.halon > 0 && worth(S, t.c, 62),
-          label: (S, t) => "Ask " + t.c.name + " for the halon bottle",
-          detail: "There are two on this aeroplane and neither of them is yours.",
+          label: (S, t) => T("Ask {who} for the halon bottle", { who: t.c.name }),
+          detail: K("There are two on this aeroplane and neither of them is yours."),
           cost: 22,
           run(S, t) {
-              if (t.c.halon <= 0) return { text: "“It's gone. Both of them are gone.”", kind: "bad" };
+              if (t.c.halon <= 0) {
+                  return { text: T("“It's gone. Both of them are gone.”"), kind: "bad" };
+              }
               if (ask(S, t.c, 62)) {
                   t.c.halon--;
                   st.give(S, "halon_bottle");
-                  return { text: "“Do you know how to use it?” You say yes. " + t.c.name +
-                      " gives you a red bottle and eleven seconds of instructions.", kind: "great" };
+                  return { text: T("“Do you know how to use it?” You say yes. {who} gives you a " +
+                                   "red bottle and eleven seconds of instructions.",
+                                   { who: t.c.name }), kind: "great" };
               }
-              return { text: "“Absolutely not. Sit down.” Which is, to be fair to them, correct.",
-                       kind: "bad" };
+              return { text: T("“Absolutely not. Sit down.” Which is, to be fair to them, " +
+                               "correct."), kind: "bad" };
           } },
 
         { id: "crew.ask_hood", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !st.slotOf(S, "hood") && t.c.hood > 0 && worth(S, t.c, 58),
-          label: (S, t) => "Ask " + t.c.name + " for a smoke hood",
+          label: (S, t) => T("Ask {who} for a smoke hood", { who: t.c.name }),
           cost: 20,
           run(S, t) {
               if (ask(S, t.c, 58)) {
                   t.c.hood--;
                   st.give(S, "hood");
-                  return { text: t.c.name + " hands you a foil packet. It is the crew's own and " +
-                      "they now do not have it.", kind: "great" };
+                  return { text: T("{who} hands you a foil packet. It is the crew's own and " +
+                                   "they now do not have it.", { who: t.c.name }),
+                           kind: "great" };
               }
-              return { text: "“They're for crew.” They are for crew.", kind: "bad" };
+              return { text: T("“They're for crew.” They are for crew."), kind: "bad" };
           } },
 
         { id: "crew.move_trolley", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => S.cabinFlags.cartOut && worth(S, t.c, 36),
-          label: (S, t) => "Ask " + t.c.name + " to stow the trolley",
-          detail: "Two hundred kilos across the aisle is the single biggest thing in your way.",
+          label: (S, t) => T("Ask {who} to stow the trolley", { who: t.c.name }),
+          detail: K("Two hundred kilos across the aisle is the single biggest thing in your way."),
           cost: 20,
           run(S, t) {
               if (ask(S, t.c, 36)) {
                   S.cabinFlags.cartOut = false;
                   delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
-                  return { text: "The trolley goes away. The aisle is a corridor again and " +
-                      "everything you do for the rest of this flight is faster.", kind: "great" };
+                  return { text: T("The trolley goes away. The aisle is a corridor again and " +
+                                   "everything you do for the rest of this flight is faster."),
+                           kind: "great" };
               }
-              return { text: "“We're mid-service.” The trolley stays across row " +
-                  (cabin.rowAt(S.cabinFlags.cartX) || "?") + ".", kind: "bad" };
+              return { text: T("“We're mid-service.” The trolley stays across row {row}.",
+                               { row: cabin.rowAt(S.cabinFlags.cartX) || "?" }), kind: "bad" };
           } },
 
         { id: "crew.ask_masks", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !S.cabinFlags.masksDropped && worth(S, t.c, 66),
-          label: (S, t) => "Ask " + t.c.name + " to drop the oxygen masks",
-          detail: "It is the wrong oxygen for this and it is oxygen.",
+          label: (S, t) => T("Ask {who} to drop the oxygen masks", { who: t.c.name }),
+          detail: K("It is the wrong oxygen for this and it is oxygen."),
           cost: 24,
           run(S, t) {
               if (ask(S, t.c, 66)) {
                   S.cabinFlags.masksDropped = true;
                   PRS.audio.play("masksDrop");
-                  return { text: "Sixty panels open at once with a noise like a deck of cards. " +
-                      "The masks come down all the way to the tail. Half the cabin puts one on " +
-                      "and the other half looks at it.", kind: "great" };
+                  return { text: T("Sixty panels open at once with a noise like a deck of " +
+                                   "cards. The masks come down all the way to the tail. Half " +
+                                   "the cabin puts one on and the other half looks at it."),
+                           kind: "great" };
               }
-              return { text: "“Oxygen and fire.” They are not wrong. They are also not right.",
-                       kind: "bad" };
+              return { text: T("“Oxygen and fire.” They are not wrong. They are also not " +
+                               "right."), kind: "bad" };
           } },
 
         { id: "crew.ask_pa", deck: "crew", tags: ["social"], danger: "good",
           targets: near,
           when: (S, t) => !S.flags.crewPA && worth(S, t.c, 50),
-          label: (S, t) => "Ask " + t.c.name + " to make an announcement",
-          detail: "One sentence to sixty people beats sixty conversations.",
+          label: (S, t) => T("Ask {who} to make an announcement", { who: t.c.name }),
+          detail: K("One sentence to sixty people beats sixty conversations."),
           cost: 22,
           run(S, t) {
               if (ask(S, t.c, 50)) {
@@ -209,30 +224,32 @@
                   cred(S, 16);
                   PRS.audio.play("pa");
                   for (const p of S.pax) p.awareness = Math.min(100, p.awareness + 24);
-                  return { text: "PA: “Ladies and gentlemen, cabin crew — we have a small fire in " +
-                      "the cabin and it is being dealt with. Please remain seated with your " +
-                      "seatbelts fastened.” The word remain is doing a great deal of work.",
-                      kind: "good" };
+                  return { text: T("PA: “Ladies and gentlemen, cabin crew — we have a small " +
+                                   "fire in the cabin and it is being dealt with. Please remain " +
+                                   "seated with your seatbelts fastened.” The word remain is " +
+                                   "doing a great deal of work."), kind: "good" };
               }
-              return { text: "“That would cause a panic.” It would. That is not the same as it " +
-                  "being wrong.", kind: "bad" };
+              return { text: T("“That would cause a panic.” It would. That is not the same as " +
+                               "it being wrong."), kind: "bad" };
           } },
 
         { id: "crew.ask_interphone", deck: "crew", tags: ["social"],
           targets: near,
           when: (S, t) => S.crewPhase < 4 && worth(S, t.c, 56),
-          label: (S, t) => "Tell " + t.c.name + " to call the flight deck",
-          detail: "The two people who can put this aeroplane on the ground do not know yet. " +
-                  "Told, they get it down sooner, and sooner is ninety seconds you do not get.",
+          label: (S, t) => T("Tell {who} to call the flight deck", { who: t.c.name }),
+          detail: K("The two people who can put this aeroplane on the ground do not know yet. " +
+                  "Told, they get it down sooner, and sooner is ninety seconds you do not get."),
           cost: 26,
           run(S, t) {
               if (ask(S, t.c, 56)) {
                   C.setPhase(S, 4);
-                  return { text: t.c.name + " picks up the handset. Whatever they say takes nine " +
-                      "seconds and the nose is down before they have hung it up.", kind: "great" };
+                  return { text: T("{who} picks up the handset. Whatever they say takes nine " +
+                                   "seconds and the nose is down before they have hung it up.",
+                                   { who: t.c.name }), kind: "great" };
               }
-              return { text: "“Not yet. We assess first, then we call.” That is the procedure and " +
-                  "the procedure is costing you ninety seconds a minute.", kind: "bad" };
+              return { text: T("“Not yet. We assess first, then we call.” That is the procedure " +
+                               "and the procedure is costing you ninety seconds a minute."),
+                       kind: "bad" };
           } },
 
         // ---------------------------------------------------------------------- flight deck ---

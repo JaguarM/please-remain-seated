@@ -8,53 +8,56 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
 
     // Each is worth net +1 across the five, spent differently. `mod` is added to the character's
-    // own stats and the total is clamped to 1..10. `unlock` is the number of souls in the log book,
-    // counted as people who got off alive, at which it hangs in the wardrobe: the first after a
-    // flight or two, the last after a few dozen.
+    // own stats and the total is clamped to 1..10. `unlock` is the number of souls in the log
+    // book, at which it hangs in the wardrobe. The book counts people your actions saved rather
+    // than people who got off, which is about twenty on a good flight, so the first two are a
+    // first flight and a third flight and the spacing widens from there: the wardrobe should
+    // open while you are still working out what the aeroplane is, not once you have finished.
     const OUTFITS = [
         {
-            id: "gym", name: "Gym kit and trainers", unlock: 50, sprite: "outfit_gym",
-            blurb: "You were going to run at the other end. Shorts, a technical top, and the " +
-                   "only shoes on this aeroplane you can actually sprint in.",
+            id: "gym", name: K("Gym kit and trainers"), unlock: 10, sprite: "outfit_gym",
+            blurb: K("You were going to run at the other end. Shorts, a technical top, and the " +
+                   "only shoes on this aeroplane you can actually sprint in."),
             mod: { speed: 2, voice: -1 },
-            note: "Fastest in the cabin. Nobody in shorts has ever been believed about anything.",
+            note: K("Fastest in the cabin. Nobody in shorts has ever been believed about anything."),
         },
         {
-            id: "suit", name: "The suit you flew in", unlock: 150, sprite: "outfit_suit",
-            blurb: "There is a meeting at four. There is not going to be a meeting at four. The " +
-                   "jacket is on the hook by the door and the tie is still done up.",
+            id: "suit", name: K("The suit you flew in"), unlock: 40, sprite: "outfit_suit",
+            blurb: K("There is a meeting at four. There is not going to be a meeting at four. The " +
+                   "jacket is on the hook by the door and the tie is still done up."),
             mod: { voice: 2, nerve: 1, speed: -2 },
-            note: "People do what a suit says. A suit cannot climb over a row of seats.",
+            note: K("People do what a suit says. A suit cannot climb over a row of seats."),
         },
         {
-            id: "work", name: "Work clothes", unlock: 300, sprite: "outfit_work",
-            blurb: "Steel toecaps, sleeves rolled, and hands that have already been burned once " +
-                   "this year.",
+            id: "work", name: K("Work clothes"), unlock: 90, sprite: "outfit_work",
+            blurb: K("Steel toecaps, sleeves rolled, and hands that have already been burned once " +
+                   "this year."),
             mod: { strength: 2, voice: 1, speed: -2 },
-            note: "You can pick things up and people assume you are allowed to. Slow.",
+            note: K("You can pick things up and people assume you are allowed to. Slow."),
         },
         {
-            id: "comfort", name: "Dressed for a long flight", unlock: 500, sprite: "outfit_comfort",
-            blurb: "Fleece, compression socks, an eye mask pushed up onto your forehead since " +
-                   "somewhere over the Alps.",
+            id: "comfort", name: K("Dressed for a long flight"), unlock: 180, sprite: "outfit_comfort",
+            blurb: K("Fleece, compression socks, an eye mask pushed up onto your forehead since " +
+                   "somewhere over the Alps."),
             mod: { nerve: 2, lungs: 1, strength: -2 },
-            note: "Nothing frightens you and you cannot lift anybody. Layers are a filter.",
+            note: K("Nothing frightens you and you cannot lift anybody. Layers are a filter."),
         },
         {
-            id: "hill", name: "Straight off a hill", unlock: 750, sprite: "outfit_hill",
-            blurb: "Boots, a hardshell, and a week at altitude that has left you with lungs that " +
-                   "are going to matter in about four minutes.",
+            id: "hill", name: K("Straight off a hill"), unlock: 320, sprite: "outfit_hill",
+            blurb: K("Boots, a hardshell, and a week at altitude that has left you with lungs that " +
+                   "are going to matter in about four minutes."),
             mod: { lungs: 2, strength: 1, speed: -2 },
-            note: "You will still be standing up when everybody else is on the floor.",
+            note: K("You will still be standing up when everybody else is on the floor."),
         },
         {
-            id: "beach", name: "Shorts and flip-flops", unlock: 1000, sprite: "outfit_beach",
-            blurb: "It was thirty-one degrees when you got on. You have not thought about your " +
-                   "feet once and you are going to think about them a great deal shortly.",
+            id: "beach", name: K("Shorts and flip-flops"), unlock: 500, sprite: "outfit_beach",
+            blurb: K("It was thirty-one degrees when you got on. You have not thought about your " +
+                   "feet once and you are going to think about them a great deal shortly."),
             mod: { speed: 2, nerve: 1, strength: -1, lungs: -1 },
-            note: "Quick, cheerful, and about to walk through something hot in flip-flops.",
+            note: K("Quick, cheerful, and about to walk through something hot in flip-flops."),
         },
     ];
 
@@ -81,13 +84,19 @@
         return PRS.atlas.icon("outfit", scale || 3, { c: c, l: PRS.util.shade(c, 1.3) });
     }
 
+    // The five, spelled out on a card rather than abbreviated on a bar.
+    const STAT = {
+        strength: () => T("strength"), speed: () => T("speed"), lungs: () => T("lungs"),
+        nerve: () => T("nerve"), voice: () => T("voice"),
+    };
+
     /** "+2 speed, −1 voice", for the card. */
     function summary(outfit) {
-        if (!outfit) return "as you are";
+        if (!outfit) return T("as you are");
         const bits = [];
         for (const key in outfit.mod) {
             const v = outfit.mod[key];
-            bits.push((v > 0 ? "+" : "−") + Math.abs(v) + " " + key);
+            bits.push((v > 0 ? "+" : "−") + Math.abs(v) + " " + STAT[key]());
         }
         return bits.join(", ");
     }

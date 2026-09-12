@@ -106,10 +106,13 @@
     }
 
     // "9s", "1m 04s" - for action costs, where the shape of the number is the whole warning.
+    // The two letters are a language's own: German counts in Sekunden and minds about it.
     function costLabel(seconds) {
         const s = Math.round(seconds);
-        if (s < 60) return s + "s";
-        return Math.floor(s / 60) + "m " + String(s % 60).padStart(2, "0") + "s";
+        const X = PRS.tx || ((x) => x);
+        if (s < 60) return s + X("s", "suffix on a number of seconds");
+        return Math.floor(s / 60) + X("m", "suffix on a number of minutes") + " " +
+               String(s % 60).padStart(2, "0") + X("s", "suffix on a number of seconds");
     }
 
     /** A hex colour, multiplied. Under 1 darkens; over 1 lightens, up to white. */
@@ -120,12 +123,17 @@
         return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1);
     }
 
+    // "1 flight", "6 flights". Both words are translation keys, because a language can inflect
+    // a noun in ways an "s" on the end cannot reach. PRS.i18n does the inflecting; this is the
+    // English fallback for anything that runs before it has loaded.
     function plural(n, one, many) {
+        if (PRS.i18n) return PRS.i18n.n(n, one, many);
         return n + " " + (n === 1 ? one : (many || one + "s"));
     }
 
     // A list read as a sentence: "a, b and c". Used everywhere the report speaks.
     function listSentence(items, conj) {
+        if (PRS.i18n) return PRS.i18n.list(items, conj);
         conj = conj || "and";
         if (!items.length) return "";
         if (items.length === 1) return items[0];

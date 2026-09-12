@@ -87,6 +87,9 @@
             actions: [],           // every action id, in order, for the report and the recorder
             counts: {},            // action id -> how many times
             medals: {},
+            // The nearest each unlocking medal ever came, which is not always where it ended up:
+            // "declared early" is four steps up the chain before minute five and nothing after.
+            nearly: {},
             flags: {},             // one-shot story flags
             stats: {
                 stepsTaken: 0, carriesCompleted: 0, metresCarried: 0,

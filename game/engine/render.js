@@ -14,6 +14,10 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    // `T` is the tile size everywhere in this file, so the translator goes by its
+    // other name. X() is the one that takes a note, which is what these do: every word
+    // drawn on the cabin is painted into one tile and has no room to grow.
+    const X = PRS.tx;
     const cabin = PRS.cabin;
     const atlas = PRS.atlas;
     const clamp01 = PRS.util.clamp01;
@@ -916,11 +920,12 @@
             ctx.save();
             ctx.translate(gx * T + T * 0.64, gy * T + T / 2);
             ctx.rotate(-Math.PI / 2);
-            ctx.fillText("GALLEY", 0, 0);
+            ctx.fillText(X("GALLEY", "written down the side of a galley, one short word"), 0, 0);
             ctx.restore();
         }
-        label("LAV", cabin.AFT_GALLEY_X, 1);
-        label("LAV", cabin.AFT_GALLEY_X, 7);
+        const lav = X("LAV", "written across a lavatory door, three letters at most");
+        label(lav, cabin.AFT_GALLEY_X, 1);
+        label(lav, cabin.AFT_GALLEY_X, 7);
 
         // The floor by the doors at each end says what the air is like on it, and nothing more.
         // It is not a promise and it stops being good news the moment the smoke gets there.
@@ -929,8 +934,12 @@
             const tier = air.bad > 0.62 ? 2 : air.bad > 0.24 ? 1 : 0;
             ctx.fillStyle = ["rgba(120,214,140,0.95)", "rgba(232,197,58,0.95)",
                              "rgba(212,72,58,1)"][tier];
-            label(["CLEAR", "SMOKE", "GONE"][tier], zx, 2);
-            label(["CLEAR", "SMOKE", "GONE"][tier], zx, 6);
+            // Painted on one tile of floor: five letters is the room there is.
+            const word = [X("CLEAR", "the air by a door, painted on the floor"),
+                          X("SMOKE", "the air by a door, painted on the floor"),
+                          X("GONE", "the air by a door, painted on the floor")][tier];
+            label(word, zx, 2);
+            label(word, zx, 6);
         }
         ctx.restore();
 
@@ -1023,8 +1032,13 @@
         }
     }
 
-    /** A small static drawing of the cabin for the report: who was where at touchdown. */
-    function drawSummary(ctx, S, scale) {
+    /**
+     * A small static drawing of the cabin for the report: who was where at touchdown.
+     *
+     * `focus` is the tile the manifest is pointing at: the one seat in two hundred and seventy
+     * that somebody is asking about, lit from under the dot that is already there and boxed.
+     */
+    function drawSummary(ctx, S, scale, focus) {
         const T = TILE * scale;
         ctx.imageSmoothingEnabled = false;
         ctx.fillStyle = "#1a1d23";
@@ -1045,6 +1059,15 @@
         }
         ctx.fillStyle = "#ffffff";
         ctx.fillRect(S.player.x * T + 2, S.player.y * T + 2, T - 5, T - 5);
+        if (!focus) return;
+        // A box round the tile, drawn as four bars because a one-pixel stroke on a canvas the
+        // page then scales up lands between pixels and goes soft.
+        ctx.fillStyle = "#ffd54a";
+        const bx = focus.x * T - 2, by = focus.y * T - 2, bw = T + 3, bh = T + 3;
+        ctx.fillRect(bx, by, bw, 1);
+        ctx.fillRect(bx, by + bh - 1, bw, 1);
+        ctx.fillRect(bx, by, 1, bh);
+        ctx.fillRect(bx + bw - 1, by, 1, bh);
     }
 
     PRS.render = {

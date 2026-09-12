@@ -20,82 +20,83 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const K = PRS.k;
 
     const ITEMS = [
         // -------------------------------------------------------------- things you can pack ---
-        { id: "water_big", name: "Bottle of water", pool: true,
+        { id: "water_big", name: K("Bottle of water"), pool: true,
           sprite: "cabin:water_bottle", uses: 3, agent: "water",
           tags: ["water", "douse", "drink", "refillable"], refill: "tap",
-          note: "Three good pours. The lavatory tap fills it again in nine seconds." },
+          note: K("Three good pours. The lavatory tap fills it again in nine seconds.") },
 
-        { id: "phone", name: "Phone", pool: true, sprite: "cabin:phone",
+        { id: "phone", name: K("Phone"), pool: true, sprite: "cabin:phone",
           uses: null, tags: ["phone", "evidence"],
-          note: "Photograph the fire and people believe you. Show them and they believe you faster." },
+          note: K("Photograph the fire and people believe you. Show them and they believe you faster.") },
 
-        { id: "blanket", name: "Travel blanket", pool: true, sprite: "cabin:blanket",
+        { id: "blanket", name: K("Travel blanket"), pool: true, sprite: "cabin:blanket",
           uses: null, agent: "smother", tags: ["cloth", "smother", "wettable", "cover"],
-          note: "Never runs out. Soak it in a lavatory and it becomes the second best thing here." },
+          note: K("Never runs out. Soak it in a lavatory and it becomes the second best thing here.") },
 
-        { id: "wet_towel", name: "Damp travel towel", pool: true, where: "pax",
+        { id: "wet_towel", name: K("Damp travel towel"), pool: true, where: "pax",
           sprite: "cabin:wet_towel", uses: 4, agent: "wetcloth",
           tags: ["cloth", "douse", "mask", "refillable"], refill: "tap",
-          note: "Smothers without spreading, and tied over a face it buys somebody a minute." },
+          note: K("Smothers without spreading, and tied over a face it buys somebody a minute.") },
 
-        { id: "hood", name: "Smoke hood", pool: true, where: "pax",
+        { id: "hood", name: K("Smoke hood"), pool: true, where: "pax",
           sprite: "cabin:smoke_hood", uses: 1, tags: ["hood", "smoke", "self"],
-          note: "Fifteen minutes of not breathing smoke. Fifteen minutes is the whole game." },
+          note: K("Fifteen minutes of not breathing smoke. Fifteen minutes is the whole game.") },
 
-        { id: "goggles", name: "Swimming goggles", pool: true, sprite: "cabin:goggles",
+        { id: "goggles", name: K("Swimming goggles"), pool: true, sprite: "cabin:goggles",
           uses: null, tags: ["eyes", "smoke", "self"],
-          note: "Eyes open in smoke that shuts everyone else's: it does not slow you, and it " +
-                "frightens you less." },
+          note: K("Eyes open in smoke that shuts everyone else's: it does not slow you, and it " +
+                "frightens you less.") },
 
-        { id: "multitool", name: "Multi-tool that should not have got through security",
+        { id: "multitool", name: K("Multi-tool that should not have got through security"),
           pool: true, where: "pax", sprite: "cabin:multitool", uses: null,
           tags: ["tool", "cut", "pry", "belt"],
-          note: "Cuts a seatbelt in two seconds instead of unbuckling it in six, and opens the " +
-                "oxygen mask panels." },
+          note: K("Cuts a seatbelt in two seconds instead of unbuckling it in six, and opens the " +
+                "oxygen mask panels.") },
 
-        { id: "first_aid", name: "First aid kit", pool: true, where: "galley",
+        { id: "first_aid", name: K("First aid kit"), pool: true, where: "galley",
           sprite: "cabin:first_aid", uses: 4, tags: ["medical", "burn", "treat"],
-          note: "Burn gel is the difference between a passenger who walks and one you carry." },
+          note: K("Burn gel is the difference between a passenger who walks and one you carry.") },
 
-        { id: "strap", name: "Luggage strap", pool: true, sprite: "cabin:strap",
+        { id: "strap", name: K("Luggage strap"), pool: true, sprite: "cabin:strap",
           uses: null, tags: ["strap", "drag", "tie"],
-          note: "Under the arms and buckled at the back, dragging somebody has a handle: half " +
-                "again as fast, and it works on people you cannot lift." },
+          note: K("Under the arms and buckled at the back, dragging somebody has a handle: half " +
+                "again as fast, and it works on people you cannot lift.") },
 
         // ------------------------------------------------------- in other people's laps ---
-        { id: "gloves", name: "Welding gloves", where: "pax", sprite: "cabin:fire_gloves",
+        { id: "gloves", name: K("Welding gloves"), where: "pax", sprite: "cabin:fire_gloves",
           uses: null, tags: ["gloves", "heat", "grip"],
-          note: "You can touch things that are on fire. This turns out to be most things." },
+          note: K("You can touch things that are on fire. This turns out to be most things.") },
 
-        { id: "tape", name: "Roll of duct tape", where: "pax", sprite: "cabin:duct_tape",
+        { id: "tape", name: K("Roll of duct tape"), where: "pax", sprite: "cabin:duct_tape",
           uses: 6, tags: ["tape", "seal", "tie", "pry"],
-          note: "Seals the bin shut, and seals the vents in a row." },
+          note: K("Seals the bin shut, and seals the vents in a row.") },
 
-        { id: "inhaler", name: "Inhaler", where: "pax", sprite: "cabin:inhaler",
+        { id: "inhaler", name: K("Inhaler"), where: "pax", sprite: "cabin:inhaler",
           uses: 3, tags: ["medical", "lungs", "self", "treat"],
-          note: "Puts a set of lungs back in the game. Yours, or somebody who has stopped coughing." },
+          note: K("Puts a set of lungs back in the game. Yours, or somebody who has stopped coughing.") },
 
-        { id: "hivis", name: "Hi-vis vest", where: "pax", sprite: "cabin:hivis",
+        { id: "hivis", name: K("Hi-vis vest"), where: "pax", sprite: "cabin:hivis",
           uses: null, tags: ["authority", "wear"],
-          note: "People obey a hi-vis vest. People have always obeyed a hi-vis vest." },
+          note: K("People obey a hi-vis vest. People have always obeyed a hi-vis vest.") },
 
         // ------------------------------------------------------------- in the galley drawers ---
-        { id: "binbag", name: "Roll of bin liners", where: "galley", sprite: "cabin:binbag",
+        { id: "binbag", name: K("Roll of bin liners"), where: "galley", sprite: "cabin:binbag",
           uses: 4, tags: ["bag", "water", "carry", "refillable"], refill: "tap",
-          note: "The biggest volume of water you can move in one trip. Fiddly. Worth it." },
+          note: K("The biggest volume of water you can move in one trip. Fiddly. Worth it.") },
 
         // ------------------------------------------------------------------- the crew's kit ---
-        { id: "halon_bottle", name: "BCF halon extinguisher", where: "crew",
+        { id: "halon_bottle", name: K("BCF halon extinguisher"), where: "crew",
           sprite: "cabin:extinguisher", uses: 1, agent: "halon", tags: ["extinguisher", "halon"],
-          note: "One discharge. It works on the flame, which is not the fire." },
+          note: K("One discharge. It works on the flame, which is not the fire.") },
 
-        { id: "water_ext", name: "Water extinguisher", where: "crew",
+        { id: "water_ext", name: K("Water extinguisher"), where: "crew",
           sprite: "cabin:extinguisher_water", uses: 2, agent: "water",
           tags: ["extinguisher", "water"],
-          note: "Nine litres under pressure, two discharges, and it weighs as much as a child." },
+          note: K("Nine litres under pressure, two discharges, and it weighs as much as a child.") },
     ];
 
     /** The bag is three things. That is the cabin baggage allowance, still being enforced. */

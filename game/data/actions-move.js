@@ -5,6 +5,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -80,13 +81,19 @@
         const f = S.fire;
         const i = cabin.idx(S.player.x, S.player.y);
         const bits = [];
-        if (f.intensity[i] > 2) bits.push("It is " + PRS.fire.describe(f, S.player.x, S.player.y) +
-                                          " where you are standing.");
-        if (f.smoke[i] > 12) bits.push("Smoke: " + PRS.fire.describeSmoke(f.smoke[i]) + ".");
+        if (f.intensity[i] > 2) {
+            bits.push(T("It is {what} where you are standing.",
+                        { what: PRS.fire.describe(f, S.player.x, S.player.y) }));
+        }
+        if (f.smoke[i] > 12) {
+            bits.push(T("Smoke: {what}.", { what: PRS.fire.describeSmoke(f.smoke[i]) }));
+        }
         const here = st.paxAt(S, S.player.x, S.player.y).filter((p) => p.state !== "carried");
-        if (here.length) bits.push("You are on top of " +
-            PRS.util.listSentence(here.map((p) => p.name)) + ".");
-        return "You are at " + where + ". " + bits.join(" ");
+        if (here.length) {
+            bits.push(T("You are on top of {who}.",
+                        { who: PRS.util.listSentence(here.map((p) => p.name)) }));
+        }
+        return T("You are at {where}. ", { where: where }) + bits.join(" ");
     }
 
     // -------------------------------------------------------------------------------- steps ---
@@ -110,7 +117,7 @@
                 }
                 return out;
             },
-            label: (S, c) => "Go to " + cabin.placeName(c.x, c.y),
+            label: (S, c) => T("Go to {where}", { where: cabin.placeTo(c.x, c.y) }),
             detail: (S, c) => cabin.placeName(c.x, c.y),
             cost: (S, c) => c.r.cost,
             run(S, c) {
@@ -123,18 +130,18 @@
             id: "move.crawl",
             deck: "move",
             tags: ["move", "self"],
-            label: (S) => S.player.crouching ? "Stand back up" : "Get down and crawl",
-            detail: "The smoke is at the ceiling and the air is at the floor. Down there you " +
-                    "breathe less than half of it, and every step takes half again as long.",
+            label: (S) => S.player.crouching ? T("Stand back up") : T("Get down and crawl"),
+            detail: K("The smoke is at the ceiling and the air is at the floor. Down there you " +
+                    "breathe less than half of it, and every step takes half again as long."),
             when: (S) => !S.player.carrying.length && !S.player.dragging,
             cost: 5,
             run(S) {
                 S.player.crouching = !S.player.crouching;
                 if (S.player.crouching) {
-                    return "You go down onto your hands and knees. The air down here is " +
-                           "startlingly better and you can see forty rows of shoes.";
+                    return T("You go down onto your hands and knees. The air down here is " +
+                             "startlingly better and you can see forty rows of shoes.");
                 }
-                return "You stand back up into the grey.";
+                return T("You stand back up into the grey.");
             },
         },
     ]);

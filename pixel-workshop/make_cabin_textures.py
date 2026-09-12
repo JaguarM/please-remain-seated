@@ -433,6 +433,14 @@ FACES = {
                   "~~~~~~~~~~",
                   "~~~~ll~~~~",
                   "~~~~~~~~~~"],
+    # Not accounted for. The report is the only place this face appears: during the flight the
+    # game does not know and will not say, so nobody wears it until the wheels are down. Two
+    # crosses and a mouth, which is the oldest drawing there is for it and needs no caption.
+    "_gone":     ["~~~~~~~~~~",
+                  "~e~e~~e~e~",
+                  "~~e~~~~e~~",
+                  "~e~e~~e~e~",
+                  "~~~~mm~~~~"],
 }
 
 # A child's head is narrower, so the same five patches lose their outer pixel and the eyes end up
@@ -462,6 +470,13 @@ CHILD_FACES = {
                   "~~~~l~l~~~",
                   "~~~~~~~~~~",
                   "~~~~~l~~~~",
+                  "~~~~~~~~~~"],
+    # A narrower face has room for two crosses only if they share the column between them,
+    # which at this size reads as one mark rather than two and is the right amount of it.
+    "_gone":     ["~~e~e~e~e~",
+                  "~~~e~~~e~~",
+                  "~~e~e~e~e~",
+                  "~~~~~m~~~~",
                   "~~~~~~~~~~"],
 }
 
@@ -947,8 +962,11 @@ kdd..........ddk
 ................
 """), {"k": "#2c313a", "h": "#b8c0cb", "l": "#8e97a3", "m": "#6c7480", "d": "#1a1c20"})
 
-# A pet carrier with something in it that has been very quiet for an hour.
+# A pet carrier with something in it that has been very quiet for an hour. Its feet stand on
+# the same line a passenger's shoulders end on - row thirteen - because a carrier a pixel above
+# that line is a carrier floating, and at three hundred per cent nobody misses it.
 sprite("pet_carrier", m("""
+................
 ................
 ....kkkkkkkk....
 ..kkbbbbbbbbkk..
@@ -962,7 +980,6 @@ sprite("pet_carrier", m("""
 ..kbbbbbbbbbbk..
 ..kkkkkkkkkkkk..
 ...k........k...
-................
 ................
 ................
 """), {"k": "#1e1a16", "b": "#4a5a72", "g": "#8ad06a"})

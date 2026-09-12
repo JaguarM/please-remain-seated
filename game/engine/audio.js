@@ -12,6 +12,9 @@
     let master = null;
     let roarGain = null, roarSource = null;
     let enabled = true;
+    // 0..1, and 0.5 is the loudest the master gain has ever been: the cabin roar sits under
+    // everything and a game that opens at full scale is a game somebody turns off.
+    let volume = 1;
     let ready = false;
     // How many cues have been asked for, ever. The play screen uses it to find out whether the
     // action it just ran made its own noise, and only falls back to a generic one if it did not,
@@ -25,7 +28,7 @@
         if (!AC) { enabled = false; return null; }
         try { ctx = new AC(); } catch (e) { enabled = false; return null; }
         master = ctx.createGain();
-        master.gain.value = 0.5;
+        master.gain.value = level();
         master.connect(ctx.destination);
         return ctx;
     }
@@ -176,14 +179,32 @@
     /** How many cues have been played. Only useful as a before-and-after pair. */
     function count() { return plays; }
 
+    /** What the master gain should be, given the switch and the slider. */
+    function level() { return enabled ? 0.5 * volume : 0; }
+
+    function apply() {
+        if (master) master.gain.setTargetAtTime(level(), now(), 0.05);
+        if (!enabled || volume <= 0) stopRoar();
+    }
+
     function setEnabled(on) {
         enabled = !!on;
-        if (master) master.gain.setTargetAtTime(enabled ? 0.5 : 0, now(), 0.05);
-        if (!enabled) stopRoar();
+        apply();
     }
 
     function isEnabled() { return enabled; }
 
-    PRS.audio = { unlock, play, count, sfx, setEnabled, isEnabled,
+    /**
+     * How loud, 0..1. Sliding to zero is the same silence as the switch being off, and the two
+     * are kept apart because M is a thing you press for a moment and the slider is a setting.
+     */
+    function setVolume(v) {
+        volume = Math.max(0, Math.min(1, typeof v === "number" ? v : 1));
+        apply();
+    }
+
+    function getVolume() { return volume; }
+
+    PRS.audio = { unlock, play, count, sfx, setEnabled, isEnabled, setVolume, getVolume,
                   startRoar, stopRoar, setRoar };
 })(window);

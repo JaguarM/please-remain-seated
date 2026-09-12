@@ -26,6 +26,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
 
     const LIMIT = 80;              // how many turns back the stack goes; nobody needs eighty
     const TRAIL = 12;              // how many walks back the trail goes
@@ -68,6 +69,7 @@
             counts: copy(S.counts),
             flags: copy(S.flags),
             medals: copy(S.medals),
+            nearly: copy(S.nearly || {}),
             stats: copy(S.stats),
             actions: S.actions.slice(),
             logLength: S.log.length,
@@ -96,6 +98,7 @@
         S.counts = copy(snap.counts);
         S.flags = copy(snap.flags);
         S.medals = copy(snap.medals);
+        S.nearly = copy(snap.nearly || {});
         S.stats = copy(snap.stats);
         S.actions = snap.actions.slice();
         S.log.length = snap.logLength;
@@ -134,18 +137,18 @@
      */
     function peek(S, index) {
         const stack = S.undoStack || [];
-        if (S.clock.landed) return { ok: false, why: "The aeroplane is on the ground." };
-        if (!stack.length) return { ok: false, why: "You have not done anything yet." };
+        if (S.clock.landed) return { ok: false, why: K("The aeroplane is on the ground.") };
+        if (!stack.length) return { ok: false, why: K("You have not done anything yet.") };
         const i = index === undefined ? stack.length - 1 : index;
         if (!(i >= 0 && i < stack.length)) {
-            return { ok: false, why: "That is further back than you can go." };
+            return { ok: false, why: K("That is further back than you can go.") };
         }
 
         let walks = true;
         for (let k = i; k < stack.length; k++) {
             if (stack[k].reveal) {
-                return { ok: false, why: "You cannot un-see that. Anything that told you something " +
-                                         "new stays done." };
+                return { ok: false, why: K("You cannot un-see that. Anything that told you " +
+                                           "something new stays done.") };
             }
             if (stack[k].id !== WALK) walks = false;
         }
@@ -175,11 +178,15 @@
         S.stats.undos = (S.stats.undos || 0) + plan.count;
         const back = Math.abs(plan.seconds);
         PRS.state.log(S, plan.walks
-            ? "You go back the way you came, to " + PRS.cabin.placeName(plan.at.x, plan.at.y) +
-              ", and you have " + PRS.util.plural(back, "second") + " back."
-            : "You did not do that. " + plan.label +
-              (plan.count > 1 ? " (and the " + (plan.count - 1) + " before it)" : "") +
-              " is undone, and you have the " + back + " seconds back.", "undo");
+            ? T("You go back the way you came, to {where}, and you have {secs} back.",
+                { where: PRS.cabin.placeTo(plan.at.x, plan.at.y),
+                  secs: PRS.util.plural(back, K("second"), K("seconds")) })
+            : (plan.count > 1
+                ? T("You did not do that. {what} (and the {n} before it) is undone, and you " +
+                    "have the {secs} seconds back.",
+                    { what: T(plan.label), n: plan.count - 1, secs: back })
+                : T("You did not do that. {what} is undone, and you have the {secs} seconds back.",
+                    { what: T(plan.label), secs: back })), "undo");
         return plan;
     }
 

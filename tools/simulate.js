@@ -67,6 +67,7 @@ function makeSandbox() {
 const FILES = [
     "game/art/cabin-sprites.js",
     "game/engine/core.js",
+    "game/i18n/i18n.js",
     "game/engine/atlas.js",
     "game/engine/audio.js",
     "game/sim/cabin.js",
@@ -98,9 +99,26 @@ const FILES = [
     "game/data/actions-loot.js",
 ];
 
-function load() {
+// The catalogues, which are optional: a bot flying in English does not need them, and a run
+// that wants German lines in its log (tools/render_frame.py reads them) does. They are listed
+// separately because a missing one must not be a failure to load.
+function catalogues() {
+    const dir = path.join(ROOT, "game", "i18n");
+    const out = [];
+    for (const code of fs.readdirSync(dir)) {
+        const sub = path.join(dir, code);
+        if (!fs.statSync(sub).isDirectory()) continue;
+        for (const name of fs.readdirSync(sub).sort()) {
+            if (name.endsWith(".js")) out.push("game/i18n/" + code + "/" + name);
+        }
+    }
+    return out;
+}
+
+/** Load the game. `lang` flies it in a language other than the English it is written in. */
+function load(lang) {
     const ctx = makeSandbox();
-    for (const rel of FILES) {
+    for (const rel of FILES.concat(catalogues())) {
         const file = path.join(ROOT, rel);
         const code = fs.readFileSync(file, "utf8");
         try {
@@ -111,6 +129,7 @@ function load() {
             process.exit(1);
         }
     }
+    if (lang) ctx.PRS.i18n.setLang(lang);
     return ctx.PRS;
 }
 
@@ -369,6 +388,10 @@ function playOne(PRS, opts) {
               : ch.kit.concat(rng.shuffle(free).slice(0, PRS.data.items.SLOTS - ch.kit.length));
     const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, items: bag, seed: seed,
                                  luck: opts.luck });
+    // The report works out what the same flight does with nobody in it, because that is what the
+    // log book credits. Nothing here reads the number and it is a second fifteen minutes of
+    // physics per flight, so a run of ten thousand does not pay for it.
+    S.counterfactual = false;
     setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = BOTS[opts.strategy || "random"];
     let steps = 0;

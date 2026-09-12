@@ -4,6 +4,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const st = PRS.state;
     const A = PRS.actions;
 
@@ -22,8 +23,10 @@
             }
             return out.slice(0, 30);
           },
-          label: (S, c) => "Hand " + c.p.name + " the " + PRS.loot.short(c.s.item.name),
-          detail: "You will not have it any more. They will.",
+          label: (S, c) => T("Hand {who} the {what}",
+                             { who: c.p.name,
+                               what: PRS.loot.short(T(c.s.item.name)) }),
+          detail: K("You will not have it any more. They will."),
           cost: 9,
           run(S, c) {
               S.inventory = S.inventory.filter((s) => s !== c.s);
@@ -35,9 +38,11 @@
               if (c.s.id === "inhaler" || c.s.id === "first_aid") {
                   c.p.smokeDose = Math.max(0, c.p.smokeDose - 14);
               }
-              return { text: "You hand " + c.p.name + " the " + PRS.loot.short(c.s.item.name) +
-                  " and do not explain and do not wait. It is the best use of that object " +
-                  "available and it is now somebody else's problem to use it well.", kind: "good" };
+              return { text: T("You hand {who} the {what} and do not explain and do not " +
+                               "wait. It is the best use of that object available and it is now " +
+                               "somebody else's problem to use it well.",
+                               { who: c.p.name,
+                                 what: PRS.loot.short(T(c.s.item.name)) }), kind: "good" };
           } },
     ]);
 })(window);

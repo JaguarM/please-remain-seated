@@ -15,6 +15,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t, K = PRS.k;
     const cabin = PRS.cabin;
     const st = PRS.state;
     const A = PRS.actions;
@@ -36,25 +37,25 @@
     // dose it is worth against fire.AGENTS, `spread` how much of it reaches the tiles around the
     // one you aimed at, and `soak` how much of it comes down on the people sitting there.
     const LIQUIDS = [
-        { id: "bag", name: "the nine litres in the bin liner", agent: "water", amount: 2.4,
+        { id: "bag", name: K("the nine litres in the bin liner"), agent: "water", amount: 2.4,
           spread: 0.55, soak: 1.6,
           have: (S) => !!S.flags.bagFull, use: (S) => st.setFlag(S, "bagFull", false) },
-        { id: "water_big", name: "the water bottle", agent: "water", amount: 1.0, spread: 0.3,
+        { id: "water_big", name: K("the water bottle"), agent: "water", amount: 1.0, spread: 0.3,
           soak: 1.0, have: (S) => charged(S, "water_big"), use: (S) => spend(S, "water_big") },
     ];
 
     // The jacket is last and is always available, which is why the action never disappears. A
     // cloth covers the place you put it and not the seats either side.
     const CLOTHS = [
-        { id: "wetblanket", name: "the wet blanket", agent: "wetcloth", amount: 1.2, spread: 0.2,
+        { id: "wetblanket", name: K("the wet blanket"), agent: "wetcloth", amount: 1.2, spread: 0.2,
           soak: 0.8,
           have: (S) => { const b = st.slotOf(S, "blanket"); return b && b.wet; },
           use: (S) => { st.slotOf(S, "blanket").wet = false; } },
-        { id: "wet_towel", name: "the damp towel", agent: "wetcloth", amount: 1.0, spread: 0.15,
+        { id: "wet_towel", name: K("the damp towel"), agent: "wetcloth", amount: 1.0, spread: 0.15,
           soak: 0.6, have: (S) => charged(S, "wet_towel"), use: (S) => spend(S, "wet_towel") },
-        { id: "blanket", name: "the blanket", agent: "smother", amount: 1.0, spread: 0.15,
+        { id: "blanket", name: K("the blanket"), agent: "smother", amount: 1.0, spread: 0.15,
           soak: 0.5, have: (S) => !!st.slotOf(S, "blanket"), use: () => {} },
-        { id: "jacket", name: "your jacket", agent: "beat", amount: 1.0, spread: 0.1, soak: 0.3,
+        { id: "jacket", name: K("your jacket"), agent: "beat", amount: 1.0, spread: 0.1, soak: 0.3,
           have: () => true, use: () => {} },
     ];
 
@@ -87,7 +88,7 @@
     /** The card's first words, when somebody has hold of you. */
     function held(S) {
         const q = P.obstructor(S);
-        return q ? q.name + " has hold of your arm. " : "";
+        return q ? T("{who} has hold of your arm. ", { who: q.name }) : "";
     }
 
     /** Put it on, say what happened, and be honest that none of it reached the cell. */
@@ -99,15 +100,16 @@
         witness(S, r.knocked, entry.soak);
         const gone = S.fire.intensity[cabin.idx(target.x, target.y)] < 1;
         return {
-            text: "You put " + entry.name + " on it. " +
+            text: T("You put {what} on it. ", { what: T(entry.name) }) +
                 (gone
-                    ? "It goes out. For a moment there is nothing there at all, and it is the best " +
-                      "moment of your afternoon."
-                    : "It drops to " + F.describe(S.fire, target.x, target.y) + ".") +
+                    ? T("It goes out. For a moment there is nothing there at all, and it is the " +
+                        "best moment of your afternoon.")
+                    : T("It drops to {what}.",
+                        { what: F.describe(S.fire, target.x, target.y) })) +
                 (r.onCore
-                    ? " Some of it gets into the bin and the case gets cooler, which is the only " +
-                      "part of this that counts."
-                    : " None of it reaches the bin."),
+                    ? T(" Some of it gets into the bin and the case gets cooler, which is the " +
+                        "only part of this that counts.")
+                    : T(" None of it reaches the bin.")),
             kind: gone ? "good" : "plain",
         };
     }
@@ -116,13 +118,14 @@
         {
             id: "fire.douse", item: (S) => { const b = best(S, LIQUIDS); return b ? (b.id === "bag" ? "binbag" : b.id) : null; }, deck: "fire", tags: ["fire", "hands"], danger: "good",
             when: (S) => !!hot(S) && !!best(S, LIQUIDS),
-            label: (S) => "Pour " + best(S, LIQUIDS).name + " on it",
+            label: (S) => T("Pour {what} on it", { what: T(best(S, LIQUIDS).name) }),
             detail: (S) => {
                 const e = best(S, LIQUIDS);
                 const slot = st.slotOf(S, e.id);
                 return held(S) + (slot && slot.uses !== null && slot.uses !== undefined
-                    ? slot.uses + " left. It will come down on whoever is sitting under it."
-                    : "It will come down on whoever is sitting under it.");
+                    ? T("{n} left. It will come down on whoever is sitting under it.",
+                        { n: slot.uses })
+                    : T("It will come down on whoever is sitting under it."));
             },
             cost: (S) => best(S, LIQUIDS).amount > 2 ? 14 : 11,
             run: (S) => apply(S, best(S, LIQUIDS), hot(S), "pour"),
@@ -131,12 +134,13 @@
         {
             id: "fire.smother", item: (S) => { const c = best(S, CLOTHS); return c ? (c.id === "wetblanket" ? "blanket" : c.id) : null; }, deck: "fire", tags: ["fire", "hands"], danger: "good",
             when: (S) => !!hot(S) && !!best(S, CLOTHS),
-            label: (S) => "Smother it with " + best(S, CLOTHS).name,
+            label: (S) => T("Smother it with {what}", { what: T(best(S, CLOTHS).name) }),
             detail: (S) => held(S) + (best(S, CLOTHS).id === "jacket"
-                ? "This is what everybody does and it is very nearly useless."
+                ? T("This is what everybody does and it is very nearly useless.")
                 : best(S, CLOTHS).id === "blanket"
-                    ? "Dry, it takes some of the air off it, and it will not stay a blanket for long."
-                    : "Takes the air off it without spreading it about."),
+                    ? T("Dry, it takes some of the air off it, and it will not stay a blanket " +
+                        "for long.")
+                    : T("Takes the air off it without spreading it about.")),
             cost: (S) => best(S, CLOTHS).id === "jacket" ? 9 : 11,
             run(S) {
                 const entry = best(S, CLOTHS);
@@ -150,9 +154,10 @@
                         b.scorched = (b.scorched || 0) + 1;
                         if (b.scorched >= 2) {
                             S.inventory = S.inventory.filter((s) => s !== b);
-                            out.text += " The blanket burns through and you drop what is left of it.";
+                            out.text += T(" The blanket burns through and you drop what is " +
+                                          "left of it.");
                         } else {
-                            out.text += " The blanket is scorched through in two places.";
+                            out.text += T(" The blanket is scorched through in two places.");
                         }
                     }
                 }

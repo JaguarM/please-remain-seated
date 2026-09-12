@@ -11,6 +11,7 @@
 (function (global) {
     "use strict";
     const PRS = global.PRS = global.PRS || {};
+    const T = PRS.t;
     const cabin = PRS.cabin;
     const clamp = PRS.util.clamp;
 
@@ -25,8 +26,9 @@
               S.credibility = Math.min(100, S.credibility + 30);
               S.cabinAwareness = Math.max(S.cabinAwareness, 42);
               PRS.audio.play("alarm");
-              return { text: "The aft lavatory smoke detector goes off. It is a very small noise " +
-                             "and it changes everything: sixty people stop talking at once.",
+              return { text: T("The aft lavatory smoke detector goes off. It is a very small " +
+                               "noise and it changes everything: sixty people stop talking at " +
+                               "once."),
                        kind: "great" };
           } },
 
@@ -39,8 +41,9 @@
               if (!cabin.inBounds(x, y)) return null;
               f.intensity[cabin.idx(x, y)] = Math.min(100, f.intensity[cabin.idx(x, y)] + 30);
               PRS.audio.play("flare");
-              return { text: "A bin latch lets go with a bang and the whole locker above row " +
-                             (cabin.rowAt(x) || "?") + " is alight at once.", kind: "bad" };
+              return { text: T("A bin latch lets go with a bang and the whole locker above " +
+                               "row {row} is alight at once.",
+                               { row: cabin.rowAt(x) || "?" }), kind: "bad" };
           } },
 
         { id: "turbulence", weight: 12, luck: 1,
@@ -59,9 +62,11 @@
                   }
               }
               PRS.audio.play("drop");
-              return { text: "The aeroplane drops half a wing and comes back. " +
-                       (dropped.length ? "You put " + dropped.join(" and ") + " down harder than " +
-                        "you meant to." : "You get a hand to a seat back in time."),
+              return { text: T("The aeroplane drops half a wing and comes back. {what}",
+                       { what: dropped.length
+                           ? T("You put {who} down harder than you meant to.",
+                               { who: PRS.util.listSentence(dropped) })
+                           : T("You get a hand to a seat back in time.") }),
                        kind: dropped.length ? "bad" : "plain" };
           } },
 
@@ -72,9 +77,10 @@
               delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
               S.cabinFlags.cartX = x;
               S.cabinFlags.aisleBlocked[x] = 9999;
-              return { text: "Somebody knocks the brake off the trolley and two hundred kilos of " +
-                             "duty free rolls three rows aft and stops across the aisle at row " +
-                             (cabin.rowAt(x) || "?") + ".", kind: "bad" };
+              return { text: T("Somebody knocks the brake off the trolley and two hundred " +
+                               "kilos of duty free rolls three rows aft and stops across the " +
+                               "aisle at row {row}.",
+                               { row: cabin.rowAt(x) || "?" }), kind: "bad" };
           } },
 
         { id: "someone_stands", weight: 18, luck: -1,
@@ -88,8 +94,9 @@
               p.x = p.homeX; p.y = cabin.AISLE_Y;
               S.cabinFlags.aisleBlocked[p.x] = (S.cabinFlags.aisleBlocked[p.x] || 0) + 30;
               PRS.state.reindex(S);
-              return { text: p.name + " stands up in row " + p.row + ", gets a bag out of the bin, " +
-                             "puts it down in the aisle, and stands next to it.", kind: "bad" };
+              return { text: T("{who} stands up in row {row}, gets a bag out of the bin, puts " +
+                               "it down in the aisle, and stands next to it.",
+                               { who: p.name, row: p.row }), kind: "bad" };
           } },
 
         { id: "helpful_offer", weight: 14, luck: 3,
@@ -100,8 +107,8 @@
               if (!options.length) return null;
               const p = r.pick(options);
               p.trust = Math.min(100, p.trust + 30);
-              return { text: p.name + " catches your eye from " + p.seat + " and mouths: what do " +
-                             "you need. Ask them.", kind: "great" };
+              return { text: T("{who} catches your eye from {seat} and mouths: what do you " +
+                               "need. Ask them.", { who: p.name, seat: p.seat }), kind: "great" };
           } },
 
         { id: "sit_down", weight: 22, luck: -1,
@@ -113,14 +120,15 @@
               S.player.panic = Math.min(100, S.player.panic + 4);
               (S.stats.sitDownBy = S.stats.sitDownBy || {})[p.id] = true;
               const lines = [
-                  "“Will you SIT DOWN.”",
-                  "“You are frightening my children.”",
-                  "“There is a procedure and you are not it.”",
-                  "“I have asked you politely. That was the polite one.”",
-                  "“Cabin crew! CABIN CREW! This person won't sit down!”",
+                  T("“Will you SIT DOWN.”"),
+                  T("“You are frightening my children.”"),
+                  T("“There is a procedure and you are not it.”"),
+                  T("“I have asked you politely. That was the polite one.”"),
+                  T("“Cabin crew! CABIN CREW! This person won't sit down!”"),
               ];
-              return { text: p.name + ", from " + p.seat + ": " +
-                  PRS.state.line(S, "sitdown", lines), kind: "bad" };
+              return { text: T("{who}, from {seat}: {said}",
+                               { who: p.name, seat: p.seat,
+                                 said: PRS.state.line(S, "sitdown", lines) }), kind: "bad" };
           } },
     ];
 

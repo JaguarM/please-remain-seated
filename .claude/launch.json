@@ -9,6 +9,15 @@
         "8742"
       ],
       "port": 8742
+    },
+    {
+      "name": "please-remain-seated (any port)",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "tools/serve.py"
+      ],
+      "port": 8731,
+      "autoPort": true
     }
   ]
 }
