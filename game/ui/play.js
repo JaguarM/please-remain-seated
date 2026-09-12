@@ -54,8 +54,13 @@
      * spent is visibly more than five, short enough that a hundred actions are not a film.
      * Anything past the action's own seconds - the rest of the flight, once you have gone down -
      * runs much faster, because none of it is a decision any more.
+     *
+     * The ceiling is half a second. It used to be nearly a whole one, and a walk with four
+     * people in your arms sat on it every time, which read as the game hanging rather than the
+     * walk being hard. How hard the walk was is now said by the walk itself - see `strain` -
+     * not by how long you are kept waiting.
      */
-    const PACE = { perSecond: 28, least: 140, most: 900, after: 0.45 };
+    const PACE = { perSecond: 16, least: 120, most: 520, after: 0.45 };
 
     function paceMs(seconds) {
         return Math.max(PACE.least, Math.min(PACE.most, seconds * PACE.perSecond));
@@ -1167,13 +1172,23 @@
             const path = entry.id === "move.walk" && entry.ctx && entry.ctx.r
                 ? entry.ctx.r.path.map((i) => [cabin.xOf(i), cabin.yOf(i)])
                 : PRS.render.motion.route(from[0], from[1], S.player.x, S.player.y);
-            PRS.render.motion.follow("you", [from].concat(path), ms);
+            PRS.render.motion.follow("you", [from].concat(path), ms, strain(res.cost, path.length));
         }
 
         busy = { passage: res.passage, start: performance.now(), ms: ms, focus: focus,
                  before: before, said: tell(before, measure(), focus), then: then };
         root.classList.add("busy");
         playOut(busy.start);
+    }
+
+    /**
+     * How laboured a walk is, 0 to 1, from what each tile of it cost. An empty-handed walk down
+     * the aisle is a second a tile and a climb over a seat three or four; twelve and up is the
+     * smoke, or somebody across your chest, or both, and the marker staggers accordingly.
+     */
+    function strain(seconds, tiles) {
+        const perTile = seconds / Math.max(1, tiles);
+        return Math.max(0, Math.min(1, (perTile - 2.5) / 10));
     }
 
     /** The price, once more, next to the clock, because that is the number it came out of. */

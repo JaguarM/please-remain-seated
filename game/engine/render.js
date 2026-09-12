@@ -288,8 +288,13 @@
      * Walk a figure along a route of tiles - the first of them being where it sets off from -
      * arriving in `ms`. Your own walks come through here, so the marker takes the route the price
      * was quoted for and arrives exactly as the seconds run out.
+     *
+     * `strain`, 0 to 1, is how hard the walk was, and a hard walk is walked hard: the figure
+     * lurches a pixel or two down on every stride while it is on its way. The time it takes is
+     * capped, so this is what tells a walk through the smoke with four people in your arms from
+     * a stroll to the galley.
      */
-    function follow(key, tiles, ms) {
+    function follow(key, tiles, ms, strain) {
         if (!tiles || !tiles.length) return;
         let m = moving.get(key);
         if (!m) {
@@ -301,6 +306,17 @@
         m.ty = last[1];
         m.route = tiles.map((t) => [t[0], t[1]]);
         m.speed = ms > 0 ? Math.max(0.01, routeLength(m.x, m.y, m.route) / (ms / 1000)) : 1e6;
+        m.strain = strain || 0;
+        m.walked = 0;
+    }
+
+    /**
+     * How far down to draw a walking figure this frame, in sprite pixels: a stagger, one dip a
+     * tile, as deep as the walk is hard. Nothing once it has arrived.
+     */
+    function stagger(m) {
+        if (!m.route.length || !m.strain) return 0;
+        return Math.round(m.strain * 2.4 * Math.abs(Math.sin(m.walked * Math.PI)));
     }
 
     /** Where to draw somebody this frame, having moved them `dt` seconds toward where they are. */
@@ -321,9 +337,10 @@
         while (go > 0 && m.route.length) {
             const [wx, wy] = m.route[0];
             const d = Math.hypot(wx - m.x, wy - m.y);
-            if (d <= go) { m.x = wx; m.y = wy; go -= d; m.route.shift(); }
-            else { m.x += (wx - m.x) * go / d; m.y += (wy - m.y) * go / d; go = 0; }
+            if (d <= go) { m.x = wx; m.y = wy; go -= d; m.route.shift(); m.walked += d; }
+            else { m.x += (wx - m.x) * go / d; m.y += (wy - m.y) * go / d; m.walked += go; go = 0; }
         }
+        if (!m.route.length) m.strain = 0;
         return m;
     }
 
@@ -606,7 +623,7 @@
         }
 
         // ---- you ----------------------------------------------------------------------------
-        const ppx = pixels(youAt.x, scale), ppy = pixels(youAt.y, scale);
+        const ppx = pixels(youAt.x, scale), ppy = pixels(youAt.y, scale) + stagger(youAt) * scale;
         drawYou(ctx, S, ppx, ppy, scale, 1, 0.55 + 0.45 * Math.abs(Math.sin(t * 0.004)));
 
         // ---- smoke, over everything, because that is what it does ---------------------------
@@ -1082,6 +1099,6 @@
         fx: { say, pulse, flash: flashOver, shake, clear: clearFx },
         // Where everybody is drawn, which is not where they are. The play screen empties it at
         // boarding and hands it your own walks; everybody else chases without being asked.
-        motion: { follow: follow, reset: resetMotion, route: aisleRoute },
+        motion: { follow: follow, reset: resetMotion, route: aisleRoute, at: drawnAt, stagger: stagger },
     };
 })(window);
