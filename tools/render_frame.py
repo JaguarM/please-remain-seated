@@ -86,7 +86,7 @@ def fire_sprite(v):
 def fire_sprite_at(tile, x, y):
     """The same rule as PRS.render.fireSpriteAt: a burning seat is that seat's tile on fire,
     anything else is the fire tile in one of two orientations, and embers are embers."""
-    base = fire_sprite(tile["fire"])
+    base = "fire_blue" if tile.get("jet") else fire_sprite(tile["fire"])
     if not base or not base.startswith("fire_"):
         return base
     if tile["kind"] == "seat":

@@ -11,6 +11,10 @@
 // again, and it will do that until the aeroplane is on the ground and somebody with a hose and a
 // bucket of vermiculite takes the case off it.
 //
+// And after six minutes it stops being a fire at all and becomes a jet. See BLUE_AT: the pack goes
+// to a second stage that water has no opinion about, because a game where a bottle and a tap hold
+// one cell below temperature for fifteen minutes is a game you win by standing still.
+//
 // So suppression is real - it drops intensity, it stops spread, it saves lives - and `core` is the
 // thing suppression cannot touch. `core.heat` climbs on its own and dumps back into the cabin
 // every time it tops out. Everything the player does to the fire changes how often that happens
@@ -24,6 +28,26 @@
     const { clamp, clamp01 } = PRS.util;
 
     const N = cabin.W * cabin.H;
+
+    // When the pack goes blue, and what that is worth.
+    //
+    // Six minutes of a lithium pack venting into its own case is enough to take the whole thing
+    // past the point where any of this is a fire being fought. What burns after that is vented
+    // electrolyte coming out of the seam under pressure, and it is blue, and it is roughly twice
+    // the fire the orange one was. Water still lands on it; it just does not matter any more.
+    const BLUE_AT = 360;        // seconds into the flight
+    const BLUE_RATE = 2.2;      // how much faster the core climbs once it has gone
+    const BLUE_VIOLENCE = 2.0;  // how much harder a cell vents
+    const BLUE_REACH = 0.12;    // how much of a pour still gets to the cell. Nearly none.
+    const BLUE_FLOOR = 46;      // the jet itself, burning on the tile, whatever you put on it
+    // What it puts into the air, per second, wherever you left it. This number is the size of a
+    // dozen burning seats, because that is what it is: a jet of burning electrolyte inside a
+    // plastic box, and the box is going too. A lavatory fully alight for nine minutes fills an
+    // aeroplane. The old value was 2.6, which over nine minutes came to an average of six across
+    // the cabin, which is to say a haze, which is to say you could park the fire in the aft
+    // lavatory and nobody breathed anything.
+    const BLUE_SMOKE = 30;
+    const BLUE_TORCH = 1.1;     // what it does to the tile next to it, per second, per fuel
 
     // How an agent behaves once it is on a tile: how much intensity it takes off now, how much
     // suppression it leaves behind, how fast that fades, and what it does to smoke.
@@ -76,6 +100,9 @@
                 contained: 0,    // 0..1, how much of the venting the cabin does not see
                 exposed: false,  // has anyone actually looked at it
                 inSink: false,   // the one thing that genuinely helps and nobody thinks of
+                cooled: 0,       // water spent on the cell, and how little the next pour gets
+                blue: false,     // the second stage. See BLUE_AT.
+                inBin: true,     // still in the locker, which is the only thing aiming it
                 lastVent: 0,
             },
             oxygen: 1.0,         // cabin oxygen fraction available to the fire
@@ -130,6 +157,36 @@
     // -------------------------------------------------------------------------- suppression ---
 
     /**
+     * Take heat out of the cell, and say how much of this one actually got in.
+     *
+     * Water on a hard case gets the outside of the case to a hundred degrees and no further. The
+     * first bottle is doing thermodynamics; the fourth is boiling off what the third one left, on
+     * a case already at the temperature water stops working at. So what a pour reaches falls away
+     * with what this cell has already had taken out of it, and falls further with every cell that
+     * has already gone, because the pack around it is soaked in its own heat.
+     *
+     * A vent is a new cell and a clean sheet, which is the only reason to keep pouring at all.
+     *
+     * This is the number that decides whether the game is winnable, and it must not be. A bottle
+     * and a tap will hold one cell for a few minutes. They will not hold nine of them for nine,
+     * and every route to the cell - a pour, a wet blanket, thirty seconds on the same seam -
+     * comes through this function, so there is one place where that is true.
+     */
+    function coolCore(f, amount) {
+        const reach = (f.core.blue ? BLUE_REACH : 1)
+                    / (1 + f.core.cooled / 28 + 0.25 * f.core.vented);
+        const dose = 34 * amount * reach;
+        const got = Math.min(f.core.heat, dose);
+        f.core.heat -= got;
+        // The whole dose is spent, not the useful part of it. Water onto a case that is already
+        // as cold as water can make it is water gone. And it does not come back when the cell
+        // goes: the pack is what it is now, and the next cell is sitting in it.
+        f.core.cooled += dose;
+        f.suppressedSeconds += got * 0.1;
+        return { reach: reach, got: got };
+    }
+
+    /**
      * Put an agent on a tile and its neighbours. Returns what visibly happened, because the log
      * line is different for "that did something" and "that made it worse".
      */
@@ -164,13 +221,15 @@
         }
         // Does any of it reach the cell? Only if you are on the seat of the fire.
         const onCore = (x === f.core.x && y === f.core.y);
+        let cool = null;
         if (onCore && agent.coolsCore > 0) {
-            f.core.heat = Math.max(0, f.core.heat - 34 * agent.coolsCore * amount);
+            cool = coolCore(f, agent.coolsCore * amount);
         } else if (onCore && agent.knock < 0) {
             f.core.heat = Math.min(100, f.core.heat + 12 * amount);
         }
         f.suppressedSeconds += knocked * 0.1;
-        return { agent: agent, knocked: knocked, worsened: worsened, onCore: onCore };
+        return { agent: agent, knocked: knocked, worsened: worsened, onCore: onCore,
+                 reach: cool ? cool.reach : 0, got: cool ? cool.got : 0 };
     }
 
     /** Deny the fire air rather than fight it: closing the bin, sealing a vent, the packs off. */
@@ -200,14 +259,38 @@
         const spreadTo = [];
         let spread = 0;
 
+        // The pack goes to its second stage, once, at six minutes, wherever it is and whatever
+        // anybody has done to it. Nothing on the aeroplane stops this and nothing delays it: it
+        // is not a consequence of how the fire is going, it is how long a pack takes.
+        if (!f.core.blue && S.clock.elapsed >= BLUE_AT) {
+            f.core.blue = true;
+            const ci = cabin.idx(f.core.x, f.core.y);
+            f.intensity[ci] = Math.max(f.intensity[ci], BLUE_FLOOR);
+            f.suppress[ci] = 0;
+            PRS.state.log(S, f.core.inSink
+                ? T("The thing in the basin changes note. What comes off it now is a blue jet " +
+                    "about a foot long, and it is going straight up through the water without " +
+                    "appearing to notice it. The tap is still running. It is not doing anything " +
+                    "any more.")
+                : T("The fire changes colour. What was orange is now a blue jet coming out of " +
+                    "the seam under pressure, with a sound like a blowtorch, and the seat backs " +
+                    "either side of it have started to go without being touched."), "bad");
+            PRS.audio.play("flare");
+        }
+
         // Containment leaks. Whatever you have done to the locker, the heat is working on it,
         // so holding the fire in is something you keep doing rather than something you did.
         f.core.contained = Math.max(0, f.core.contained - 0.006 * dt);
 
         // The core climbs. Nothing in the cabin stops this; things only slow it. A sink slows it
         // by about half, which is the most anything on this aeroplane can do.
+        // A basin of water is a bucket you cannot knock over, and it is worth what it is worth
+        // right up until the jet, which burns above the waterline in a plastic box. What the
+        // sink buys you is the first six minutes. It does not buy you the last nine.
+        const sinkRate = f.core.inSink ? (f.core.blue ? 0.85 : 0.55) : 1;
         const coreRate = f.core.rate
-            * (f.core.inSink ? 0.55 : 1)
+            * (f.core.blue ? BLUE_RATE : 1)
+            * sinkRate
             * (1 - 0.35 * f.core.contained)
             * (1 + 0.10 * f.core.vented);          // each vented cell heats its neighbours
         f.core.heat += coreRate * dt * 0.55;
@@ -223,7 +306,9 @@
             f.ventCount++;
             f.core.lastVent = S.clock.elapsed;
             const ci = cabin.idx(f.core.x, f.core.y);
-            const violence = (1 - 0.55 * f.core.contained) * (f.core.inSink ? 0.35 : 1);
+            const violence = (1 - 0.55 * f.core.contained)
+                           * (f.core.inSink ? (f.core.blue ? 0.8 : 0.35) : 1)
+                           * (f.core.blue ? BLUE_VIOLENCE : 1);
             f.intensity[ci] = Math.min(100, f.intensity[ci] + 55 * violence + 20);
             f.suppress[ci] = f.suppress[ci] * 0.25;
             f.smoke[ci] = Math.min(100, f.smoke[ci] + 34 * violence);
@@ -239,6 +324,73 @@
                     f.intensity[bi] = Math.min(100, f.intensity[bi] + 22 * reach);
                     f.binBurning[cabin.binKey(bx, side)] = true;
                 }
+            }
+            // Out of the bin, there is nothing to channel it. A locker throws what a cell vents
+            // along the locker; a case on the floor of a lavatory throws it at the lavatory, the
+            // aft galley and the cross-aisle everybody has been sent to stand in. Putting the
+            // fire somewhere else is not the same as putting it out, and this is the line that
+            // says so.
+            if (!f.core.inBin) {
+                for (const [nx, ny] of cabin.neighbours(f.core.x, f.core.y)) {
+                    if (cabin.solid(nx, ny)) continue;
+                    const ni = cabin.idx(nx, ny);
+                    if (f.fuel[ni] <= 0.02) continue;
+                    if (vent() < violence * 0.75) {
+                        f.intensity[ni] = Math.min(100, f.intensity[ni] + 20 * violence);
+                    }
+                }
+            }
+        }
+
+        // The jet. There is a fire on the tile the case is on and there is nothing whatever to be
+        // done about it: a bottle of water buys a second of it looking better, and the cells
+        // running out does not stop it either, because what is burning by then is the case.
+        //
+        // The one thing that clears a blue tile is picking the case up and putting it somewhere
+        // else. What you leave behind is an ordinary fire, and an ordinary fire can be put out -
+        // so moving it is not running away from it, it is the only move that ever wins ground,
+        // and it costs you both hands and a walk down an aisle holding the thing.
+        if (f.core.blue) {
+            const ci = cabin.idx(f.core.x, f.core.y);
+            const floor = BLUE_FLOOR * (f.core.inSink ? 0.85 : 1);
+            if (f.intensity[ci] < floor) {
+                f.intensity[ci] = Math.min(floor, f.intensity[ci] + 9 * dt);
+            }
+            // A jet burning a case, a basin and a lavatory wall makes far more smoke than the
+            // bin fire it replaced, and it makes it wherever the player decided to put it. The
+            // aft lavatory is next to the aft doors, which is where everybody has been sent.
+            // Into the space, and into the part of the space that has room for it.
+            //
+            // Smoke poured onto one tile is smoke thrown away: the tile tops out at solid grey
+            // and everything after that is discarded, which is how a lavatory could be fully
+            // alight for nine minutes and the cabin end the flight at a haze. So the jet's output
+            // goes over everything within two tiles that is not hull, weighted by how much room
+            // each of them has left. It fills the compartment, then the cross-aisle, then it is
+            // the aisle's problem and the aisle is a chimney.
+            let room = 0;
+            const into = [];
+            for (let sx = f.core.x - 2; sx <= f.core.x + 2; sx++) {
+                for (let sy = f.core.y - 2; sy <= f.core.y + 2; sy++) {
+                    if (!cabin.inBounds(sx, sy) || cabin.solid(sx, sy)) continue;
+                    const si = cabin.idx(sx, sy);
+                    const free = 100 - f.smoke[si];
+                    if (free <= 0.5) continue;
+                    into.push([si, free]);
+                    room += free;
+                }
+            }
+            const made = BLUE_SMOKE * dt;
+            for (const [si, free] of into) {
+                f.smoke[si] = clamp(f.smoke[si] + made * (free / room), 0, 100);
+            }
+            // And it is a jet, not a bonfire: it is pointed at whatever is next to it and it
+            // does not wait for the tile to catch on its own. This is why moving the case does
+            // not end the fire - it only decides which part of the aeroplane burns next.
+            for (const [nx, ny] of cabin.neighbours(f.core.x, f.core.y)) {
+                if (cabin.solid(nx, ny)) continue;
+                const ni = cabin.idx(nx, ny);
+                if (f.fuel[ni] <= 0.02) continue;
+                f.intensity[ni] = Math.min(100, f.intensity[ni] + BLUE_TORCH * dt * f.fuel[ni]);
             }
         }
 
@@ -373,6 +525,7 @@
     function describe(f, x, y) {
         const i = cabin.idx(x, y);
         const v = f.intensity[i];
+        if (f.core.blue && x === f.core.x && y === f.core.y) return T("a blue jet");
         if (v <= 0.5) return f.burnt[i] > 0.25 ? T("charred and cold") : T("nothing");
         if (v < 8) return T("smouldering");
         if (v < 22) return T("alight");
@@ -410,7 +563,9 @@
 
     /** Seconds until the next cell vents, at the current rate. The lawyer can see this. */
     function ventEta(f) {
-        const rate = f.core.rate * (f.core.inSink ? 0.55 : 1) * (1 - 0.35 * f.core.contained)
+        const rate = f.core.rate * (f.core.blue ? BLUE_RATE : 1)
+                   * (f.core.inSink ? (f.core.blue ? 0.85 : 0.55) : 1)
+                   * (1 - 0.35 * f.core.contained)
                    * (1 + 0.10 * f.core.vented) * 0.55;
         if (rate <= 0.0001) return Infinity;
         return (100 - f.core.heat) / rate;
@@ -418,6 +573,6 @@
 
     PRS.fire = {
         AGENTS, create, at, smokeAt, heatAt, worst, burningTiles, totalSmoke, smokeLayer,
-        apply, starve, advance, describe, describeSmoke, fireSprite, smokeSprite, ventEta,
+        apply, coolCore, starve, advance, describe, describeSmoke, fireSprite, smokeSprite, ventEta,
     };
 })(window);

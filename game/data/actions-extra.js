@@ -165,14 +165,26 @@
                        have(S, "water_big") && slot(S, "water_big").uses > 0,
           run(S) {
               st.useCharge(S, slot(S, "water_big"));
-              S.fire.core.heat = Math.max(0, S.fire.core.heat - 42);
+              // Through the same law as every other pour, so that standing at the tap with a
+              // bottle is a delay and not a cure.
+              const c = F.coolCore(S.fire, 2.24);
               S.stats.agentsUsed++;
               P.annoy(S, 1);
               PRS.audio.play("pour");
-              return { text: T("Thirty seconds of pouring the same bottle onto the same " +
-                               "seam. Nothing looks different. The next cell is now {eta} away " +
-                               "instead of thirty seconds away, and that is what cooling means.",
-                               { eta: PRS.util.mmss(F.ventEta(S.fire)) }), kind: "great" };
+              const eta = T("The next cell is now {eta} away, and that is what cooling means.",
+                            { eta: PRS.util.mmss(F.ventEta(S.fire)) });
+              if (c.reach > 0.6) {
+                  return { text: T("Thirty seconds of pouring the same bottle onto the same " +
+                                   "seam. Nothing looks different. ") + eta, kind: "great" };
+              }
+              if (c.reach > 0.3) {
+                  return { text: T("Thirty seconds of pouring, and most of it comes back up as " +
+                                   "steam before it is halfway in. The case is already as cold " +
+                                   "as water can make it. ") + eta, kind: "good" };
+              }
+              return { text: T("You pour the whole bottle over a case that boils it off as fast " +
+                               "as it lands. Whatever is left in there is past what a tap can " +
+                               "do. ") + eta, kind: "plain" };
           } },
 
         // ------------------------------------------------------------------ more of the crew ---

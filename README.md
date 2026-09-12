@@ -10,11 +10,12 @@ who has noticed. The plane lands in fifteen minutes, and the clock only moves wh
 ![The cabin four minutes out](docs/cabin.png)
 
 *Four minutes to touchdown. The fire has the left bank from row 8 to row 22 and has already
-burnt through the seats in the middle of it, the aisle is full of people who stood up, twelve
-have been moved to the floor by the doors, eight are down, and the flight deck has declared.
-Drawn by `tools/render_frame.py` from the game's own simulation and sprite maps, so
-`--seed=606 --at=540` gives you this picture and not one like it: every die in the flight is
-cast from the seed.*
+burnt through the seats in the middle of it, the aisle is full of people who stood up, thirteen
+have been moved to the floor by the doors, sixteen are down, and the flight deck has declared.
+The blue one at 14C is not a hotter orange fire: at six minutes the pack goes to its second
+stage, and what burns after that is a jet that water has no opinion about. Drawn by
+`tools/render_frame.py` from the game's own simulation and sprite maps, so `--seed=606 --at=540`
+gives you this picture and not one like it: every die in the flight is cast from the seed.*
 
 The rules
 ---------
@@ -26,6 +27,15 @@ The rules
   locker. Water cools it, halon smothers the flame, nothing reaches the cell. Nine cells, and
   every one of them is going to go. Fighting it still matters: it keeps the smoke down and the
   aisle walkable, and it comes down on the people sitting under it, who remember.
+- **At six minutes it stops being a fire you are fighting.** The pack goes to a second stage and
+  what burns after that is a blue jet of vented electrolyte: twice the fire, water does nothing
+  to it, and a case out of the locker throws what it vents at whatever you parked it next to.
+  Everything you do to it before that buys real time. Nothing you do to it after that does.
+- **The jet is the case, not the tile.** A blue tile cannot be put out and running out of cells
+  does not stop it. The only thing that clears one is picking the case up and carrying it
+  somewhere else, and what you leave behind is an ordinary fire, which you can beat. So moving it
+  is the one move that wins ground, and it costs both hands, a burn, and a walk down an aisle
+  full of people holding the thing that is doing all this.
 - **Smoke is what kills.** It moves four times faster than the fire and fills from the ceiling
   down. A person on the floor is in different air from a person standing up.
 - **Nowhere is safe.** When the doors open, every passenger is judged where they are: the smoke
@@ -205,6 +215,9 @@ Testing it
     node tools/harm.js 60 --strategy=idle     # where the harm at touchdown comes from, by part
     node tools/replay.js flights.json         # play recorded flights back against the bots
     node tools/coverage.js                    # every action performed at least once
+    node tools/test_fire_strats.js            # every known way to play the fire, flown: nobody
+                                              # saves sixty, and fighting it is neither the whole
+                                              # game nor a waste of the seconds
     node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll,
                                               # and a second played slowly is the same second
     node tools/i18n_scan.js                   # what each language has, and what it is missing
@@ -216,16 +229,31 @@ design aims at. Survivors of 60 as Priya, sixty flights each:
 
 | bot | what it does | survived | best |
 |---|---|---|---|
-| idle | does nothing at all: the report's "without you" | 20 | 29 |
-| fire | only the fire deck: the bin, the case, the sink | 35 | 60 |
-| douse | the first playtest: pours from where one pour reaches the most fire, refills at the tap | 33 | 49 |
-| carry | carries whoever is worst off to the best floor by a door | 31 | 48 |
-| good | recruits early, then carries | 34 | 51 |
-| blend | two or three minutes at the fire while it is small, then recruits and carries | 39 | 58 |
+| idle | does nothing at all: the report's "without you" | 18 | 26 |
+| fire | only the fire deck, wherever it happens to be standing | 25 | 37 |
+| douse | the first playtest: pours from where one pour reaches the most fire, refills at the tap | 24 | 32 |
+| carry | carries whoever is worst off to the best floor by a door | 24 | 35 |
+| good | recruits early, then carries | 27 | 40 |
+| blend | two or three minutes at the fire while it is small, then recruits and carries | 31 | 43 |
+| hold | never opens the locker: closes it, tapes it, holds it shut | 15 | 18 |
+| mover | never lets the case settle: lifts it and puts it down somewhere else, over and over | 17 | 24 |
+| forward | carries the case the other way and leaves it in the forward galley | 6 | 16 |
+| sink | a playtester's line: the case into the basin as fast as possible, then live at the tap | 34 | 43 |
+| aftline | the basin, then hold the ground round it with everything wet | 33 | 44 |
+| sinkthen | the basin, and then other people | 37 | 47 |
 
 No bot that does one thing is far ahead of the others, and the one that does two is ahead of all
-of them. If the fire bot or the douse bot ever leads the table, fighting the fire has become the
-whole game again; if either falls to the idle line, it has stopped being worth doing.
+of them. If a fire-only bot ever leads the table, fighting the fire has become the whole game
+again; if the best of them falls to the idle line, it has stopped being worth doing. That is not
+a thing to remember: `node tools/test_fire_strats.js` asserts it, and fails with a sentence saying
+which of the two happened.
+
+The bottom six rows are lines real playtesters found, and they are in the file because two of them
+returned sixty of sixty before they were bots. What the table says now is the shape the game is
+meant to have: moving the vape is the strongest thing you can do to the fire (`sink`, `aftline`),
+doing it and then turning round and moving people beats it (`sinkthen`), never opening the locker
+is worse than doing nothing at all (`hold`), and carrying the burning case the length of the cabin
+past fifty-eight people is the worst idea in the game (`forward`, six).
 
 **Playtesting.** The report has a flight recorder: the last thirty flights, each with a box for
 what you were trying to do. "Save recorded flights" writes them to a file, and `tools/replay.js`

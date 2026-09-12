@@ -290,6 +290,151 @@ const BOTS = {
         return goodScore(PRS, S, list, true);
     },
 
+
+    // ------------------------------------------------------------------ the case, six ways ---
+    //
+    // Everything below here plays the line a real playtester found: get the vape out of the
+    // locker and put it somewhere that is not above a person's head. They exist because that
+    // line twice returned sixty of sixty, and the only way to know it has stopped doing that -
+    // and has not quietly become worthless either - is to keep flying it. tools/test_fire_strats.js
+    // is the assertion; these are the flights it asserts about.
+
+    /** The recorded flight: into the basin as fast as possible, then live at the tap. */
+    sink(PRS, S, list) {
+        const cabin = PRS.cabin;
+        const c = S.fire.core;
+        const atLav = cabin.kindAt(S.player.x, S.player.y) === "lav";
+        const toLav = walkTo(list, (x, y) => cabin.kindAt(x, y) === "lav");
+        const toCore = walkTo(list, (x, y) => beside(x, y, c.x, c.y));
+        return pickBy(list, (e) => {
+            if (e.id === "fire.case_in_sink") return 400;
+            if (e.id === "fire.case_to_lav") return 390;
+            if (e.id === "fire.pull_case") return 380;
+            if (e.id === "fire.open_bin" && !c.exposed) return 370;
+            if (!c.exposed && e === toCore) return 360;
+            if (atLav && (e.id === "cabin.fill_bottle" || e.id === "cabin.wet_towel")) return 300;
+            if (e.id === "extra.cool_bin") return 290;
+            if (e.id === "fire.douse" || e.id === "fire.smother") return 200;
+            if (e === toLav) return 100;
+            if (e.id === "move.walk") return 5 - e.cost * 0.1;
+            return 0;
+        });
+    },
+
+    /** The same, and then hold the ground round it: whatever catches near the case, put it out. */
+    aftline(PRS, S, list) {
+        const cabin = PRS.cabin;
+        const c = S.fire.core;
+        const wet = loaded(PRS, S);
+        const atLav = cabin.kindAt(S.player.x, S.player.y) === "lav";
+        const toLav = walkTo(list, (x, y) => cabin.kindAt(x, y) === "lav");
+        const toCore = walkTo(list, (x, y) => beside(x, y, c.x, c.y));
+        const here = heatAround(PRS, S, S.player.x, S.player.y);
+        return pickBy(list, (e) => {
+            if (e.id === "fire.case_in_sink") return 400;
+            if (e.id === "fire.case_to_lav") return 390;
+            if (e.id === "fire.pull_case") return 380;
+            if (e.id === "fire.open_bin" && !c.exposed) return 370;
+            if (!c.exposed && e === toCore) return 360;
+            if (atLav && !wet && (e.id === "cabin.fill_bottle" || e.id === "cabin.wet_towel" ||
+                                  e.id === "cabin.wet_blanket")) return 320;
+            if (e.id === "fire.halon") return 310;
+            if (wet && here > 12 && (e.id === "fire.douse" ||
+                (e.id === "fire.smother" && e.label.indexOf("jacket") < 0))) return 300;
+            if (e.deck === "crew") return 240;
+            if (!wet && e === toLav) return 200;
+            if (e === toCore) return 120;
+            if (e.id === "move.walk") return 5 - e.cost * 0.1;
+            return 0;
+        });
+    },
+
+    /** Never opens the locker: closes it, tapes it, holds it, and fights what gets out. */
+    hold(PRS, S, list) {
+        const c = S.fire.core;
+        const toCore = walkTo(list, (x, y) => beside(x, y, c.x, c.y));
+        const here = heatAround(PRS, S, S.player.x, S.player.y);
+        return pickBy(list, (e) => {
+            if (e.id === "fire.open_bin" || e.id === "fire.pull_case") return 0;
+            if (e.id === "fire.tape_bin") return 400;
+            if (e.id === "fire.close_bin") return 380;
+            if (e.id === "fire.seal_vent") return 330;
+            if (e.id === "fire.hold_bin") return 300 - c.contained * 120;
+            if (here > 12 && (e.id === "fire.douse" ||
+                (e.id === "fire.smother" && e.label.indexOf("jacket") < 0))) return 260;
+            if (e.id === "fire.firebreak") return 240;
+            if (e === toCore) return 100;
+            if (e.id === "move.walk") return 5 - e.cost * 0.1;
+            return 0;
+        });
+    },
+
+    /** Takes it forward instead, away from the doors everybody aft is going to use. */
+    forward(PRS, S, list) {
+        const cabin = PRS.cabin;
+        const c = S.fire.core;
+        const held = !!S.flags.holdingCase;
+        const goal = (x, y) => x === cabin.FWD_GALLEY_X;
+        const toGoal = held ? walkTo(list, goal) : null;
+        const toCore = walkTo(list, (x, y) => beside(x, y, c.x, c.y));
+        const there = cabin.kindAt(S.player.x, S.player.y) === "galley" &&
+                      S.player.x === cabin.FWD_GALLEY_X;
+        return pickBy(list, (e) => {
+            if (held && there && e.id === "fire.put_case_down") return 400;
+            if (e === toGoal) return 380;
+            if (e.id === "fire.pull_case") return 370;
+            if (e.id === "fire.open_bin" && !c.exposed) return 360;
+            if (!c.exposed && e === toCore) return 350;
+            if (e.id === "fire.douse" || e.id === "fire.smother") return 200;
+            if (e.id === "people.recruit") return 190;
+            if (e.id === "move.walk") return 5 - e.cost * 0.1;
+            return 0;
+        });
+    },
+
+    /**
+     * Never lets it settle: picks the case up and puts it down somewhere else, over and over,
+     * so no tile is blue for long and every tile it touched is an ordinary fire. This is the bot
+     * that exists because the lift/put-down pair exists, and it is the one to watch: if moving
+     * the case ever becomes free, this is where it shows up first.
+     */
+    mover(PRS, S, list) {
+        const cabin = PRS.cabin;
+        const c = S.fire.core;
+        const held = !!S.flags.holdingCase;
+        const onCore = S.player.x === c.x && S.player.y === c.y;
+        // Somewhere with nothing to burn and nobody in it, as far from both as it can get.
+        let spot = null, spotV = -Infinity;
+        if (held) {
+            for (const e of list) {
+                if (e.id !== "move.walk") continue;
+                const x = e.ctx.x, y = e.ctx.y;
+                const v = -PRS.cabin.baseFuel(x, y) * 40 -
+                          PRS.state.paxAt(S, x, y).length * 25 - e.cost * 0.6;
+                if (v > spotV) { spotV = v; spot = e; }
+            }
+        }
+        const toCore = walkTo(list, (x, y) => x === c.x && y === c.y);
+        return pickBy(list, (e) => {
+            if (held && e === spot) return 400;
+            if (held && e.id === "fire.put_case_down") return 300;
+            if (!held && onCore && e.id === "fire.lift_case") return 380;
+            if (e.id === "fire.pull_case") return 370;
+            if (e.id === "fire.open_bin" && !c.exposed) return 360;
+            if (!held && e === toCore) return 340;
+            if (e.id === "fire.douse" || e.id === "fire.smother") return 150;
+            if (e.id === "move.walk") return 5 - e.cost * 0.1;
+            return 0;
+        });
+    },
+
+    /** The basin, and then the thing the game is actually about: other people. */
+    sinkthen(PRS, S, list) {
+        const c = S.fire.core;
+        if (!c.inSink) return BOTS.sink(PRS, S, list);
+        return goodScore(PRS, S, list, false);
+    },
+
     // Does nothing at all. Establishes the floor, and it is the same flight the report calls
     // "without you". It used to pick a thing for itself and, with nothing to pick, clicked at
     // random, which made the floor a few people too high.

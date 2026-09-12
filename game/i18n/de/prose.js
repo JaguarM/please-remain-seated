@@ -228,12 +228,64 @@
          "everybody in the row is going to get wet.",
          "Nicht zum Löschen. Um den Koffer unter der Temperatur zu halten, die die nächste Zelle " +
          "braucht, und alle in der Reihe werden nass."],
-        ["Thirty seconds of pouring the same bottle onto the same seam. Nothing looks different. " +
-         "The next cell is now {eta} away instead of thirty seconds away, and that is what " +
-         "cooling means.",
-         "Dreißig Sekunden lang dieselbe Flasche auf dieselbe Fuge. Es sieht nicht anders aus. " +
-         "Die nächste Zelle ist jetzt {eta} entfernt statt dreißig Sekunden, und genau das " +
-         "heißt kühlen."],
+        ["Pick the burning case up again", "Den brennenden Koffer wieder aufheben"],
+        ["It is where you left it and it is worse than it was. Somewhere else is not nowhere, " +
+         "but it is somewhere else.",
+         "Er liegt, wo du ihn gelassen hast, und er ist schlimmer als vorher. Woanders ist " +
+         "nicht nirgendwo, aber es ist woanders."],
+        ["You take it back out of the basin. The water comes off it as steam before it reaches " +
+         "your wrists.",
+         "Du holst ihn wieder aus dem Becken. Das Wasser geht als Dampf weg, bevor es deine " +
+         "Handgelenke erreicht."],
+        ["You get your hands back under it.", "Du bekommst die Hände wieder darunter."],
+        ["The jet is coming out of the seam about a foot from your face and you are carrying it.",
+         "Der Strahl kommt einen Fuß vor deinem Gesicht aus der Fuge, und du trägst das Ding."],
+        ["It is heavier than it was and it is still going.",
+         "Er ist schwerer als vorher und er brennt weiter."],
+        ["Put the case down here", "Den Koffer hier abstellen"],
+        ["Whatever is under it and whatever is beside it. Look before you do this.",
+         "Was auch immer darunter ist und was daneben. Sieh hin, bevor du das tust."],
+        ["You put it down at {where}. It starts working on the floor immediately, and on " +
+         "whatever is within arm's length of the floor.",
+         "Du stellst ihn bei {where} ab. Er macht sich sofort über den Boden her, und über " +
+         "alles, was in Armlänge davon liegt."],
+
+        [" It goes to steam a foot above the case and the jet does not flicker. Whatever that " +
+         "is now, water is not part of the conversation.",
+         " Es verdampft einen Fuß über dem Koffer, und der Strahl flackert nicht einmal. Was " +
+         "das jetzt ist, darüber hat Wasser keine Meinung mehr."],
+        [" Most of it comes straight back off as steam. The case is already as cold as water " +
+         "can make it, and it is still getting hotter inside.",
+         " Das meiste kommt sofort als Dampf zurück. Der Koffer ist schon so kalt, wie Wasser " +
+         "ihn machen kann, und drinnen wird er trotzdem heißer."],
+        ["Nothing about it changes.", "Es ändert sich nichts daran."],
+        [" Nothing about it changes.", " Es ändert sich nichts daran."],
+        ["The thing in the basin changes note. What comes off it now is a blue jet about a foot " +
+         "long, and it is going straight up through the water without appearing to notice it. " +
+         "The tap is still running. It is not doing anything any more.",
+         "Das Ding im Becken wechselt die Tonlage. Was jetzt herauskommt, ist ein blauer Strahl, " +
+         "etwa einen Fuß lang, und er geht durch das Wasser nach oben, als wäre es nicht da. " +
+         "Der Hahn läuft noch. Er bewirkt nichts mehr."],
+        ["The fire changes colour. What was orange is now a blue jet coming out of the seam " +
+         "under pressure, with a sound like a blowtorch, and the seat backs either side of it " +
+         "have started to go without being touched.",
+         "Das Feuer wechselt die Farbe. Was orange war, ist jetzt ein blauer Strahl, der unter " +
+         "Druck aus der Fuge kommt, mit einem Geräusch wie ein Schweißbrenner, und die " +
+         "Sitzlehnen links und rechts fangen an, ohne dass sie jemand berührt hätte."],
+        ["a blue jet", "ein blauer Strahl"],
+
+        ["Thirty seconds of pouring the same bottle onto the same seam. Nothing looks different. ",
+         "Dreißig Sekunden lang dieselbe Flasche auf dieselbe Fuge. Es sieht nicht anders aus. "],
+        ["Thirty seconds of pouring, and most of it comes back up as steam before it is halfway " +
+         "in. The case is already as cold as water can make it. ",
+         "Dreißig Sekunden gießen, und das meiste kommt als Dampf zurück, bevor es halb drin " +
+         "ist. Der Koffer ist schon so kalt, wie Wasser ihn machen kann. "],
+        ["You pour the whole bottle over a case that boils it off as fast as it lands. Whatever " +
+         "is left in there is past what a tap can do. ",
+         "Du kippst die ganze Flasche über einen Koffer, der sie verkocht, so schnell wie sie " +
+         "ankommt. Was da drin noch übrig ist, ist über das hinaus, was ein Wasserhahn kann. "],
+        ["The next cell is now {eta} away, and that is what cooling means.",
+         "Die nächste Zelle ist jetzt {eta} entfernt, und genau das heißt kühlen."],
 
         ["Tell {who} it is a lithium battery: water, not halon",
          "{who} sagen: Lithiumakku, Wasser statt Halon"],

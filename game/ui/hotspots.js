@@ -176,7 +176,16 @@
 
     /** Is there a fire on this tile worth clicking. Embers count; a warm carpet does not. */
     function fireAt(S, x, y) {
-        return S.fire.intensity[cabin.idx(x, y)] > 3;
+        return S.fire.intensity[cabin.idx(x, y)] > 3 || coreAt(S, x, y);
+    }
+
+    /**
+     * The seat of it is always clickable, whatever the flame on top of it is doing. A case with
+     * the tap running over it is barely alight and it is still the whole game; without this the
+     * only way to reach the one thing that matters was to wait for it to be on fire again.
+     */
+    function coreAt(S, x, y) {
+        return S.fire.core.x === x && S.fire.core.y === y;
     }
 
     /** Everything a click on a tile could mean, most likely first. Empty means "walk there". */
@@ -186,6 +195,8 @@
         for (const p of st.paxAt(S, x, y)) out.push(personThing(p));
         for (const c of S.crew) if (c.x === x && c.y === y) out.push(crewThing(c));
         if (x === S.player.x && y === S.player.y) {
+            // A case in your hands is on your tile, and it is the first thing about you.
+            if (S.flags.holdingCase && coreAt(S, x, y)) out.push(fireThing(x, y));
             out.push(youThing(S));
             // Whoever is in your arms is on your tile too, and putting them down is theirs.
             for (const id of S.player.carrying.concat(S.player.dragging ? [S.player.dragging] : [])) {
@@ -193,7 +204,7 @@
                 if (p) out.push(personThing(p));
             }
         }
-        if (fireAt(S, x, y)) out.push(fireThing(x, y));
+        if (fireAt(S, x, y) && !out.some((t) => t.kind === "fire")) out.push(fireThing(x, y));
         return out;
     }
 
@@ -295,7 +306,10 @@
         }
 
         if (thing.kind === "fire") {
-            if (S.fire.intensity[cabin.idx(thing.x, thing.y)] <= 0.5) {
+            // A cold tile means the card was opened on a fire that has gone out under you, so it
+            // moves to the worst one left. The seat of it never moves: it is the thing itself.
+            if (!coreAt(S, thing.x, thing.y) &&
+                S.fire.intensity[cabin.idx(thing.x, thing.y)] <= 0.5) {
                 const h = hottest(S);
                 if (!h) return null;
                 thing.x = h.x; thing.y = h.y;
@@ -449,8 +463,13 @@
         return {
             icon: PRS.fire.fireSprite(Math.max(S.fire.intensity[i], 1)) || "ember", iconScale: 2,
             title: T("The fire"),
+            // Between one cell and the next there is no flame on the case at all, and "nothing"
+            // is the one thing it is not.
             sub: T("{fire} · {where} · smoke {smoke}",
-                   { fire: PRS.fire.describe(S.fire, x, y), where: cabin.placeName(x, y),
+                   { fire: coreAt(S, x, y) && S.fire.intensity[i] <= 0.5
+                       ? T("quiet between cells")
+                       : PRS.fire.describe(S.fire, x, y),
+                     where: cabin.placeName(x, y),
                      smoke: PRS.fire.describeSmoke(S.fire.smoke[i]) }),
             traits: seat,
         };

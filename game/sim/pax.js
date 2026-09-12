@@ -210,9 +210,28 @@
                 const i = cabin.idx(cx, cabin.AISLE_Y);
                 cost += 1.0 + f.smoke[i] * 0.08 + f.intensity[i] * 0.5;
             }
+            cost += doorState(f, doorX);
             if (cost < best) best = cost;
         }
         return best;
+    }
+
+    /**
+     * And the state of the door itself, which used to be the one thing this did not look at: it
+     * costed the aisle you walk down and then stopped one tile short, so a fire standing in the
+     * cross-aisle - or a burning case somebody carried into the lavatory beside it - was a fire
+     * scoring could not see. Sixty people queueing at a door with a fire in it are not at a door.
+     *
+     * It is the worst tile in the door's own column, because you do not get to pick which part
+     * of a cross-aisle you evacuate through when there are sixty of you.
+     */
+    function doorState(f, doorX) {
+        let worst = 0;
+        for (let y = 1; y < cabin.H - 1; y++) {
+            const i = cabin.idx(doorX, y);
+            worst = Math.max(worst, f.smoke[i] * 0.08 + f.intensity[i] * 0.5);
+        }
+        return worst;
     }
 
     /**
@@ -695,6 +714,6 @@
         DOWN_AT, GRAB_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying,
         displayState, stateWords, wakeUp, condition, carryOverhead, canCarry, advance, recruit, helperCap,
         resistance, persuasion, convince, odds, worthAsking, face, palette, speak, hasSeen, saw,
-        evacuation, exposure, refuge, moveGain, shelter, annoy, obstructor,
+        evacuation, doorState, exposure, refuge, moveGain, shelter, annoy, obstructor,
     };
 })(window);

@@ -58,6 +58,9 @@ for (let y = 0; y < cabin.H; y++) {
             seat: cabin.kindAt(x, y) === "seat" ? cabin.seatPos(y) : null,
             burnt: Math.round(S.fire.burnt[i] * 100) / 100,
             fire: Math.round(S.fire.intensity[i] * 10) / 10,
+            // The jet is its own heat and not a point on the orange scale, so the tile says so
+            // rather than making the Python side work it out from a number it cannot see.
+            jet: S.fire.core.blue && S.fire.core.x === x && S.fire.core.y === y,
             smoke: Math.round(S.fire.smoke[i] * 10) / 10,
             bin: cabin.rowAt(x) !== null,
             binOpenL: !!S.cabinFlags.binsOpen[cabin.binKey(x, "left")],

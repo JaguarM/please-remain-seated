@@ -91,6 +91,25 @@
         return q ? T("{who} has hold of your arm. ", { who: q.name }) : "";
     }
 
+    /**
+     * The last clause of every pour: whether any of that reached the cell. It is the only part of
+     * fighting this fire that changes the ending, so it is said every time, and it is said
+     * honestly — including when the honest answer is that the pour was for nothing.
+     */
+    function coreLine(S, r) {
+        if (!r.onCore) return T(" None of it reaches the bin.");
+        if (S.fire.core.blue) {
+            return T(" It goes to steam a foot above the case and the jet does not flicker. " +
+                     "Whatever that is now, water is not part of the conversation.");
+        }
+        if (r.reach < 0.35) {
+            return T(" Most of it comes straight back off as steam. The case is already as cold " +
+                     "as water can make it, and it is still getting hotter inside.");
+        }
+        return T(" Some of it gets into the bin and the case gets cooler, which is the only " +
+                 "part of this that counts.");
+    }
+
     /** Put it on, say what happened, and be honest that none of it reached the cell. */
     function apply(S, entry, target, sound) {
         entry.use(S);
@@ -98,18 +117,18 @@
         S.stats.agentsUsed++;
         PRS.audio.play(sound);
         witness(S, r.knocked, entry.soak);
-        const gone = S.fire.intensity[cabin.idx(target.x, target.y)] < 1;
+        const jet = S.fire.core.blue && target.x === S.fire.core.x && target.y === S.fire.core.y;
+        const gone = !jet && S.fire.intensity[cabin.idx(target.x, target.y)] < 1;
         return {
             text: T("You put {what} on it. ", { what: T(entry.name) }) +
                 (gone
                     ? T("It goes out. For a moment there is nothing there at all, and it is the " +
                         "best moment of your afternoon.")
-                    : T("It drops to {what}.",
-                        { what: F.describe(S.fire, target.x, target.y) })) +
-                (r.onCore
-                    ? T(" Some of it gets into the bin and the case gets cooler, which is the " +
-                        "only part of this that counts.")
-                    : T(" None of it reaches the bin.")),
+                    : jet
+                        ? T("Nothing about it changes.")
+                        : T("It drops to {what}.",
+                            { what: F.describe(S.fire, target.x, target.y) })) +
+                coreLine(S, r),
             kind: gone ? "good" : "plain",
         };
     }

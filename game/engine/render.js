@@ -723,12 +723,13 @@
         const c = S.fire.core;
         if (!cabin.inBounds(c.x, c.y)) return;
         const pulse = 0.62 + 0.24 * Math.abs(Math.sin(t * 0.0035));
+        const colour = c.blue ? "#3fa8ff" : "#d4483a";
         corners(ctx, c.x * T + scale, c.y * T + scale, T - 2 * scale, T - 2 * scale, scale,
-                "#d4483a", pulse);
+                colour, pulse);
         const cx = c.x * T + T / 2, cy = c.y * T - 2 * scale;
         ctx.save();
         ctx.globalAlpha = pulse;
-        ctx.fillStyle = "#d4483a";
+        ctx.fillStyle = colour;
         ctx.beginPath();
         ctx.moveTo(cx, cy + 3 * scale);
         ctx.lineTo(cx - 3 * scale, cy - 2 * scale);
@@ -745,7 +746,12 @@
      * tools/render_frame.py follows the same rule.
      */
     function fireSpriteAt(S, x, y) {
-        const base = PRS.fire.fireSprite(S.fire.intensity[cabin.idx(x, y)]);
+        const core = S.fire.core;
+        // The jet is its own heat and it is not on the orange scale, so it is drawn as itself
+        // wherever the case has got to: in the locker, in your hands, in the basin.
+        const base = core.blue && x === core.x && y === core.y
+            ? "fire_blue"
+            : PRS.fire.fireSprite(S.fire.intensity[cabin.idx(x, y)]);
         if (!base) return null;
         if (base.indexOf("fire_") !== 0) return base;
         if (cabin.kindAt(x, y) === "seat") return "seat_" + cabin.seatPos(y) + "_" + base;

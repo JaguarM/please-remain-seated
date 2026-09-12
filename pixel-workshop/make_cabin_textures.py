@@ -629,7 +629,13 @@ FIRE_HEATS = {
     "4": {"r": "#a8360a", "o": "#ff8c22", "y": "#ffe66a", "w": "#ffffff"},   # an inferno
 }
 
-for _n, _heat in FIRE_HEATS.items():
+# The fifth heat, and it is not on the scale. Six minutes in, the pack stops being a bin fire and
+# becomes a jet: vented electrolyte burning above the case at a temperature a bottle of water has
+# no opinion about. Everything orange in the cabin is a fire. This one is blue, so that a player
+# who has never read a word of this game knows at a glance that the rules just changed.
+FIRE_BLUE = {"r": "#101c5c", "o": "#1e56c8", "y": "#3fa8ff", "w": "#e8f8ff"}
+
+for _n, _heat in {**FIRE_HEATS, "blue": FIRE_BLUE}.items():
     sprite("fire_" + _n, FIRE_MAP, _heat)
     sprite("fire_" + _n + "b", FIRE_MAP_B, _heat)
 
@@ -666,7 +672,7 @@ def over(base, top):
 
 
 for _pos in SEAT_POS:
-    for _n, _heat in FIRE_HEATS.items():
+    for _n, _heat in {**FIRE_HEATS, "blue": FIRE_BLUE}.items():
         _frame = SEAT_SCORCHED if _n in ("1", "2") else SEAT_BURNT
         sprite("seat_" + _pos + "_fire_" + _n,
                over(SPRITES["seat_" + _pos]["rows"], SEAT_FIRE_BLOB),

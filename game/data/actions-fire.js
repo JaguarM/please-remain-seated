@@ -42,10 +42,29 @@
      * door in the aft lavatory is not a locker door.
      */
     function inLocker(S) {
-        return !S.flags.holdingCase && !S.flags.caseInLav && !S.fire.core.inSink;
+        return S.fire.core.inBin && !S.flags.holdingCase;
     }
     function slot(S, id) { return st.slotOf(S, id); }
     function haveCharged(S, id) { const s = slot(S, id); return s && !s.spent && (s.uses === null || s.uses > 0); }
+
+    /**
+     * The last clause of every pour: whether any of that reached the cell. It is the only part of
+     * fighting this fire that changes the ending, so it is said every time, and it is said
+     * honestly — including when the honest answer is that the pour was for nothing.
+     */
+    function coreLine(S, r) {
+        if (!r.onCore) return T(" None of it reaches the bin.");
+        if (S.fire.core.blue) {
+            return T(" It goes to steam a foot above the case and the jet does not flicker. " +
+                     "Whatever that is now, water is not part of the conversation.");
+        }
+        if (r.reach < 0.35) {
+            return T(" Most of it comes straight back off as steam. The case is already as cold " +
+                     "as water can make it, and it is still getting hotter inside.");
+        }
+        return T(" Some of it gets into the bin and the case gets cooler, which is the only " +
+                 "part of this that counts.");
+    }
 
     /** Put an agent on the hot tile, spend the charge, and say something honest about it. */
     function pour(S, itemId, agentName, opts) {
@@ -68,15 +87,15 @@
                        { what: F.describe(S.fire, target.x, target.y) }), kind: "bad" };
         }
         const line = opts.text ? T(opts.text) : "";
-        const gone = after < 1;
+        const jet = S.fire.core.blue && target.x === S.fire.core.x && target.y === S.fire.core.y;
+        const gone = !jet && after < 1;
         const tail = gone
             ? T(" It goes out. For a moment there is nothing there at all, and it is the best " +
                 "moment of your afternoon.")
-            : T(" It drops to {what}.", { what: F.describe(S.fire, target.x, target.y) });
-        const core = r.onCore
-            ? T(" Some of it gets into the bin and the case gets cooler, which is the only part " +
-                "of this that counts.")
-            : T(" None of it reaches the bin.");
+            : jet
+                ? T(" Nothing about it changes.")
+                : T(" It drops to {what}.", { what: F.describe(S.fire, target.x, target.y) });
+        const core = coreLine(S, r);
         return { text: line + tail + core, kind: gone ? "good" : "plain" };
     }
 
@@ -163,7 +182,8 @@
               S.player.burns += st.wearing(S, "gloves") ? 8 : 30;
               S.fire.core.contained = 0;
               // Out of the locker and into your hands: the seat of the fire is now wherever
-              // you are, and it goes where you go.
+              // you are, and it goes where you go. Nothing aims it any more either.
+              S.fire.core.inBin = false;
               S.fire.core.x = S.player.x;
               S.fire.core.y = S.player.y;
               PRS.audio.play("flare");
@@ -173,6 +193,38 @@
                        (st.wearing(S, "gloves")
                            ? T(" The welding gloves are the only reason you still have hands.")
                            : T(" You are not wearing gloves. You will feel this for a year.")),
+                       kind: "bad" };
+          } },
+
+        // Picking it up again. Once the case is out of the locker the blue tile is wherever you
+        // put it down, and the only way to clear a blue tile is to take the case off it — so
+        // this has to exist, or the basin is a decision you can never revisit and the jet you
+        // parked in the aft cross-aisle is there for the rest of the flight.
+        //
+        // It costs both hands and a burn every time, which is the point: a player who keeps
+        // moving it is a player who is not moving anybody else.
+        { id: "fire.lift_case", deck: "fire", tags: ["fire", "hands"], danger: "bad",
+          label: K("Pick the burning case up again"), cost: 14,
+          detail: K("It is where you left it and it is worse than it was. Somewhere else is not " +
+                  "nowhere, but it is somewhere else."),
+          when: (S) => !S.flags.holdingCase && !S.fire.core.inBin &&
+                       S.player.x === S.fire.core.x && S.player.y === S.fire.core.y,
+          run(S) {
+              st.setFlag(S, "holdingCase");
+              st.setFlag(S, "caseInLav", false);
+              const wasSink = S.fire.core.inSink;
+              S.fire.core.inSink = false;
+              S.fire.core.contained = 0;
+              S.player.burns += st.wearing(S, "gloves") ? 11 : 34;
+              PRS.audio.play("flare");
+              return { text: (wasSink
+                          ? T("You take it back out of the basin. The water comes off it as " +
+                              "steam before it reaches your wrists.")
+                          : T("You get your hands back under it.")) + " " +
+                       (S.fire.core.blue
+                           ? T("The jet is coming out of the seam about a foot from your face " +
+                               "and you are carrying it.")
+                           : T("It is heavier than it was and it is still going.")),
                        kind: "bad" };
           } },
 
@@ -209,6 +261,21 @@
                                { n: S.fire.core.cells }) + "\n\n" +
                        T("This is the best thing you will do today and nobody will ever know " +
                          "you did it."), kind: "great" };
+          } },
+
+        { id: "fire.put_case_down", deck: "fire", tags: ["fire", "hands"], danger: "bad",
+          label: K("Put the case down here"), cost: 6,
+          detail: K("Whatever is under it and whatever is beside it. Look before you do this."),
+          when: (S) => S.flags.holdingCase,
+          run(S) {
+              st.setFlag(S, "holdingCase", false);
+              S.fire.core.x = S.player.x;
+              S.fire.core.y = S.player.y;
+              F.apply(S.fire, S.player.x, S.player.y, "air", 0.5, 0);
+              return { text: T("You put it down at {where}. It starts working on the floor " +
+                               "immediately, and on whatever is within arm's length of the " +
+                               "floor.", { where: cabin.placeName(S.player.x, S.player.y) }),
+                       kind: "bad" };
           } },
 
         { id: "fire.empty_bin", deck: "fire", tags: ["fire", "hands"], danger: "good",
