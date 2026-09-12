@@ -423,13 +423,11 @@
     // ----------------------------------------------------------------------------- headers ---
 
     function personHeader(S, p) {
-        const cond = P.condition(p);
         const dist = Math.abs(p.x - S.player.x) + Math.abs(p.y - S.player.y);
         return {
             icon: P.face(p), palette: P.palette(p), iconScale: 2, title: p.name,
-            sub: T("{seat} · {kg}kg · {state} · {condition}",
-                   { seat: p.seat, kg: p.kg, state: P.displayState(p),
-                     condition: T(cond.label) }),
+            sub: T("{seat} · {kg}kg · {how}",
+                   { seat: p.seat, kg: p.kg, how: P.stateWords(p) }),
             traits: p.traits.length
                 ? p.traits.map(PRS.data.passengers.traitName).join(", ") : null,
             flag: p.helper ? T("working with you")

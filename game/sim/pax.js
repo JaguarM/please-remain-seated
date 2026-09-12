@@ -83,6 +83,21 @@
         }
     }
 
+    /**
+     * How somebody is, in one phrase: what they are doing, and how much smoke and fire is in
+     * them. Two questions with two answers, except at the bottom of the scale where they are the
+     * same answer twice - the air knocks somebody down and the card reads "unconscious ·
+     * unconscious" - so where the condition has nothing to add to the state it is not said. The
+     * dead are "not moving", which is all of it; "gone" is the report's word and the report has
+     * its own line for it.
+     */
+    function stateWords(p) {
+        const state = displayState(p);
+        if (p.state === "dead") return state;
+        const cond = T(condition(p).label);
+        return cond === state ? state : state + " · " + cond;
+    }
+
     // -------------------------------------------------------------------- what they look like ---
     //
     // Not drawing - the drawing is in render.js - but the two questions the drawing asks, kept
@@ -678,7 +693,7 @@
 
     PRS.pax = {
         DOWN_AT, GRAB_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying,
-        displayState, wakeUp, condition, carryOverhead, canCarry, advance, recruit, helperCap,
+        displayState, stateWords, wakeUp, condition, carryOverhead, canCarry, advance, recruit, helperCap,
         resistance, persuasion, convince, odds, worthAsking, face, palette, speak, hasSeen, saw,
         evacuation, exposure, refuge, moveGain, shelter, annoy, obstructor,
     };

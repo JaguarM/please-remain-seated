@@ -193,7 +193,7 @@
         "dragging somebody": "zieht jemanden",
         "{name} — you": "{name} — du",
         "wearing {what}": "trägt {what}",
-        "{seat} · {kg}kg · {state} · {condition}": "{seat} · {kg} kg · {state} · {condition}",
+        "{seat} · {kg}kg · {how}": "{seat} · {kg} kg · {how}",
     });
 
     // The long ones, as pairs: a key is a whole English sentence and an object key cannot be

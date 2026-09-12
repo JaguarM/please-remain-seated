@@ -109,9 +109,8 @@
             targets: (S) => reach(S).filter((c) => c.p.state !== "carried" && !c.p.helper),
             when: (S, c) => P.canCarry(S, c.p),
             label: (S, c) => T("Pick up {who}", { who: who(c) }),
-            detail: (S, c) => T("{seat} · {kg}kg · {state} · {condition}",
-                                { seat: c.p.seat, kg: c.p.kg, state: P.displayState(c.p),
-                                  condition: T(P.condition(c.p).label) }),
+            detail: (S, c) => T("{seat} · {kg}kg · {how}",
+                                { seat: c.p.seat, kg: c.p.kg, how: P.stateWords(c.p) }),
             cost: (S, c) => P.carryOverhead(S, c.p),
             run(S, c) {
                 pickUp(S, c.p);

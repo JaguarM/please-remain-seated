@@ -802,16 +802,14 @@
         if (tg.kind === "person" || tg.kind === "crew") {
             const p = tg.kind === "person" ? st.paxById(S, tg.thing.id) : PRS.crew.byId(S, tg.thing.id);
             if (!p) return;
-            const cond = tg.kind === "person" ? PRS.pax.condition(p) : null;
             tip.appendChild(el("div", { class: "tip-who" }, [
                 PRS.atlas.icon(tg.kind === "person" ? PRS.render.faceOf(p) : (p.sprite || "crew"),
                                2, PRS.render.paletteOf(p)),
                 el("div", {}, [
                     el("b", { text: p.name }),
                     el("i", { text: tg.kind === "person"
-                        ? T("{seat} · {kg}kg · {state} · {condition}",
-                            { seat: p.seat, kg: p.kg, state: PRS.pax.displayState(p),
-                              condition: T(cond.label) })
+                        ? T("{seat} · {kg}kg · {how}",
+                            { seat: p.seat, kg: p.kg, how: PRS.pax.stateWords(p) })
                         : T(p.role) }),
                     p.traits && p.traits.length
                         ? el("u", { text: p.traits.map(PRS.data.passengers.traitName)
