@@ -679,12 +679,20 @@
         box.appendChild(meter(T("YOUR LUNGS"), 100 - P.smokeDose, 100, "m-lungs",
                               P.smokeDose > 70 ? T("failing") : P.smokeDose > 40 ? T("bad")
                               : P.smokeDose > 15 ? T("coughing") : T("fine")));
-        // Your credibility, and not the cabin's: it lives next to your face because it is the
-        // one number on the screen that is nobody's but yours, and every social action reads it.
-        box.appendChild(meter(T("THEY BELIEVE YOU"), S.credibility, 100, "m-cred"));
         box.appendChild(meter(T("BURNS"), P.burns, 100, "m-burn",
                               P.burns > 40 ? T("severe") : P.burns > 15 ? T("bad")
                               : P.burns > 3 ? T("sore") : T("none")));
+        // Under the lungs and the burns, because it is the third thing you are carrying and the
+        // only one that goes up. It is not the raw credibility: it is the number every social
+        // action actually rolls, which is what the cabin has come to believe plus the voice you
+        // boarded with, so a purser at nought reads higher than a quiet man at forty and the bar
+        // says so. Persuasion runs past a hundred at the top end and the bar stops there, and
+        // the words change at forty-six, which is what an ordinary passenger's resistance is
+        // before their mood: below it you are not talking anybody out of their seat.
+        const say = Math.min(100, Math.round(PRS.pax.persuasion(S)));
+        box.appendChild(meter(T("CREDIBILITY"), say, 100, "m-cred",
+                              say > 80 ? T("they listen") : say > 62 ? T("most of them")
+                              : say > 46 ? T("some of them") : T("nobody")));
         // Whoever is in your arms, as a button, because putting them down is on their card.
         const held = P.carrying.map((id) => [id, T("CARRYING")])
             .concat(P.dragging ? [[P.dragging, T("DRAGGING")]] : []);
