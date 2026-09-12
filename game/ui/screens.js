@@ -856,11 +856,7 @@
             // The book: what it counted, and how far that got you.
             if (L) {
                 inner.appendChild(soulBar(L));
-                if (L.unlocked.length) {
-                    inner.appendChild(el("p", { class: "unlocked",
-                        text: T("Unlocked: {what}.", { what: PRS.util.listSentence(
-                            L.unlocked.map((n) => T(n))) }) }));
-                }
+                if (L.unlocked.length) inner.appendChild(unlockedRow(L.unlocked, S.character));
             }
 
             // One locked card: the one this flight came nearest to. A person you nearly have is
@@ -883,6 +879,22 @@
             ]));
             root.appendChild(inner);
         });
+    }
+
+    /**
+     * What turned over on this flight, each with the thing itself beside its name. A line reading
+     * "Unlocked: Kip Halloran" is a name you have to go and look up; the face is the card you
+     * just won, and it is already drawn everywhere else in the game.
+     */
+    function unlockedRow(unlocked, ch) {
+        return el("div", { class: "unlocked" }, [
+            el("span", { class: "ul-label", text: T("Unlocked:") }),
+        ].concat(unlocked.map((u) => el("span", { class: "ul-item" }, [
+            u.kind === "character"
+                ? PRS.atlas.icon("pax", 3, PRS.pax.palette(u.character))
+                : PRS.data.outfits.icon(u.outfit, ch, 3),
+            el("b", { text: T(u.name) }),
+        ]))));
     }
 
     /**

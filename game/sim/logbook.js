@@ -87,12 +87,14 @@
             }].concat(before.history).slice(0, KEEP),
         };
         save(after);
+        // What turned over, as the thing itself and not its name: the unlock screen draws the
+        // face or the coat beside it, and a name on its own cannot be drawn.
         const unlocked = PRS.data.characters.CHARACTERS
             .filter((c) => !isUnlocked(c, before) && isUnlocked(c, after))
-            .map((c) => c.name)
+            .map((c) => ({ kind: "character", name: c.name, character: c }))
             .concat(PRS.data.outfits.OUTFITS
                 .filter((o) => !isUnlocked(o, before) && isUnlocked(o, after))
-                .map((o) => o.name));
+                .map((o) => ({ kind: "outfit", name: o.name, outfit: o })));
         return { before: before, after: after, saved: saved,
                  unlocked: unlocked, next: nextOutfit(after) };
     }

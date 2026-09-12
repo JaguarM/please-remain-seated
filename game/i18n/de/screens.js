@@ -211,7 +211,7 @@
          "{have} von {need} {what}, in diesem Flug"],
 
         ["+{n} in the log book", "+{n} im Flugbuch"],
-        ["Unlocked: {what}.", "Freigeschaltet: {what}."],
+        ["Unlocked:", "Freigeschaltet:"],
         ["The cabin at touchdown", "Die Kabine beim Aufsetzen"],
         ["Manifest", "Passagierliste"],
         // {where} arrives as a destination and brings its own preposition with it - "in den

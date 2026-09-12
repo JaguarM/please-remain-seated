@@ -685,7 +685,12 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .soul-pip.fresh.lit img { opacity: 1; filter: none; }
 .soul-pip.fresh.lit u { color: var(--gold); }
 .soul-next { display: block; font-style: normal; font-size: 13px; color: var(--ink-dim); }
-.unlocked { color: var(--great); font-size: 14px; margin: 14px 0 0; }
+.unlocked { color: var(--great); font-size: 14px; margin: 14px 0 0;
+            display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; }
+.ul-label { color: var(--ink-dim); }
+/* Icon and name as one thing, so a row of three reads as three cards and not six words. */
+.ul-item { display: inline-flex; align-items: center; gap: 6px; }
+.ul-item img { width: 24px; height: 24px; image-rendering: pixelated; }
 
 .near { margin-top: 32px; }
 .near .rep-kicker { margin-bottom: 8px; }
