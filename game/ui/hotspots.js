@@ -441,9 +441,11 @@
         const i = cabin.idx(x, y);
         const seat = c.inSink
             ? T("The case is in the lavatory basin, under water.")
-            : T("The seat of it is the locker above {seat}.",
-                { seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }) +
-              (c.exposed ? T(" You have seen inside it.") : T(" Nobody has looked inside it."));
+            : S.flags.holdingCase
+                ? T("The case is in your hands. The seat of the fire is wherever you are standing.")
+                : T("The seat of it is the locker above {seat}.",
+                    { seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }) +
+                  (c.exposed ? T(" You have seen inside it.") : T(" Nobody has looked inside it."));
         return {
             icon: PRS.fire.fireSprite(Math.max(S.fire.intensity[i], 1)) || "ember", iconScale: 2,
             title: T("The fire"),

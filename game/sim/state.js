@@ -76,6 +76,7 @@
                 cartX: cabin.xOfRow(11),
                 aisleBlocked: {},         // x -> seconds of blockage remaining
                 binsOpen: {},
+                ventsTaped: {},           // x -> the gaspers down that row are taped over
             },
 
             credibility: 0,        // 0..100. Nobody believes you and they are right not to.

@@ -450,6 +450,11 @@
             const p = st.paxById(S, S.player.dragging);
             if (p) { p.x = x; p.y = y; }
         }
+        // The case is carried the way a person is carried. It used to stay in the locker until
+        // the moment it arrived in the basin, which meant the seat of the fire teleported eleven
+        // rows while the player watched themselves walk. If it is in your hands it is where you
+        // are, and a cell that vents on the way vents over the tile you are standing on.
+        if (S.flags.holdingCase) { S.fire.core.x = x; S.fire.core.y = y; }
         st.reindex(S);
     }
 

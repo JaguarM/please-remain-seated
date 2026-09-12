@@ -35,6 +35,15 @@
         const c = S.fire.core;
         return Math.abs(S.player.x - c.x) <= 1 && Math.abs(S.player.y - c.y) <= 1;
     }
+    /**
+     * Is the case still in the locker above 14C? Everything about the bin — closing it, holding
+     * it, taping it, emptying it, hauling the case out of it — is about a case that is in it.
+     * Once the thing is in your hands or in the basin there is no bin to fight, and a locker
+     * door in the aft lavatory is not a locker door.
+     */
+    function inLocker(S) {
+        return !S.flags.holdingCase && !S.flags.caseInLav && !S.fire.core.inSink;
+    }
     function slot(S, id) { return st.slotOf(S, id); }
     function haveCharged(S, id) { const s = slot(S, id); return s && !s.spent && (s.uses === null || s.uses > 0); }
 
@@ -80,7 +89,8 @@
         { id: "fire.close_bin", deck: "fire", tags: ["fire", "hands", "fiddly"], danger: "good",
           label: K("Close the overhead bin"), cost: 8,
           detail: K("Take the air away from it. This is what the manual actually says."),
-          when: (S) => atCore(S) && S.cabinFlags.binsOpen[cabin.binKey(S.fire.core.x, "left")],
+          when: (S) => atCore(S) && inLocker(S) &&
+                       S.cabinFlags.binsOpen[cabin.binKey(S.fire.core.x, "left")],
           run(S) {
               delete S.cabinFlags.binsOpen[cabin.binKey(S.fire.core.x, "left")];
               delete S.fire.binOpen[cabin.binKey(S.fire.core.x, "left")];
@@ -98,7 +108,7 @@
         { id: "fire.hold_bin", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: K("Hold the bin shut with your body"), cost: 26,
           detail: K("It will not stay latched. You can make it stay latched."),
-          when: (S) => atCore(S),
+          when: (S) => atCore(S) && inLocker(S),
           run(S) {
               const c = F.starve(S.fire, S.fire.core.x, S.fire.core.y, 1.6);
               S.player.burns += st.wearing(S, "gloves") ? 4 : 16;
@@ -112,7 +122,7 @@
         { id: "fire.tape_bin", item: "tape", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
           label: K("Tape the bin shut"), cost: 22,
           detail: K("Six strips across the latch. It is not going to open again."),
-          when: (S) => atCore(S) && haveCharged(S, "tape"),
+          when: (S) => atCore(S) && inLocker(S) && haveCharged(S, "tape") && !S.flags.binTaped,
           run(S) {
               st.useCharge(S, slot(S, "tape"), 2);
               const c = F.starve(S.fire, S.fire.core.x, S.fire.core.y, 2.2);
@@ -126,7 +136,7 @@
         { id: "fire.open_bin", deck: "fire", tags: ["reveal", "fire", "hands"], danger: "bad",
           label: K("Open the bin and look at it"), cost: 10,
           detail: K("You will find out what this is. It will also get a great deal of air."),
-          when: (S) => atCore(S) && !S.fire.core.exposed,
+          when: (S) => atCore(S) && inLocker(S) && !S.fire.core.exposed,
           run(S) {
               S.fire.core.exposed = true;
               S.cabinFlags.binsOpen[cabin.binKey(S.fire.core.x, "left")] = true;
@@ -147,11 +157,15 @@
         { id: "fire.pull_case", deck: "fire", tags: ["fire", "hands"], danger: "bad",
           label: K("Pull the burning case out of the bin"), cost: 16,
           detail: K("You will be holding it. Have a plan for the next fifteen seconds."),
-          when: (S) => atCore(S) && S.fire.core.exposed && !S.flags.holdingCase,
+          when: (S) => atCore(S) && inLocker(S) && S.fire.core.exposed,
           run(S) {
               st.setFlag(S, "holdingCase");
               S.player.burns += st.wearing(S, "gloves") ? 8 : 30;
               S.fire.core.contained = 0;
+              // Out of the locker and into your hands: the seat of the fire is now wherever
+              // you are, and it goes where you go.
+              S.fire.core.x = S.player.x;
+              S.fire.core.y = S.player.y;
               PRS.audio.play("flare");
               return { text: T("You get both hands under it and haul it out. It is the size " +
                                "of a cabin bag and it is on fire and you are now holding it " +
@@ -200,7 +214,7 @@
         { id: "fire.empty_bin", deck: "fire", tags: ["fire", "hands"], danger: "good",
           label: K("Throw everything else out of the bin"), cost: 19,
           detail: K("The fuel is not the fire. The fuel is four cabin bags and a coat."),
-          when: (S) => atCore(S) && S.fire.core.exposed && !S.flags.binEmptied,
+          when: (S) => atCore(S) && inLocker(S) && S.fire.core.exposed && !S.flags.binEmptied,
           run(S) {
               st.setFlag(S, "binEmptied");
               for (let d = -1; d <= 1; d++) {
@@ -307,12 +321,17 @@
           } },
 
 
+        // A row of gaspers can be taped once. There were six strips in the roll and a row that
+        // has been done stays done: the smoke that comes back into it comes past the tape, not
+        // through the holes, and taping tape does nothing.
         { id: "fire.seal_vent", item: "tape", deck: "fire", tags: ["fire", "fiddly"], danger: "good",
           label: K("Tape over the air vents in this row"), cost: 20,
-          when: (S) => haveCharged(S, "tape") && cabin.rowAt(S.player.x) !== null,
+          when: (S) => haveCharged(S, "tape") && cabin.rowAt(S.player.x) !== null &&
+                       !S.cabinFlags.ventsTaped[S.player.x],
           run(S) {
               st.useCharge(S, slot(S, "tape"));
               const x = S.player.x;
+              S.cabinFlags.ventsTaped[x] = true;
               for (let y = 1; y <= 7; y++) {
                   S.fire.smoke[cabin.idx(x, y)] *= 0.72;
               }

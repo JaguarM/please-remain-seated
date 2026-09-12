@@ -685,6 +685,7 @@
             ctx.restore();
         }
 
+        drawCore(ctx, S, T, scale, t);
         drawPlan(ctx, S, opts, T, scale, t);
         // The thing the card is open on. Steady and white, so it reads as "selected" rather than
         // as one more thing the pointer is proposing. A person gets the brackets round their
@@ -706,6 +707,35 @@
         // Last of all, above the smoke and above whatever just happened to you, because it is
         // the one part of the picture that has to be legible in a cabin nobody can see through.
         drawStatus(ctx, S, T, scale, t);
+    }
+
+    /**
+     * The seat of it. Everything else on this picture is a consequence; this one tile is the
+     * case with the cell in it, and until now the only way to know which tile it was was to read
+     * "the locker above 12A" off a card and count rows. So it is marked, in red, over the smoke,
+     * and it follows the case: put the thing in the lavatory basin and the mark goes with it.
+     *
+     * It is corners rather than a fill because the tile underneath it is the thing being marked,
+     * and a caret over the top because at a glance a player finds a shape above a tile faster
+     * than they find a tile.
+     */
+    function drawCore(ctx, S, T, scale, t) {
+        const c = S.fire.core;
+        if (!cabin.inBounds(c.x, c.y)) return;
+        const pulse = 0.62 + 0.24 * Math.abs(Math.sin(t * 0.0035));
+        corners(ctx, c.x * T + scale, c.y * T + scale, T - 2 * scale, T - 2 * scale, scale,
+                "#d4483a", pulse);
+        const cx = c.x * T + T / 2, cy = c.y * T - 2 * scale;
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        ctx.fillStyle = "#d4483a";
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + 3 * scale);
+        ctx.lineTo(cx - 3 * scale, cy - 2 * scale);
+        ctx.lineTo(cx + 3 * scale, cy - 2 * scale);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
     }
 
     /**

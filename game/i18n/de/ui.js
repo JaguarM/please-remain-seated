@@ -179,6 +179,8 @@
         "{n} tiles away": "{n} Felder entfernt",
         "The case is in the lavatory basin, under water.":
             "Der Koffer liegt im WC-Becken, unter Wasser.",
+        "The case is in your hands. The seat of the fire is wherever you are standing.":
+            "Du hast den Koffer in den Händen. Der Herd des Feuers ist da, wo du stehst.",
         "The seat of it is the locker above {seat}.": "Der Herd ist das Gepäckfach über {seat}.",
         " You have seen inside it.": " Du hast hineingesehen.",
         " Nobody has looked inside it.": " Niemand hat hineingesehen.",
