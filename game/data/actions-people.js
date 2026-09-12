@@ -197,7 +197,12 @@
                     : cond.tier === 1 ? T(" They are already coughing.") : "";
                 const wet = (c.p.annoyed || 0) >= 30
                     ? T(" You have soaked them, and they remember.") : "";
-                return odds + health + wet;
+                // The sceptic line is the whole shape of the deck: talking at this person is
+                // thirty wasted seconds, and showing them something is not.
+                const blind = c.p.traits.indexOf("sceptic") >= 0 && !P.hasSeen(c.p)
+                    ? T(" They do not believe there is a fire and they are not going to be " +
+                        "talked into it. Show them something.") : "";
+                return odds + blind + health + wet;
             },
             cost: 22,
             run(S, c) {
@@ -205,8 +210,13 @@
                 const roll = say(S, p, "help", { bonus: 6, awareness: 16 });
                 if (!roll.ok) {
                     PRS.audio.play("refuse");
-                    return { text: T("{who}: {said} (Ask again. It gets easier every time, " +
-                                     "and it gets easier faster if they can see the fire.)",
+                    if (p.traits.indexOf("sceptic") >= 0 && !P.hasSeen(p)) {
+                        return { text: T("{who}: {said} (Asking again will not do it. This one " +
+                                         "has to see it.)",
+                                         { who: p.name, said: P.speak(S, p) }), kind: "bad" };
+                    }
+                    return { text: T("{who}: {said} (Ask again. It gets easier the second time, " +
+                                     "and easier still if they can see the fire.)",
                                      { who: p.name, said: P.speak(S, p) }), kind: "bad" };
                 }
                 P.recruit(S, p, T("They are going to work the cabin until this ends."));
@@ -290,11 +300,17 @@
             id: "people.show_photo", item: "phone", deck: "people", tags: ["social"], danger: "good",
             targets: (S) => reachAwake(S).filter((c) => !c.p.helper),
             when: (S) => !!S.flags.havePhoto,
+            once: "target",
             label: (S, c) => T("Show {who} the photograph", { who: who(c) }),
-            detail: K("Telling people is slow. Showing them is not."),
+            detail: (S, c) => c.p.traits.indexOf("sceptic") >= 0 && !P.hasSeen(c.p)
+                ? K("This one is not going to take your word for it, and you have one photograph " +
+                    "and one showing of it.")
+                : K("Telling people is slow. Showing them is not. Once each: nobody looks at the " +
+                    "same photograph twice."),
             cost: 9,
             run(S, c) {
                 const was = c.p.trust;
+                P.saw(S, c.p);
                 say(S, c.p, "look", { bonus: 30, awareness: 30 });
                 c.p.trust = Math.min(100, c.p.trust + 30);
                 if (was <= 30) S.credibility = Math.min(100, S.credibility + 4);

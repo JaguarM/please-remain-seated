@@ -341,7 +341,10 @@ function goodScore(PRS, S, list, fightsFirst) {
         // Recruit early, then use your own arms. A helper found at minute two works for
         // thirteen minutes; one found at minute twelve works for three.
         const early = S.clock.elapsed < 330;
-        if (e.id === "people.recruit" && helpers < 6) return (early ? 210 : 120) - e.cost * 0.2;
+        if (e.id === "people.recruit") return (early ? 210 : 120) - e.cost * 0.2 - helpers * 5;
+        // A sceptic is not talked round. The photograph is the only thing that moves them, and
+        // it moves each of them exactly once.
+        if (e.id === "people.show_photo" && e.ctx && !PRS.pax.hasSeen(e.ctx.p)) return 205;
         if (e.id === "people.follow") return 200 - e.cost * 0.5;
         if (e.id === "fire.tape_bin" || e.id === "fire.close_bin") return 180;
         if (e.id === "cabin.stow_trolley") return 175;

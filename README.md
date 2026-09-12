@@ -34,10 +34,16 @@ The rules
   off alive.
 - **Nobody believes you, and they are right not to.** Credibility rises with evidence: a
   photograph, an open bin, a burn on your hand, the lavatory smoke detector, somebody getting up
-  to help. Every social action is gated on it.
+  to help. Every social action is gated on it. A sceptic is not gated on it at all: a sceptic is
+  not talked round, a sceptic is shown, and until they have seen the photograph or the open bin
+  or enough smoke to need neither, there is no sentence you own that will move them. The
+  photograph works on each person once, because nobody looks at the same photograph twice.
 - **You cannot save everybody.** Alone you can carry a handful of people the length of the
-  cabin. A recruited helper moves people for the rest of the flight without being told, and the
-  cabin has room for seven of them. Fifty-four is very hard, and sixty is not on offer.
+  cabin. A recruited helper moves people for the rest of the flight without being told, and there
+  is no ceiling on how many of them there can be: the limit is the aeroplane. What stops the
+  eighth from being as cheap as the second is that everybody still sitting down by then is
+  somebody who has already said no, and the aisle they would be working is fuller than it was.
+  Fifty-four is very hard, and sixty is not on offer.
 - **You can change your mind, not your luck.** Every die in the flight is cast at boarding, from
   the seed on the pass: what mood each passenger is in, when the fire jumps a row, what the cabin
   does on its third turn. Backspace undoes the last action and gives the seconds back, one action

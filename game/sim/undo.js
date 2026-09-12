@@ -67,6 +67,7 @@
             crewPhase: S.crewPhase,
             crewPhaseAt: S.crewPhaseAt,
             counts: copy(S.counts),
+            doneTo: copy(S.doneTo),
             flags: copy(S.flags),
             medals: copy(S.medals),
             nearly: copy(S.nearly || {}),
@@ -96,6 +97,7 @@
         S.crewPhase = snap.crewPhase;
         S.crewPhaseAt = snap.crewPhaseAt;
         S.counts = copy(snap.counts);
+        S.doneTo = copy(snap.doneTo);
         S.flags = copy(snap.flags);
         S.medals = copy(snap.medals);
         S.nearly = copy(snap.nearly || {});

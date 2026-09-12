@@ -105,7 +105,7 @@
           } },
 
         { id: "helpful_offer", weight: 14, luck: 3,
-          when: (S) => S.credibility > 45 && PRS.state.helperCount(S) < 6,
+          when: (S) => S.credibility > 45 && PRS.pax.helperCap(S) > 0,
           run(S, r) {
               const options = S.pax.filter((p) => !p.helper && p.state !== "down" &&
                   p.state !== "dead" && p.traits.indexOf("helpful") >= 0);

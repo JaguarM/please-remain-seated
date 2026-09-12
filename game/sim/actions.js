@@ -4,6 +4,9 @@
 //
 //   { id, deck, label, detail, cost, when, run, tags, danger, once, targets, item }
 //
+// `once: true` is once a flight; `once: "target"` is once per person, seat or crew member the
+// definition can point at.
+//
 // `when(S, ctx)` decides whether it appears, `cost(S, ctx)` is in seconds, and `run(S, ctx)`
 // returns the line the log prints. `targets(S)` is what makes the number large: an action with
 // targets appears once per target, so one definition of "carry them forward" is sixty-one
@@ -150,9 +153,15 @@
         const out = [];
         for (const def of REGISTRY) {
             if (def.hidden && !includeHidden) continue;
-            if (def.once && S.counts[def.id]) continue;
+            if (def.once === true && S.counts[def.id]) continue;
             const entries = entriesFor(def, S);
-            for (const e of entries) out.push(e);
+            for (const e of entries) {
+                // `once: "target"` is once per person rather than once per flight: showing one
+                // passenger the photograph is a thing that works, and showing them it a second
+                // time is not a thing that works twice.
+                if (def.once === "target" && S.doneTo[e.key]) continue;
+                out.push(e);
+            }
         }
         out.sort(function (a, b) {
             const da = DECKS[a.deck].order, db = DECKS[b.deck].order;
@@ -202,6 +211,7 @@
         }
 
         S.counts[def.id] = (S.counts[def.id] || 0) + 1;
+        if (def.once === "target") S.doneTo[entry.key] = 1;
         // The key is what the recorder keeps: the definition and the target, which is enough to
         // find the same entry again on a replay of the same seed.
         S.actions.push({ id: def.id, key: entry.key, t: S.clock.elapsed, cost: cost,

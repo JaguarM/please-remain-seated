@@ -519,7 +519,7 @@
         const fog = 1 + clamp01(S.fire.smoke[cabin.idx(best.x, best.y)] / 100) * 0.8;
         const fright = 1 + clamp01(p.panic / 100) * 0.5;
         // The aisle is fifty centimetres wide. A second pair of hands is worth almost a whole
-        // extra pair; a seventh is worth rather less, because six of them are already in it.
+        // extra pair; a tenth is worth rather less, because nine of them are already in it.
         const congestion = 1 + 0.08 * Math.max(0, activeHelpers(S) - 1);
         p.taskLeft = (14 + best.kg * 0.2 + dist * 2.0) * fog * fright * congestion;
         p.x = best.x; p.y = best.y;
@@ -528,15 +528,18 @@
     /**
      * A helper who has been working for a while pulls somebody else in. This is the compounding
      * that makes recruiting worth more than carrying: the fourth person you ask is not worth one
-     * person, they are worth everybody that person asks. It is capped, because a cabin has a
-     * finite number of people in it who are ever going to get out of their seat.
+     * person, they are worth everybody that person asks. It slows as the cabin fills with them,
+     * because everybody left to ask has now watched somebody be asked and stayed in their seat.
      */
     function spreadHelping(S, p, dt) {
         if (S.cabinAwareness < 30) return;
         if (helperCap(S) <= 0) return;
         // About one conversion every two minutes per helper, at full credibility, and none at all
-        // while nobody believes anything is happening.
-        const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60);
+        // while nobody believes anything is happening. Slower the more of them are already up,
+        // because the people left to ask are the ones who have watched somebody ask and stayed
+        // in their seat.
+        const rate = 0.0036 * dt * clamp01(S.credibility / 70) * clamp01(S.cabinAwareness / 60) /
+                     (1 + activeHelpers(S) * 0.22);
         if (rate <= 0 || !PRS.state.hazard(S, p, "spread", rate)) return;
         const near = S.pax.filter((q) => canHelp(q) && Math.abs(q.x - p.x) <= 3 &&
             q.traits.indexOf("hostile") < 0);
@@ -553,9 +556,16 @@
         return n;
     }
 
-    /** How many more people this cabin has in it who will ever get out of their seat. */
+    /**
+     * How many more people this cabin has in it who will ever get out of their seat. There is no
+     * ceiling on helpers: the limit is the aeroplane. What stops the eighth from being as cheap
+     * as the second is that the people still sitting down by then are the ones who already said
+     * no, and the aisle they would be working is fuller than it was.
+     */
     function helperCap(S) {
-        return 7 - activeHelpers(S);
+        let n = 0;
+        for (const p of S.pax) if (canHelp(p)) n++;
+        return n;
     }
 
     /** Turn somebody into a helper. The single highest-value thing in the game. */
@@ -577,10 +587,27 @@
         return true;
     }
 
+    /**
+     * Whether this person has seen the fire rather than been told about it. Shown the photograph,
+     * shown the open bin - or sitting in enough of it that nobody has to show them anything.
+     */
+    function hasSeen(p) {
+        return !!p.sawEvidence || p.awareness >= 65 || p.smokeDose > 8;
+    }
+
+    /** Mark that they have seen it. Every action that puts the fire in front of somebody calls this. */
+    function saw(S, p) {
+        p.sawEvidence = true;
+        p.awareness = Math.min(100, p.awareness + 12);
+    }
+
     /** How hard this person is to talk into anything, 0..100 needed against your persuasion. */
     function resistance(S, p) {
         let r = 46;
-        if (p.traits.indexOf("sceptic") >= 0) r += 30;
+        // A sceptic is not talked round, a sceptic is shown. Until this one has seen something -
+        // the photograph, the bin open, the burn on your hand, or enough smoke to have stopped
+        // needing any of that - the number is out of reach of anything you can say.
+        if (p.traits.indexOf("sceptic") >= 0) r += hasSeen(p) ? 12 : 58;
         if (p.traits.indexOf("hostile") >= 0) r += 26;
         if (p.traits.indexOf("helpful") >= 0) r -= 34;
         if (p.traits.indexOf("drunk") >= 0) r += 16;
@@ -593,7 +620,7 @@
         r -= S.credibility * 0.38;
         // Being told the same thing again wears most people down, for about three conversations.
         // A sceptic is not worn down by talking at all: a sceptic needs to see it.
-        r -= Math.min(p.traits.indexOf("sceptic") >= 0 ? 0 : 3, p.spokenTo) * 4;
+        r -= Math.min(p.traits.indexOf("sceptic") >= 0 ? 0 : 2, p.spokenTo) * 3;
         // Somebody you have soaked is not in a mood to do you favours.
         r += (p.annoyed || 0) * 0.3;
         if (p.panic > 70) r += 18;              // too frightened to hear you
@@ -653,7 +680,7 @@
     PRS.pax = {
         DOWN_AT, GRAB_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying,
         displayState, wakeUp, condition, carryOverhead, canCarry, advance, recruit, helperCap,
-        resistance, persuasion, convince, odds, worthAsking, face, palette, speak,
+        resistance, persuasion, convince, odds, worthAsking, face, palette, speak, hasSeen, saw,
         evacuation, exposure, refuge, moveGain, shelter, annoy, obstructor,
     };
 })(window);

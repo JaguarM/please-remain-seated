@@ -58,10 +58,16 @@
         [" They are already coughing.", " Die Person hustet schon."],
         [" You have soaked them, and they remember.",
          " Du hast sie nass gemacht, und sie erinnert sich daran."],
-        ["{who}: {said} (Ask again. It gets easier every time, and it gets easier faster if they " +
+        ["{who}: {said} (Ask again. It gets easier the second time, and easier still if they " +
          "can see the fire.)",
-         "{who}: {said} (Frag noch einmal. Es wird jedes Mal leichter, und es wird schneller " +
-         "leichter, wenn die Person das Feuer sehen kann.)"],
+         "{who}: {said} (Frag noch einmal. Beim zweiten Mal ist es leichter, und noch leichter, " +
+         "wenn die Person das Feuer sehen kann.)"],
+        ["{who}: {said} (Asking again will not do it. This one has to see it.)",
+         "{who}: {said} (Nochmal fragen bringt hier nichts. Die Person muss es sehen.)"],
+        [" They do not believe there is a fire and they are not going to be talked into it. " +
+         "Show them something.",
+         " Die Person glaubt nicht, dass es brennt, und lässt sich das auch nicht einreden. " +
+         "Zeig ihr etwas."],
         ["They are going to work the cabin until this ends.",
          "Sie arbeitet die Kabine ab, bis das hier vorbei ist."],
         ["{who} unbuckles, stands up, and asks who is next. {n} now working the cabin as well as " +
@@ -87,8 +93,13 @@
          "{who} sieht hoch zum Gepäckfach, dann dich an, dann wieder das Fach. „…Gut. Gut.“"],
 
         ["Show {who} the photograph", "{who} das Foto zeigen"],
-        ["Telling people is slow. Showing them is not.",
-         "Erzählen ist langsam. Zeigen nicht."],
+        ["Telling people is slow. Showing them is not. Once each: nobody looks at the same " +
+         "photograph twice.",
+         "Erzählen ist langsam. Zeigen nicht. Einmal pro Person: Dasselbe Foto sieht sich " +
+         "niemand zweimal an."],
+        ["This one is not going to take your word for it, and you have one photograph and one " +
+         "showing of it.",
+         "Diese Person nimmt dir kein Wort ab, und du hast ein Foto und ein Mal, es zu zeigen."],
         ["{who} looks at your phone for two full seconds and then unbuckles their seatbelt " +
          "without being asked.",
          "{who} sieht zwei ganze Sekunden lang auf dein Handy und macht dann ungefragt den " +

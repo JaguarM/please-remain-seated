@@ -41,6 +41,7 @@
           detail: K("A sceptic does not need persuading. A sceptic needs seeing."),
           cost: 15,
           run(S, c) {
+              P.saw(S, c.p);
               c.p.trust = Math.min(100, c.p.trust + 55);
               c.p.awareness = 100;
               c.p.traits = c.p.traits.filter((t) => t !== "sceptic");

@@ -641,8 +641,12 @@
         // yet; this is how many people are off their seats and on the floor because of you.
         box.appendChild(meter(T("OUT OF THEIR SEATS"), st.movedCount(S), 60, "m-good",
                               st.movedCount(S) + " / 60"));
-        box.appendChild(meter(T("HELPING"), st.helperCount(S), 10, "m-good",
-                              String(st.helperCount(S))));
+        // Against the people still sitting down who would ever get up, not against a ceiling:
+        // there is no ceiling, and a full bar means this cabin has nobody left in it to ask.
+        const helping = st.helperCount(S);
+        box.appendChild(meter(T("HELPING"), helping,
+                              Math.max(1, helping + PRS.pax.helperCap(S)), "m-good",
+                              String(helping)));
         box.appendChild(meter(T("THEY BELIEVE YOU"), S.credibility, 100, "m-cred"));
         box.appendChild(meter(T("CABIN PANIC"), S.cabinPanic, 100, "m-panic"));
         // There is no fire meter and no smoke meter. The cabin is on the screen; how bad it is

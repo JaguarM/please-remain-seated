@@ -86,6 +86,7 @@
             log: [],
             actions: [],           // every action id, in order, for the report and the recorder
             counts: {},            // action id -> how many times
+            doneTo: {},            // entry key -> done, for actions that work once per person
             medals: {},
             // The nearest each unlocking medal ever came, which is not always where it ended up:
             // "declared early" is four steps up the chain before minute five and nothing after.
@@ -159,6 +160,7 @@
                 braced: false,
                 moved: false,               // out of their own seat, because somebody moved them
                 spokenTo: 0,
+                sawEvidence: false,         // shown the fire, rather than told about it
                 helper: false,
                 helperTarget: null,
                 carriedBy: null,
