@@ -107,6 +107,10 @@ button.big:hover { background: #4b6191; }
 .meter-fill { height: 100%; background: var(--blue); transition: width .2s; }
 .m-good .meter-fill { background: var(--good); }
 .m-cred .meter-fill { background: var(--gold); }
+/* Same track, different bar: over the end of the scale it keeps its width and takes the light. */
+.meter.over .meter-fill { background: linear-gradient(90deg, var(--gold) 55%, var(--warn) 100%);
+                          box-shadow: 0 0 5px var(--warn); }
+.meter.over .meter-label b { color: var(--warn); }
 .m-panic .meter-fill { background: #b45ad0; }
 .m-lungs .meter-fill { background: #5ac8d0; }
 .m-burn .meter-fill { background: var(--bad); }
@@ -561,6 +565,14 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 .stat-fill.down { background: #b06a5a; }
 .stat b.up { color: var(--good); }
 .stat b.down { color: #e08076; }
+/* Eleven does not get a longer bar. It gets a full one that is lit at the end it ran out of,
+   and a number in the same colour, because the bar is ten wide and the stat no longer is. */
+.stat-fill.over { background: linear-gradient(90deg, var(--good) 60%, var(--great) 100%);
+                  box-shadow: 0 0 4px var(--great); }
+.stat-fill.under { background: #6b4340; }
+.stat.under .stat-track { box-shadow: inset 0 0 0 1px #7a4a45; }
+.stat b.over { color: var(--great); }
+.stat b.under { color: #e08076; }
 .big-stats .stat { grid-template-columns: 30px 1fr 18px; margin-bottom: 3px; }
 .big-stats .stat-track { height: 6px; }
 .big-stats .stat span, .big-stats .stat b { font-size: 11px; }

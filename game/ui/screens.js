@@ -495,7 +495,11 @@
         window.scrollTo(0, y);
     }
 
-    /** Four bars. With an outfit passed, the changed ones are coloured and the numbers move. */
+    /**
+     * Four bars. With an outfit passed, the changed ones are coloured and the numbers move.
+     * A stat can go past ten or under one now, and the bar cannot: it is ten wide and it stays
+     * ten wide, so the eleventh point is a colour and a number rather than a longer bar.
+     */
     function statBars(ch, outfit) {
         // Three letters each, and a language picks its own three. The note is what the bar
         // measures, because a bare "SPD" tells a translator nothing.
@@ -510,12 +514,14 @@
             const v = now[key];
             const delta = v - base[key];
             const dir = delta > 0 ? " up" : delta < 0 ? " down" : "";
-            out.push(el("div", { class: "stat" }, [
+            const edge = v > 10 ? " over" : v < 1 ? " under" : "";
+            out.push(el("div", { class: "stat" + edge }, [
                 el("span", { text: names[key] }),
                 el("div", { class: "stat-track" }, [
-                    el("div", { class: "stat-fill" + dir, style: { width: (v * 10) + "%" } }),
+                    el("div", { class: "stat-fill" + dir + edge,
+                                style: { width: Math.max(0, Math.min(10, v)) * 10 + "%" } }),
                 ]),
-                el("b", { class: dir.trim(), text: String(v) }),
+                el("b", { class: (dir + edge).trim(), text: String(v) }),
             ]));
         }
         return out;

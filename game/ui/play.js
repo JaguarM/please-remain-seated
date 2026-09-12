@@ -624,7 +624,10 @@
         lastMeters[label] = value;
         const moved = was === undefined || Math.abs(was - value) < 0.5 ? ""
                     : value > was ? " up" : " down";
-        return el("div", { class: "meter " + (cls || "") + moved }, [
+        // Past the end of the track the bar stays the width it was and says so in its colour,
+        // because a number that has gone off the end of its own scale is a thing to notice.
+        const over = value > max ? " over" : "";
+        return el("div", { class: "meter " + (cls || "") + moved + over }, [
             el("div", { class: "meter-label" }, [
                 el("span", { text: label }),
                 el("b", { text: note !== undefined ? note : pct + "%" }),
@@ -689,10 +692,11 @@
         // says so. Persuasion runs past a hundred at the top end and the bar stops there, and
         // the words change at forty-six, which is what an ordinary passenger's resistance is
         // before their mood: below it you are not talking anybody out of their seat.
-        const say = Math.min(100, Math.round(PRS.pax.persuasion(S)));
+        const say = Math.round(PRS.pax.persuasion(S));
         box.appendChild(meter(T("CREDIBILITY"), say, 100, "m-cred",
-                              say > 80 ? T("they listen") : say > 62 ? T("most of them")
-                              : say > 46 ? T("some of them") : T("nobody")));
+                              say + " · " + (say > 80 ? T("they listen")
+                              : say > 62 ? T("most of them")
+                              : say > 46 ? T("some of them") : T("nobody"))));
         // Whoever is in your arms, as a button, because putting them down is on their card.
         const held = P.carrying.map((id) => [id, T("CARRYING")])
             .concat(P.dragging ? [[P.dragging, T("DRAGGING")]] : []);

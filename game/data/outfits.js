@@ -11,7 +11,10 @@
     const T = PRS.t, K = PRS.k;
 
     // Each is worth net +1 across the five, spent differently. `mod` is added to the character's
-    // own stats and the total is clamped to 1..10. `unlock` is the number of souls in the log
+    // own stats and nothing is clamped: a purser with a voice of nine puts the suit on and reads
+    // eleven, because a ten that was going to be a ten whatever you wore is an outfit that does
+    // nothing and says it does something. Ten is the width of the bar, not the top of the scale.
+    // `unlock` is the number of souls in the log
     // book, at which it hangs in the wardrobe. The book counts people your actions saved rather
     // than people who got off, which is about twenty on a good flight, so the first two are a
     // first flight and a third flight and the spacing widens from there: the wardrobe should
@@ -67,12 +70,12 @@
     /** The outfit, or null for what you flew in. */
     function byId(id) { return BY_ID[id] || null; }
 
-    /** The character's four numbers with the outfit added, clamped where they have to be. */
+    /** The character's four numbers with the outfit added. No ceiling and no floor. */
     function apply(stats, outfit) {
         const out = {};
         for (const key in stats) {
             const delta = (outfit && outfit.mod && outfit.mod[key]) || 0;
-            out[key] = Math.max(1, Math.min(10, stats[key] + delta));
+            out[key] = stats[key] + delta;
         }
         return out;
     }
