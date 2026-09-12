@@ -380,17 +380,25 @@
         }
         const r = A.route(S, hover.x, hover.y);
         if (!r) return null;
+        // The price on the tile is the price the walk will charge, rounding and all, and not a
+        // second arrived at a different way.
+        const e = walkEntry(hover);
         return { path: r.path.map((i) => [cabin.xOf(i), cabin.yOf(i)]),
-                 cost: Math.max(1, Math.round(r.cost)),
+                 cost: e ? e.cost : Math.max(1, Math.round(r.cost)),
                  name: cabin.placeName(hover.x, hover.y) };
     }
 
     // ------------------------------------------------------------------------------ walking ---
 
+    /** The walk to a tile, as it is on offer right now, or nothing if you cannot get there. */
+    function walkEntry(t) {
+        return lastAll.filter(
+            (e) => e.id === "move.walk" && e.ctx.x === t.x && e.ctx.y === t.y)[0] || null;
+    }
+
     /** Walk to a tile, and do something on arrival. This is what the cabin is for. */
     function walkTo(t, then) {
-        const hit = lastAll.filter(
-            (e) => e.id === "move.walk" && e.ctx.x === t.x && e.ctx.y === t.y)[0];
+        const hit = walkEntry(t);
         if (!hit) return false;
         run(hit, then);
         return true;
@@ -849,10 +857,9 @@
                 return T("You walked from here. Click to take that back · +{secs}",
                          { secs: costLabel(stop.seconds) });
             }
-            const r = A.route(S, tile.x, tile.y);
-            if (r) {
-                return T("Click to walk here · {secs}",
-                         { secs: costLabel(Math.max(1, Math.round(r.cost))) });
+            const e = walkEntry(tile);
+            if (e) {
+                return T("Click to walk here · {secs}", { secs: costLabel(e.cost) });
             }
             return T("You cannot stand there. A click walks you to the nearest tile you can.");
         }
@@ -1144,12 +1151,17 @@
                  res.kind === "bad" ? "#d4483a"
                  : (res.kind === "good" || res.kind === "great") ? "#5fd67a" : "#ffd54a");
 
+        // A step whose second was already paid for by the rounding of the step before costs
+        // nothing, and there is no passage to play - but you still walked it, so the marker
+        // still walks it, at the shortest pace the screen has.
         const ms = res.passage ? paceMs(res.cost) : 0;
-        if (S.player.x !== from[0] || S.player.y !== from[1]) {
+        const moved = S.player.x !== from[0] || S.player.y !== from[1];
+        if (moved) {
             const path = entry.id === "move.walk" && entry.ctx && entry.ctx.r
                 ? entry.ctx.r.path.map((i) => [cabin.xOf(i), cabin.yOf(i)])
                 : PRS.render.motion.route(from[0], from[1], S.player.x, S.player.y);
-            PRS.render.motion.follow("you", [from].concat(path), ms, strain(res.cost, path.length));
+            PRS.render.motion.follow("you", [from].concat(path), ms || PACE.least,
+                                     strain(res.cost, path.length));
         }
 
         busy = { passage: res.passage, start: performance.now(), ms: ms, focus: focus,

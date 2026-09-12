@@ -46,6 +46,11 @@
                 smokeDose: 0,
                 burns: 0,
                 crouching: false,
+                // Walking is priced in whole seconds, and a step is rarely a whole second. The
+                // fraction the rounding took, or gave, is kept here and put into the next step,
+                // so that two steps taken one at a time cost what the same two steps cost when
+                // you click the far tile and walk them in one go.
+                walkCarry: 0,
                 carrying: [],       // passenger ids
                 dragging: null,
                 wearing: {},        // itemId -> true

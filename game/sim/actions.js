@@ -74,8 +74,13 @@
         return typeof value === "function" ? value(S, ctx) : value;
     }
 
-    /** The cost of an action after everything about you that changes it. */
-    function costOf(S, def, ctx) {
+    /** Whether an action's seconds carry their rounding over to the next one. Walking does. */
+    function carries(def) {
+        return def.id === "move.walk";
+    }
+
+    /** The cost of an action after everything about you that changes it, still fractional. */
+    function rawCostOf(S, def, ctx) {
         let c = resolve(def.cost, S, ctx);
         if (c === undefined || c === null) c = 5;
         const d = S.derived;
@@ -95,6 +100,19 @@
         // there is done around them, until somebody calms them down.
         if (tags.indexOf("fire") >= 0 && PRS.pax.obstructor(S)) c *= 1.6;
 
+        return c;
+    }
+
+    /**
+     * The cost as the clock will charge it. Whole seconds, and at least one - except for a walk,
+     * where the fraction left over from the steps already taken comes with it. Two tiles walked
+     * one arrow key at a time and two tiles walked by clicking the far one are the same walk,
+     * and they are charged the same: a step that has already been paid for by the rounding of
+     * the one before it is free, rather than a second the other way round never asked for.
+     */
+    function costOf(S, def, ctx) {
+        const c = rawCostOf(S, def, ctx);
+        if (carries(def)) return Math.max(0, Math.round(c + (S.player.walkCarry || 0)));
         return Math.max(1, Math.round(c));
     }
 
@@ -193,6 +211,12 @@
         // Everything the world is, before anything happens, including which dice have been used.
         PRS.undo.push(S, entry);
         let cost = entry.cost;
+        if (carries(def)) {
+            const want = rawCostOf(S, def, entry.ctx) + (S.player.walkCarry || 0);
+            S.player.walkCarry = want - cost;
+        } else {
+            S.player.walkCarry = 0;
+        }
         let text = null, kind = def.danger === "bad" ? "bad" : def.danger === "good" ? "good" : "plain";
 
         let result = null;
@@ -442,7 +466,7 @@
     }
 
     PRS.actions = {
-        DECKS, register, count, all, byId, deckCounts, costOf, available, availableByDeck,
+        DECKS, register, count, all, byId, deckCounts, costOf, rawCostOf, available, availableByDeck,
         perform, passage, spend, stepCost, moveTo, land, resolve,
         // Ask one definition whether it is possible right now, without evaluating the other
         // three hundred. tools/coverage.js walks the whole registry with this.
