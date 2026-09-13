@@ -31,6 +31,10 @@
     let S = null;
     let root = null;
     let canvas = null, ctx = null, scale = 2;
+    let statusCanvas = null, statusCtx = null, statusScale = 2;
+    let wrap = null;              // the window the aeroplane is seen through, when it scrolls
+    let toward = null;            // and which way the fire is, when it is not in it
+    let followed = -1;            // the tile the scroll last followed you to
     let hover = null;             // the tile the mouse is over, and where in it
     let target = null;            // what a click there would open, from hotspots.js
     let raf = 0;
@@ -111,9 +115,19 @@
         ]);
 
         const left = el("div", { class: "col-left" }, [
-            el("div", { class: "canvas-wrap", id: "canvaswrap" }, [
-                canvas = el("canvas", { id: "cabin", class: "cabin" }),
-                el("div", { class: "tip", id: "tip" }),
+            // The readout is on the aeroplane when the aeroplane fits across the screen. When it
+            // runs down the screen instead, the picture is longer than the window and scrolls,
+            // and four numbers that scroll away are four numbers nobody reads: they get a strip
+            // of their own above the window, which stays put.
+            statusCanvas = el("canvas", { class: "readout", hidden: true }),
+            el("div", { class: "viewport" }, [
+                wrap = el("div", { class: "canvas-wrap", id: "canvaswrap" }, [
+                    canvas = el("canvas", { id: "cabin", class: "cabin" }),
+                    el("div", { class: "tip", id: "tip" }),
+                ]),
+                // Which way the fire is, when the fire is not on the screen. See `aim`.
+                toward = el("button", { class: "toward", hidden: true,
+                                        onclick: function () { scrollTo(S.fire.core.x); } }),
             ]),
             ghost ? ghostBlock() : null,
             el("div", { class: "here", id: "here" }),
@@ -127,11 +141,9 @@
         root.appendChild(el("div", { class: "card", id: "card" }));
 
         ctx = canvas.getContext("2d");
-        scale = PRS.render.fit(canvas);
-        if (ghost) {
-            ghostCtx = ghostCanvas.getContext("2d");
-            ghostScale = PRS.render.fit(ghostCanvas, 2);
-        }
+        statusCtx = statusCanvas.getContext("2d");
+        if (ghost) ghostCtx = ghostCanvas.getContext("2d");
+        refit();
 
         canvas.addEventListener("mousemove", onCabinMove);
         canvas.addEventListener("mouseleave", function () {
@@ -207,10 +219,40 @@
         root = null;
     }
 
+    // ------------------------------------------------------------------------- which way up ---
+    //
+    // A cabin is thirty tiles by nine. On a screen wider than it is tall that is the aeroplane
+    // seen the way a seat map is drawn; on a phone held upright it is a letterbox about as tall
+    // as a finger, and sixty faces in it are sixty smudges. So a narrow screen gets the
+    // aeroplane turned: nose at the top, rows running away down the page, nine tiles across the
+    // width of the phone and a tile you can actually put a thumb on.
+    //
+    // The renderer owns the rule and the turn itself. What is left here is the page: a class on
+    // the screen, so the bar and the log can be told the same thing the canvas was.
+
+    /**
+     * Size the canvases to the window, whichever way up that leaves the aeroplane. The turn has
+     * to be set before anything is fitted, because it is what decides the shape of the picture.
+     */
+    function refit() {
+        PRS.render.turn();
+        const down = PRS.render.turned();
+        if (root) root.classList.toggle("turned", down);
+        scale = PRS.render.fit(canvas);
+        if (statusCanvas) {
+            statusCanvas.hidden = !down;
+            if (down) statusScale = PRS.render.fitStatus(statusCanvas);
+        }
+        // Turned back, the whole aeroplane is on the screen at once and there is nothing off it
+        // to point at. `aim` is not reached to say so, so it is said here.
+        if (toward && !down) toward.hidden = true;
+        if (ghostCanvas) ghostScale = PRS.render.fit(ghostCanvas, 2);
+        followed = -1;
+    }
+
     function onResize() {
         if (!canvas || !canvas.isConnected) return;
-        scale = PRS.render.fit(canvas);
-        if (ghostCanvas) ghostScale = PRS.render.fit(ghostCanvas, 2);
+        refit();
         placeCard();
     }
 
@@ -234,7 +276,64 @@
             trail: trail,
             showReach: !busy,
         });
+        if (!statusCanvas.hidden) PRS.render.status(statusCtx, S, PRS.render.TILE * statusScale,
+                                                    statusScale, now);
+        follow();
         if (ghost) drawGhost(now);
+    }
+
+    // ------------------------------------------------------------------------------ follow ---
+
+    /**
+     * Keep yourself in the window.
+     *
+     * Turned, the aeroplane is thirty tiles long and the phone showing it is about eleven, so
+     * most of the cabin is off the screen most of the time and the player scrolls. Scrolling to
+     * find yourself after every walk is not a decision anybody is making, so the window comes
+     * with you - but only when you have actually changed row, because a window that re-centres
+     * itself while a thumb is dragging it is a window fighting the player.
+     */
+    function follow() {
+        if (!wrap || statusCanvas.hidden) return;
+        const row = S.player.x;
+        if (row !== followed) {
+            followed = row;
+            scrollTo(row);
+        }
+        aim();
+    }
+
+    /** Put a column of the aeroplane in the middle of the window. */
+    function scrollTo(x) {
+        const tile = wrap.scrollHeight / PRS.cabin.W;
+        wrap.scrollTo({ top: Math.max(0, (x + 0.5) * tile - wrap.clientHeight / 2),
+                        behavior: "smooth" });
+    }
+
+    /**
+     * Which way the fire is.
+     *
+     * A third of the aeroplane fits on a phone, so for most of a flight the thing the whole
+     * game is about is off the top or the bottom of the window, and a fire you cannot see is a
+     * fire you forget. This is an arrow on the edge it went off, in the colour the case is
+     * actually burning - red while it is a fire, blue once it is the other thing - and the row
+     * it is in. There is no sentence in it because there is no sentence a player needs: an
+     * arrow, a number and that blue are the three things they already know how to read.
+     *
+     * It is a button, because the one thing anybody would want to do with it is go there.
+     */
+    function aim() {
+        const c = S.fire.core;
+        const tile = wrap.scrollHeight / PRS.cabin.W;
+        const at = (c.x + 0.5) * tile;
+        const above = at < wrap.scrollTop + tile * 0.5;
+        const below = at > wrap.scrollTop + wrap.clientHeight - tile * 0.5;
+        toward.hidden = !(above || below);
+        if (toward.hidden) return;
+        toward.classList.toggle("up", above);
+        toward.classList.toggle("blue", !!c.blue);
+        const row = PRS.cabin.rowAt(c.x);
+        toward.textContent = (above ? "▲ " : "▼ ") + (row === null ? "" : row);
     }
 
     // ------------------------------------------------------------------------------- ghost ---

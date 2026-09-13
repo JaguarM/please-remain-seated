@@ -188,6 +188,81 @@ button.big:hover { background: #4b6191; }
 .canvas-wrap { background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
 .cabin { display: block; width: 100%; height: auto; }
 
+/* ---------------------------------------------------------------- the aeroplane turned ---
+
+   Below the width at which a tile is worth tapping, the aeroplane is flown down the page
+   instead of across it, which play.js decides and marks here with `.turned`. Nine tiles across
+   a phone is a tile about forty pixels square - a thumb - and the cost of that is that thirty
+   rows do not fit on the screen at once. So the picture keeps its width and the window scrolls,
+   and the window follows you.
+
+   The readout comes off the picture and sits above the window, because a readout that scrolls
+   away with the cabin is one nobody reads. */
+
+.readout { display: block; width: 100%; height: auto; border: 1px solid var(--line);
+           border-bottom: 0; border-radius: 4px 4px 0 0; background: #12151b; }
+/* Both of these set `display`, which is what the browser uses to honour `hidden`, so they have
+   to say it themselves or an aeroplane that is the right way round grows a readout it has
+   already drawn on itself. */
+.readout[hidden], .toward[hidden] { display: none; }
+.turned .readout + .canvas-wrap { border-radius: 0 0 4px 4px; }
+
+.turned .canvas-wrap {
+  overflow-y: auto; overscroll-behavior-y: contain; padding: 0;
+  /* What is left of the screen once the bar, the readout, the log and the card have had
+     theirs. Eleven rows of aeroplane, give or take, which is a third of the cabin. */
+  max-height: min(52vh, 560px);
+}
+.turned .col-left { padding: 8px; gap: 0; }
+.turned .logwrap { padding: 0 8px 8px; }
+
+/* A scrollbar over a nine-tile-wide aeroplane is a seat's worth of it. */
+.turned .canvas-wrap { scrollbar-width: none; }
+.turned .canvas-wrap::-webkit-scrollbar { display: none; }
+
+/* The bar at the top of a turned flight has about eighty pixels to say everything in, so it
+   says the same things in one line each: the clock, what you are made of, and what is in your
+   hands. What goes is the prose - the job title is on the boarding pass, the word BAG is above
+   three pictures of a bag's worth of things, and neither is worth a row of a phone. */
+/* The clock column is given a width rather than allowed to ask for one: what is in it is the
+   undo button, whose label is a whole sentence about what you last did, and a column that grows
+   to fit that sentence is a column that pushes your bag off the side of the phone. It has an
+   ellipsis for exactly this. */
+.turned .hud { grid-template-columns: minmax(0, 148px) minmax(0, 1fr); gap: 10px; padding: 7px 10px; }
+.turned .clock { font-size: 30px; }
+.turned .clock-plan { height: 11px; }
+.turned .hud-you {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px;
+  grid-column: auto; border-left: 1px solid var(--line); border-top: 0; padding: 0 0 0 10px;
+}
+.turned .hud-you .you-name { margin: 0 0 1px; gap: 5px; }
+.turned .hud-you .you-name b { font-size: 11px; }
+/* The job title is on the boarding pass, and the word BAG is above three pictures of a bag. */
+.turned .hud-you .you-name i, .turned .bag-head { display: none; }
+/* One meter a line. Two across fits until a word like CREDIBILITY has a number after it, and
+   then it does not, and the layout it breaks is the one holding your bag. */
+.turned .hud-you .meter, .turned .hud-you .bagbar { flex: 1 0 100%; }
+.turned .bag-items { flex-wrap: nowrap; margin-top: 3px; }
+.turned .bag-item { width: auto; flex: 1 1 0; min-width: 0; padding: 3px 2px; }
+.turned .bag-item b { font-size: 9px; }
+
+/* The window the aeroplane is seen through, and the arrow on its edge. Across the page the
+   viewport is just the wrap's parent and does nothing at all. */
+.viewport { position: relative; min-height: 0; }
+.toward {
+  position: absolute; right: 8px; bottom: 8px; z-index: 6;
+  font: 700 13px/1 var(--mono); letter-spacing: .06em; padding: 6px 9px;
+  color: #2a1512; background: #d4483a; border: 0; border-radius: 3px;
+  box-shadow: 0 3px 12px rgba(0,0,0,.55);
+}
+.toward.up { bottom: auto; top: 8px; }
+/* The two colours the caret over the case is drawn in, and for the same reason: the arrow has
+   to be the same thing as the mark it is pointing at, or it is a second thing to learn. */
+.toward.blue { color: #06182b; background: #3fa8ff; }
+
+/* A card on a phone is as wide as the phone, and does not get to eat the whole of it. */
+.turned .card { width: min(330px, calc(100vw - 16px)); max-height: min(420px, 52vh); }
+
 .here { font-size: 12px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .here-place { color: var(--ink-dim); }
 .here-hint { color: var(--ink-faint); }

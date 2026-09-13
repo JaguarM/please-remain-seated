@@ -134,6 +134,10 @@
         // when the tab is hidden; this is what stops the first frame back from being a jump.
         if (!global.document.hidden && !still) advance(now);
 
+        // Across the page, always. The mask and the clip that make this a background rather
+        // than a picture are cut for a letterbox, and the play screen may have left the
+        // renderer turned the other way on its way out of a flight.
+        PRS.render.turn(false);
         PRS.render.draw(ctx, S, { scale: scale, time: now });
     }
 
@@ -177,6 +181,7 @@
 
             wrap = el("div", { class: "backdrop", "aria-hidden": "true" }, [canvas]);
             host.appendChild(wrap);
+            PRS.render.turn(false);
             scale = PRS.render.fit(canvas);
             // fit() sizes the canvas to be read: 100% wide and as tall as it likes. Behind the
             // title it is a background instead, and covers.

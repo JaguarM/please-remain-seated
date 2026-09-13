@@ -35,28 +35,140 @@
     // A strip of canvas above the aeroplane, in tiles, where the state of the cabin is written.
     // It is part of the picture and not part of the aeroplane: nothing lives in it and no tile
     // is under it, so every coordinate in this file is still a cabin coordinate.
+    //
+    // Across the aeroplane it rides on the same canvas, because there is room for it there. Down
+    // the aeroplane there is not - the picture is longer than the screen and scrolls, and a
+    // readout that scrolls off the top is a readout nobody reads - so it goes onto a canvas of
+    // its own and this is zero. `drawStatus` is exported for that reason and no other.
     const BAND = 1.5;
+
+    /**
+     * Which way up the aeroplane is.
+     *
+     * A cabin is thirty tiles by nine, which is a letterbox, and a phone is not. So on a narrow
+     * screen the aeroplane is flown down the page instead of across it: the nose at the top, the
+     * rows running away from you, the seat letters across. The simulation is not told. A seat is
+     * still 14C, the fire is still at the tile it is at, and every coordinate in this file is
+     * still a cabin coordinate - the turn is one rotation of the canvas, set once in `draw`, and
+     * every line that draws a tile at `x * T` lands where it should without knowing why.
+     *
+     * What does not turn with it is a face and a word. A passenger rotated ninety degrees is a
+     * passenger lying down, and a row number on its side is a row number nobody reads. Those go
+     * through `upright`, which squares the canvas back up over one tile and then puts it back.
+     */
+    const view = { down: false, e: 0, f: 0 };
+
+    /**
+     * The width at which a tile stops being worth putting a thumb on. It is a width and not a
+     * phone: a narrow window on a desktop gets the same aeroplane, and a phone turned sideways
+     * gets the letterbox back.
+     */
+    const TURN_BELOW = 900;
+
+    function wantsTurn() { return (global.innerWidth || 0) > 0 && global.innerWidth < TURN_BELOW; }
+
+    /**
+     * Turn the aeroplane down the page, or back across it; with nothing to say, ask the window.
+     *
+     * Which way up it is belongs to whoever is drawing, not to the renderer, because the two
+     * places that draw a cabin want different answers: the play screen turns when the window is
+     * narrow, and the aeroplane flying behind the title never turns at all - it is a background
+     * with a mask cut for a letterbox, and a mask is not a thing that rotates. So both of them
+     * say which they want before they fit and before they draw, and neither inherits the other's.
+     */
+    function turn(down) { view.down = down === undefined ? wantsTurn() : !!down; }
+
+    function turned() { return view.down; }
+
+    /** The picture, in tiles: what it is across and what it is down, the readout included. */
+    function shape() {
+        return view.down
+            ? { across: cabin.H, down: cabin.W, band: 0 }
+            : { across: cabin.W, down: cabin.H + BAND, band: BAND };
+    }
 
     function fit(canvas, scale) {
         const s = scale || DRAW_SCALE;
-        canvas.width = cabin.W * TILE * s;
-        canvas.height = Math.round((cabin.H + BAND) * TILE * s);
+        const box = shape();
+        canvas.width = box.across * TILE * s;
+        canvas.height = Math.round(box.down * TILE * s);
         canvas.style.width = "100%";
         canvas.style.height = "auto";
         return s;
     }
 
     /**
+     * How the four numbers are laid out in the width they have been given, in tiles. Along the
+     * top of a whole aeroplane there is room for four of them in a line. Above a turned one
+     * there is a third of that width, and four cells in it are four words on top of each other,
+     * so they go two and two and the strip is twice as deep.
+     */
+    function statusGrid(across) {
+        return across >= 20 ? { cols: 4, rows: 1 } : { cols: 2, rows: 2 };
+    }
+
+    /** The readout on a canvas of its own, which is what a turned cabin needs. */
+    function fitStatus(canvas, scale) {
+        const s = scale || DRAW_SCALE;
+        canvas.width = cabin.H * TILE * s;
+        canvas.height = Math.round(BAND * statusGrid(cabin.H).rows * TILE * s);
+        canvas.style.width = "100%";
+        canvas.style.height = "auto";
+        return s;
+    }
+
+    /**
+     * The transform the aeroplane is drawn under, given where the readout ends and how hard the
+     * cabin is being shaken. Across the page it is a translation and nothing else. Down it, the
+     * whole picture is turned a quarter turn clockwise about its own corner: cabin x runs down
+     * the screen, so row 1 is at the top and row 30 at the bottom, and cabin y runs right to
+     * left, so A is by the right-hand window. A quarter turn is exact - no sprite lands on half
+     * a pixel - which is the only reason this is allowed to touch a pixel-art canvas at all.
+     */
+    function stance(ctx, T, oy, sx, sy) {
+        if (view.down) {
+            view.e = cabin.H * T + sx;
+            view.f = oy + sy;
+            ctx.setTransform(0, 1, -1, 0, view.e, view.f);
+        } else {
+            view.e = sx;
+            view.f = oy + sy;
+            ctx.setTransform(1, 0, 0, 1, view.e, view.f);
+        }
+    }
+
+    /**
+     * Square the canvas back up over the tile whose corner is at cabin pixel (px, py), and say
+     * where that corner has ended up, because in a turned cabin it is not where it was. Draw
+     * from the two numbers handed back and everything inside lands on that tile the right way
+     * up. `settle` puts the canvas back.
+     */
+    function upright(ctx, px, py, T) {
+        if (!view.down) return [px, py];
+        ctx.save();
+        ctx.setTransform(1, 0, 0, 1, view.e - py - T, view.f + px);
+        return [0, 0];
+    }
+
+    function settle(ctx) { if (view.down) ctx.restore(); }
+
+    /**
      * Which tile the mouse is over, or null, and where in the tile: `fx` and `fy` run 0..1
      * across it, so a click can tell the person in a burning seat from the fire round them.
-     * Works at any CSS size the canvas ends up.
+     * Works at any CSS size the canvas ends up, and either way up: the quarter turn is undone
+     * here rather than anywhere else, so a click is a cabin coordinate by the time it leaves.
      */
     function tileAt(canvas, scale, clientX, clientY) {
         const r = canvas.getBoundingClientRect();
+        const box = shape();
         // The readout is above the aeroplane and takes its share of the height with it.
-        const band = r.height * (BAND / (cabin.H + BAND));
-        const tw = r.width / cabin.W, th = (r.height - band) / cabin.H;
-        const px = (clientX - r.left) / tw, py = (clientY - r.top - band) / th;
+        const band = r.height * (box.band / box.down);
+        const across = (clientX - r.left) / (r.width / box.across);
+        const down = (clientY - r.top - band) / ((r.height - band) / (box.down - box.band));
+        // Undo the quarter turn: down the screen is along the aeroplane, and across it is the
+        // seat letters, right to left.
+        const px = view.down ? down : across;
+        const py = view.down ? cabin.H - across : down;
         const x = Math.floor(px), y = Math.floor(py);
         if (!cabin.inBounds(x, y)) return null;
         return { x: x, y: y, fx: px - x, fy: py - y };
@@ -101,6 +213,11 @@
 
     function drawYou(ctx, S, ppx, ppy, scale, alpha, ring) {
         const P = S.player;
+        // You are a person, and a person stands up in the picture whichever way the aeroplane
+        // has been turned. So is whoever you are carrying, who is drawn a few pixels below your
+        // own feet and has to stay below them rather than beside them.
+        const u = upright(ctx, ppx, ppy, TILE * scale);
+        ppx = u[0]; ppy = u[1];
         atlas.blitAlpha(ctx, "player_ring", ppx, ppy, scale, ring);
         atlas.blitAlpha(ctx, playerFace(S), ppx, ppy, scale, alpha, paletteOf(S.character));
         if (PRS.state.wearing(S, "hood")) atlas.blitAlpha(ctx, "mask_on", ppx, ppy, scale, alpha);
@@ -115,6 +232,7 @@
             if (q) atlas.blitAlpha(ctx, heldSprite(q, "carried"), ppx, ppy + DRAG_ROW * scale,
                                    scale, alpha, paletteOf(q));
         }
+        settle(ctx);
     }
 
     // ----------------------------------------------------------------------------- figures ---
@@ -468,23 +586,24 @@
 
         // Everything the aeroplane is drawn with sits below the readout, so the whole picture
         // is moved down by it once, here, and every draw after this is in cabin coordinates.
-        const OY = Math.round(BAND * T);
+        const OY = Math.round(shape().band * T);
 
         ctx.imageSmoothingEnabled = false;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.fillStyle = "#20242c";
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-        // A shove, applied to the whole aeroplane, because that is where it happened.
+        // A shove, applied to the whole aeroplane, because that is where it happened. It is a
+        // shove on the screen and not in the cabin, so it is handed to `stance` in screen
+        // pixels and shakes the same way whichever way up the aeroplane is.
         if (t < fx.shakeUntil && !opts.ghost) {
             const left = (fx.shakeUntil - t) / 260;
             const a = fx.shakeAmp * scale * Math.min(1, left);
-            ctx.setTransform(1, 0, 0, 1,
-                             Math.round(Math.sin(t * 0.09) * a),
-                             OY + Math.round(Math.cos(t * 0.13) * a * 0.6));
+            stance(ctx, T, OY, Math.round(Math.sin(t * 0.09) * a),
+                   Math.round(Math.cos(t * 0.13) * a * 0.6));
         } else {
             fx.shakeAmp = 0;
-            ctx.setTransform(1, 0, 0, 1, 0, OY);
+            stance(ctx, T, OY, 0, 0);
         }
 
         // ---- the aeroplane -----------------------------------------------------------------
@@ -607,18 +726,21 @@
             const jitter = (!dead && (p.state === "aisle" || p.panic > 70))
                 ? Math.round(Math.sin(t * 0.008 + p.n) * scale) : 0;
             const pal = dead ? ashenOf(p) : paletteOf(p);
-            atlas.blitAlpha(ctx, faceOf(p), px + jitter, py, scale, dead ? 0.72 : 1, pal);
-            if (p.masked) atlas.blitAlpha(ctx, "mask_on", px + jitter, py, scale, 0.95);
-            if (dead) atlas.blitAlpha(ctx, "mark_lost", px, py, scale, 0.5);
+            // Sixty faces, and not one of them lies down because the aeroplane was turned.
+            const [ux, uy] = upright(ctx, px, py, T);
+            atlas.blitAlpha(ctx, faceOf(p), ux + jitter, uy, scale, dead ? 0.72 : 1, pal);
+            if (p.masked) atlas.blitAlpha(ctx, "mask_on", ux + jitter, uy, scale, 0.95);
+            if (dead) atlas.blitAlpha(ctx, "mark_lost", ux, uy, scale, 0.5);
             if (p.helper) {
                 // A green bar under the feet of everybody who is working with you. Helpers are
                 // the only thing in this game that scales and the only thing worth counting.
                 ctx.save();
                 ctx.globalAlpha = 0.75;
                 ctx.fillStyle = "#5fd67a";
-                ctx.fillRect(px + 3 * scale, py + T - 2 * scale, T - 6 * scale, 2 * scale);
+                ctx.fillRect(ux + 3 * scale, uy + T - 2 * scale, T - 6 * scale, 2 * scale);
                 ctx.restore();
             }
+            settle(ctx);
         }
         ctx.save();
         const cs = Math.round(T * TEXT.count), cbox = Math.round(cs * 1.4);
@@ -627,11 +749,13 @@
         for (const key in stacks) {
             if (stacks[key] < 3) continue;
             const [sx, sy] = key.split(",");
-            const bx = sx * T + T - cbox, by = sy * T + T - cbox;
+            const [ux, uy] = upright(ctx, sx * T, sy * T, T);
+            const bx = ux + T - cbox, by = uy + T - cbox;
             ctx.fillStyle = "rgba(16,19,24,0.9)";
             ctx.fillRect(bx, by, cbox, cbox);
             ctx.fillStyle = "#dfe4ec";
             ctx.fillText(String(stacks[key]), bx + cbox / 2, by + cbox * 0.78);
+            settle(ctx);
         }
         ctx.restore();
 
@@ -642,8 +766,9 @@
         const crewFace = S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax";
         for (const c of S.crew) {
             const spot = drawnAt(ns + "c:" + c.id, c.x, c.y, dt);
-            atlas.blit(ctx, crewFace, pixels(spot.x, scale), pixels(spot.y, scale), scale,
-                       paletteOf(c));
+            const [ux, uy] = upright(ctx, pixels(spot.x, scale), pixels(spot.y, scale), T);
+            atlas.blit(ctx, crewFace, ux, uy, scale, paletteOf(c));
+            settle(ctx);
         }
 
         // ---- you ----------------------------------------------------------------------------
@@ -684,8 +809,10 @@
         // interface refusing to lose the player in it.
         drawYou(ctx, S, ppx, ppy, scale, 0.9, 1);
         {
-            // A chevron over your head, so a glance finds you at any zoom.
-            const cx = ppx + T / 2, cy = ppy - 3 * scale;
+            // A chevron over your head, so a glance finds you at any zoom. Over your head, not
+            // off your shoulder, so it is drawn the same way up you are.
+            const [ux, uy] = upright(ctx, ppx, ppy, T);
+            const cx = ux + T / 2, cy = uy - 3 * scale;
             ctx.save();
             ctx.fillStyle = "#ffd54a";
             ctx.beginPath();
@@ -695,6 +822,7 @@
             ctx.closePath();
             ctx.fill();
             ctx.restore();
+            settle(ctx);
         }
 
         drawCore(ctx, S, T, scale, t);
@@ -721,7 +849,8 @@
         drawVeil(ctx, S, t, opts.ghost);
         // Last of all, above the smoke and above whatever just happened to you, because it is
         // the one part of the picture that has to be legible in a cabin nobody can see through.
-        drawStatus(ctx, S, T, scale, t);
+        // Unless it is not on this canvas at all, which is what a turned cabin does with it.
+        if (shape().band) drawStatus(ctx, S, T, scale, t);
     }
 
     /**
@@ -741,7 +870,8 @@
         const colour = c.blue ? "#3fa8ff" : "#d4483a";
         corners(ctx, c.x * T + scale, c.y * T + scale, T - 2 * scale, T - 2 * scale, scale,
                 colour, pulse);
-        const cx = c.x * T + T / 2, cy = c.y * T - 2 * scale;
+        const [ux, uy] = upright(ctx, c.x * T, c.y * T, T);
+        const cx = ux + T / 2, cy = uy - 2 * scale;
         ctx.save();
         ctx.globalAlpha = pulse;
         ctx.fillStyle = colour;
@@ -752,6 +882,7 @@
         ctx.closePath();
         ctx.fill();
         ctx.restore();
+        settle(ctx);
     }
 
     /**
@@ -874,9 +1005,13 @@
     /** The same brackets, round a body rather than a tile: `box` is in sprite pixels. */
     function boxBracket(ctx, x, y, box, T, scale, colour, alpha) {
         const pad = scale;
-        corners(ctx, x * T + box[0] * scale - pad, y * T + box[1] * scale - pad,
+        // `box` is the extent of a sprite's own opaque pixels, so it is a shape in the sprite's
+        // frame and has to be bracketed in it: a body is taller than it is wide either way up.
+        const [ux, uy] = upright(ctx, x * T, y * T, T);
+        corners(ctx, ux + box[0] * scale - pad, uy + box[1] * scale - pad,
                 (box[2] - box[0]) * scale + 2 * pad, (box[3] - box[1]) * scale + 2 * pad,
                 scale, colour, alpha);
+        settle(ctx);
     }
 
     function corners(ctx, px, py, w, h, scale, colour, alpha) {
@@ -998,18 +1133,30 @@
         ctx.save();
         ctx.font = "700 " + Math.round(T * TEXT.place) + "px ui-monospace, monospace";
         ctx.textAlign = "center";
-        const label = (text, x, y) => ctx.fillText(text, x * T + T / 2, y * T + T * 0.64);
+        const label = (text, x, y) => {
+            const [ux, uy] = upright(ctx, x * T, y * T, T);
+            ctx.fillText(text, ux + T / 2, uy + T * 0.64);
+            settle(ctx);
+        };
 
-        // The galleys are one tile wide and the word is not, so it is written down the column
-        // the way it is written down the side of a galley.
+        // The galleys are one tile wide and the word is not, so it is written along the galley
+        // rather than across it. Across the page that is a column and the word is turned to go
+        // down it; down the page the galley is already lying the way the word reads, and the
+        // turn would be putting back the one the cabin has just had.
         ctx.fillStyle = "rgba(20,32,36,0.8)";
         for (const [gx, gy] of [[cabin.FWD_GALLEY_X, 2], [cabin.FWD_GALLEY_X, 6],
                                 [cabin.AFT_GALLEY_X, 2.5], [cabin.AFT_GALLEY_X, 5.5]]) {
+            const [ux, uy] = upright(ctx, gx * T, gy * T, T);
             ctx.save();
-            ctx.translate(gx * T + T * 0.64, gy * T + T / 2);
-            ctx.rotate(-Math.PI / 2);
+            if (view.down) {
+                ctx.translate(ux + T / 2, uy + T * 0.64);
+            } else {
+                ctx.translate(ux + T * 0.64, uy + T / 2);
+                ctx.rotate(-Math.PI / 2);
+            }
             ctx.fillText(X("GALLEY", "written down the side of a galley, one short word"), 0, 0);
             ctx.restore();
+            settle(ctx);
         }
         const lav = X("LAV", "written across a lavatory door, three letters at most");
         label(lav, cabin.AFT_GALLEY_X, 1);
@@ -1039,18 +1186,27 @@
         ctx.fillStyle = "rgba(210,218,230,0.8)";
         ctx.font = "700 " + Math.round(T * TEXT.row) + "px ui-monospace, monospace";
         ctx.textAlign = "center";
+        // Every row, not every other one, when the aeroplane runs down the page: there is a
+        // whole tile of aisle to write each of them on and a player scrolling past row 12
+        // looking for row 14 should not have to count.
+        const every = view.down ? 1 : 2;
         for (let x = 0; x < cabin.W; x++) {
             const row = cabin.rowAt(x);
-            if (row === null || row % 2) continue;
-            ctx.fillText(String(row), x * T + T / 2, cabin.AISLE_Y * T + T * 0.68);
+            if (row === null || row % every) continue;
+            const [ux, uy] = upright(ctx, x * T, cabin.AISLE_Y * T, T);
+            ctx.fillText(String(row), ux + T / 2, uy + T * 0.68);
+            settle(ctx);
         }
         ctx.font = "700 " + Math.round(T * TEXT.seat) + "px ui-monospace, monospace";
         ctx.fillStyle = "rgba(210,218,230,0.7)";
         for (let y = 1; y <= 7; y++) {
             const letter = cabin.seatLetter(y);
             if (!letter) continue;
-            ctx.fillText(letter, T / 2, y * T + T * 0.68);
-            ctx.fillText(letter, (cabin.W - 1) * T + T / 2, y * T + T * 0.68);
+            for (const x of [0, cabin.W - 1]) {
+                const [ux, uy] = upright(ctx, x * T, y * T, T);
+                ctx.fillText(letter, ux + T / 2, uy + T * 0.68);
+                settle(ctx);
+            }
         }
         ctx.restore();
     }
@@ -1067,9 +1223,12 @@
             if (k >= 1) continue;
             keep.push(it);
             if (it.kind === "say") {
+                // A price rises off the tile it was paid on, and rising is up the screen: the
+                // number is drawn the way it is read and drifts the way a thing drifts.
                 const ease = 1 - Math.pow(1 - k, 3);
-                const x = it.x * T + T / 2;
-                const y = it.y * T + T * 0.3 - ease * it.rise * scale;
+                const [ux, uy] = upright(ctx, it.x * T, it.y * T, T);
+                const x = ux + T / 2;
+                const y = uy + T * 0.3 - ease * it.rise * scale;
                 ctx.globalAlpha = k < 0.12 ? k / 0.12 : Math.min(1, (1 - k) * 3.2);
                 ctx.font = "700 " + Math.round(T * it.size) + "px ui-monospace, monospace";
                 ctx.lineWidth = Math.max(2, scale * 1.2);
@@ -1077,6 +1236,7 @@
                 ctx.strokeText(it.text, x, y);
                 ctx.fillStyle = it.colour;
                 ctx.fillText(it.text, x, y);
+                settle(ctx);
             } else if (it.kind === "pulse") {
                 const r = (0.34 + k * 0.9) * T;
                 ctx.globalAlpha = (1 - k) * 0.85;
@@ -1109,6 +1269,7 @@
     function drawStatus(ctx, S, T, scale, t) {
         const st = PRS.state;
         const W = ctx.canvas.width, h = Math.round(BAND * T);
+        const grid = statusGrid(W / T);
         const moved = st.movedCount(S);
         const helping = st.helperCount(S);
         // Against the people still sitting down who would ever get up: a full bar means this
@@ -1121,9 +1282,9 @@
         ctx.save();
         ctx.setTransform(1, 0, 0, 1, 0, 0);
         ctx.fillStyle = "#12151b";
-        ctx.fillRect(0, 0, W, h);
+        ctx.fillRect(0, 0, W, h * grid.rows);
         ctx.fillStyle = "rgba(255,255,255,0.08)";
-        ctx.fillRect(0, h - scale, W, scale);
+        ctx.fillRect(0, h * grid.rows - scale, W, scale);
 
         const cells = [
             { label: X("OUT OF SEATS", "readout along the top of the cabin"),
@@ -1137,22 +1298,23 @@
               colour: "#7fb0e8" },
         ];
         const pad = Math.round(T * 0.35);
-        const cw = (W - pad * 2) / cells.length;
+        const cw = (W - pad * 2) / grid.cols;
         ctx.textAlign = "left";
         ctx.textBaseline = "alphabetic";
         for (let i = 0; i < cells.length; i++) {
             const c = cells[i];
-            const x = Math.round(pad + i * cw);
+            const x = Math.round(pad + (i % grid.cols) * cw);
+            const top = Math.floor(i / grid.cols) * h;
             const w = Math.round(cw - pad);
             ctx.fillStyle = "rgba(190,200,214,0.72)";
             ctx.font = "700 " + Math.round(T * 0.30) + "px ui-monospace, monospace";
-            ctx.fillText(c.label, x, Math.round(h * 0.30));
+            ctx.fillText(c.label, x, top + Math.round(h * 0.30));
             ctx.fillStyle = c.colour;
             ctx.font = "700 " + Math.round(T * 0.42) + "px ui-monospace, monospace";
-            ctx.fillText(c.value, x, Math.round(h * 0.70));
+            ctx.fillText(c.value, x, top + Math.round(h * 0.70));
             // The bar under the number, so the number has a scale without being asked to carry
             // one. Past the end of the track it stays the width of the track.
-            const by = Math.round(h * 0.80), bh = Math.max(scale, Math.round(T * 0.09));
+            const by = top + Math.round(h * 0.80), bh = Math.max(scale, Math.round(T * 0.09));
             ctx.fillStyle = "rgba(255,255,255,0.10)";
             ctx.fillRect(x, by, w, bh);
             ctx.fillStyle = c.colour;
@@ -1230,6 +1392,9 @@
 
     PRS.render = {
         TILE, fit, tileAt, draw, drawSummary,
+        // Which way up the aeroplane is flown, and the readout on a canvas of its own for when
+        // it is flown down the page. Nothing outside the renderer needs to know more than this.
+        turn, turned, wantsTurn, fitStatus, status: drawStatus,
         paletteOf, faceOf, zoneAir, fireSpriteAt,
         spriteBox, figures, figureAt, halo,
         fx: { say, pulse, flash: flashOver, shake, clear: clearFx },
