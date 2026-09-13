@@ -232,7 +232,9 @@ What is in it
   your own actions quoted back in order, and where the fifteen minutes went. Then one more
   screen: what you changed, what the book credited for it, and the locked person you came
   nearest to.
-- A **flight recorder** on the report, which keeps your last thirty flights and plays them back.
+- A **flight recorder**, which keeps your last thirty flights and plays them back. It is at the
+  bottom of the share panel behind a button, because it is not a second way to send a flight to
+  a player: it is how somebody hands their last run to whoever is building the aeroplane.
 - **One aeroplane a day**, the same one for everybody, with the first flight you land on it the
   one that stands, and a book of days behind it that counts the run.
 - **A whole flight as a line of text**, about a hundred characters of it, which somebody else
@@ -345,10 +347,18 @@ doing it and then turning round and moving people beats it (`sinkthen`), never o
 is worse than doing nothing at all (`hold`), and carrying the burning case the length of the cabin
 past fifty-eight people is the worst idea in the game (`forward`, six).
 
-**Playtesting.** The report has a flight recorder: the last thirty flights, each with a box for
-what you were trying to do. "Save recorded flights" writes them to a file, and `tools/replay.js`
-replays every one exactly and flies the same seed with the idle, douse, good and blend bots, so
-a flight a person played can be read against the table.
+**Playtesting.** Two things on the report send a flight somewhere, and they are addressed to
+different people. The four lines and the code are for another player, and that is the whole of
+what they are for. Underneath them, behind *Or hand this run to whoever made the aeroplane*, is
+the flight recorder: the same flight in the long form - fourteen hundred characters against the
+code's hundred - with every action in it and a box for what you were trying to do, which is the
+one thing neither a code nor a replay can work out. "Copy this flight" is the big button there,
+because handing over the run just flown is what somebody opened it for; the file of thirty is
+under it, for a whole afternoon at once.
+
+`tools/replay.js` reads either file and replays every flight in it exactly, then flies the same
+seed with the idle, douse, good and blend bots, so a flight a person played can be read against
+the table.
 
 Publishing it
 -------------

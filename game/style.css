@@ -725,11 +725,14 @@ button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
 .fold-head b { font-size: 13px; font-weight: 500; }
 .fold-arrow { font: 700 14px/1 var(--mono); color: var(--ink-faint); width: 10px; }
 .fold.open .fold-head { border-radius: 4px 4px 0 0; border-bottom: none; }
-.fold .timeline, .fold .rec, .fold .share {
+.fold .timeline, .fold .share {
   border: 1px solid var(--line); border-top: none; border-radius: 0 0 4px 4px;
 }
 
-.rec { margin-top: 0; padding: 12px 16px; background: var(--panel); }
+/* The flight recorder. It lives inside the share panel now, behind a button, so it is a
+   section of that panel rather than a panel of its own: a rule across the top, and no box. */
+.rec { margin-top: 14px; padding: 14px 0 0; border-top: 1px solid var(--line); }
+.rec b { display: block; font-size: 13px; color: var(--ink); }
 .rec i { display: block; font-style: normal; font-size: 12px; color: var(--ink-faint); margin: 3px 0 8px; }
 .rec textarea {
   width: 100%; min-height: 64px; box-sizing: border-box; resize: vertical; padding: 8px;
@@ -998,6 +1001,14 @@ button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
   font-variant-emoji: emoji;
 }
 .share .title-buttons { justify-content: flex-start; margin: 10px 0 0; }
+/* The way out to the flight recorder. Deliberately the quietest thing on the panel: it is for
+   one person, and everybody else on this screen is looking for the button above it. */
+.share-back {
+  display: block; margin-top: 14px; padding: 0; background: none; border: none;
+  color: var(--ink-faint); font-size: 12px; text-decoration: underline;
+  text-underline-offset: 3px; text-decoration-color: var(--line);
+}
+.share-back:hover { background: none; color: var(--ink-dim); text-decoration-color: var(--ink-faint); }
 .share .done { font: 11px var(--mono); color: var(--great); align-self: center; }
 .share .footnote { margin-top: 10px; }
 

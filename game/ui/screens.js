@@ -1003,13 +1003,19 @@
                         el("b", { text: T(m.name) }), el("i", { text: T(m.text) })]))));
             }
 
-            // Three drawers. Everything in them is about the flight you have just read about,
-            // all three are long, and none of them is what anybody wants in the first ten
-            // seconds after the wheels come down - so all three are shut. Telling somebody is
-            // first because it is the one worth finding, and because writing the code out is a
-            // whole fifteen minutes of physics that nobody who is not going to paste it should
-            // have to wait for.
-            inner.appendChild(fold(T("Tell somebody"), () => sharePanel(() => PRS.share.text(S, R))));
+            // Two drawers. Both are about the flight you have just read about, both are long,
+            // and neither is what anybody wants in the first ten seconds after the wheels come
+            // down - so both are shut. Telling somebody is first because it is the one worth
+            // finding, and because writing the code out is a whole fifteen minutes of physics
+            // that nobody who is not going to paste it should have to wait for.
+            //
+            // The flight recorder used to be a third drawer of its own and is inside this one
+            // now, behind a button. It is not a second way to share a flight with a player: it
+            // is how somebody hands their last run to whoever is building the aeroplane, which
+            // is a different audience, a much smaller one, and a thing you go looking for rather
+            // than something that sits on the report next to the thing everybody wants.
+            inner.appendChild(fold(T("Tell somebody"),
+                                   () => sharePanel(() => PRS.share.text(S, R), R)));
             inner.appendChild(fold(T("Everything you did ({n})", { n: S.actions.length }), () =>
                 el("div", { class: "timeline" },
                     S.actions.map((a) => el("div", { class: "tl" }, [
@@ -1017,9 +1023,6 @@
                         el("span", { class: "tl-x", text: a.label }),
                         el("span", { class: "tl-c", text: costLabel(a.cost) }),
                     ])))));
-            if (R.recording && PRS.recorder) {
-                inner.appendChild(fold(T("Flight recorder"), () => recorderPanel(R)));
-            }
 
             // One way on. What the flight was worth is the next screen and nothing else is.
             inner.appendChild(el("div", { class: "title-buttons" }, [
@@ -1054,7 +1057,7 @@
      * to find out which row of the list each of your clicks was - so it is asked for and not
      * assumed. Everything above it is free and is on the screen already.
      */
-    function sharePanel(build) {
+    function sharePanel(build, R) {
         const done = el("span", { class: "done" });
         const box = el("pre", { class: "share-text" });
         let text = null;
@@ -1067,7 +1070,7 @@
         // report is on the glass before the fifteen minutes are flown again underneath it.
         box.textContent = T("Writing it out…");
         setTimeout(function () { if (box.isConnected && text === null) make(); }, 0);
-        return el("div", { class: "share" }, [
+        const panel = el("div", { class: "share" }, [
             box,
             el("div", { class: "title-buttons" }, [
                 el("button", { class: "big", text: T("Copy it"),
@@ -1080,6 +1083,18 @@
                   "into “A flight somebody sent you” is on your aeroplane with your cabin " +
                   "running under theirs.") }),
         ]);
+        // The other door out of this panel, and a much smaller one. See recorderPanel.
+        if (R && R.recording && PRS.recorder) {
+            const open = el("button", { class: "share-back", text:
+                T("Or hand this run to whoever made the aeroplane") });
+            open.addEventListener("click", function () {
+                PRS.audio.unlock();
+                PRS.audio.play("blip");
+                open.replaceWith(recorderPanel(R));
+            });
+            panel.appendChild(open);
+        }
+        return panel;
     }
 
     /** A screen that is nothing but one flight's four lines, for a day already flown. */
@@ -1116,8 +1131,19 @@
     }
 
     /**
-     * The flight recorder, inside the drawer. A replay can work out everything about a flight
-     * except what you were trying to do, so there is a box for that.
+     * The flight recorder, behind the button at the bottom of the share panel.
+     *
+     * The four lines above it are for another player: a hundred characters, and what they do
+     * with them is fly the aeroplane. This is for one person, the one building it, and it is a
+     * different thing in every way that matters. It is the long form - the whole flight as JSON,
+     * which is fourteen hundred characters and which `tools/replay.js` flies against the bots -
+     * and it carries the one thing neither a code nor a replay can work out, which is what you
+     * were trying to do. That box is the reason this exists. Everything else about the flight is
+     * already in the file.
+     *
+     * Copying this one flight is the big button, because handing over the run you have just
+     * flown is what somebody opened this for. The file of thirty is underneath it, for the
+     * person who has been playing all afternoon and is sending the afternoon.
      */
     function recorderPanel(R) {
         const at = R.recording.at;
@@ -1129,19 +1155,21 @@
         // Typing is not a keyboard shortcut.
         note.addEventListener("keydown", (ev) => ev.stopPropagation());
         return el("div", { class: "rec" }, [
-            el("i", { text: T("This flight is kept with your last {n}. Save them to a " +
-                              "file to send them in for balancing.",
-                              { n: PRS.util.plural(PRS.recorder.all().length,
-                                                   K("flight"), K("flights")) }) }),
+            el("b", { text: T("The run you have just flown") }),
+            el("i", { text: T("Not the code above - the long form, with every action in it, " +
+                              "which the balance tools fly against the bots. The box is for " +
+                              "the one thing a replay cannot work out.") }),
             note,
             el("div", { class: "title-buttons" }, [
-                el("button", { text: T("Save recorded flights"), onclick: () => {
+                el("button", { class: "big", text: T("Copy this flight"), onclick: () => copyText(
+                    PRS.recorder.exportText(PRS.recorder.all().filter((r) => r.at === at)),
+                    done) }),
+                el("button", { text: T("Save the last {n} to a file", {
+                    n: PRS.util.plural(PRS.recorder.all().length, K("flight"), K("flights")),
+                }), onclick: () => {
                     saveFlights();
                     done.textContent = T("saved to your downloads");
                 } }),
-                el("button", { text: T("Copy this flight"), onclick: () => copyText(
-                    PRS.recorder.exportText(PRS.recorder.all().filter((r) => r.at === at)),
-                    done) }),
                 done,
             ]),
         ]);

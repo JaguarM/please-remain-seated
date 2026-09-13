@@ -188,12 +188,17 @@
          "(optional)",
          "Was hattest du vor, und wann hast du gemerkt, dass es funktioniert oder nicht " +
          "funktioniert? (freiwillig)"],
-        ["Flight recorder", "Flugschreiber"],
-        ["This flight is kept with your last {n}. Save them to a file to send them in for " +
-         "balancing.",
-         "Dieser Flug liegt bei deinen letzten {n}. Speichere sie in eine Datei, um sie zur " +
-         "Balance-Auswertung einzuschicken."],
-        ["Save recorded flights", "Aufgezeichnete Flüge speichern"],
+        // The flight recorder is not a drawer of its own any more: it is behind a button at the
+        // bottom of the share panel, and it is addressed to one person rather than to a player.
+        ["Or hand this run to whoever made the aeroplane",
+         "Oder gib diesen Lauf an die Person weiter, die die Maschine gebaut hat"],
+        ["The run you have just flown", "Der Lauf, den du gerade geflogen bist"],
+        ["Not the code above - the long form, with every action in it, which the balance tools " +
+         "fly against the bots. The box is for the one thing a replay cannot work out.",
+         "Nicht der Code oben, sondern die lange Fassung mit jeder einzelnen Handlung darin, " +
+         "die die Balance-Werkzeuge gegen die Bots fliegen. Das Feld ist für das eine, was " +
+         "eine Wiederholung nicht herausfinden kann."],
+        ["Save the last {n} to a file", "Die letzten {n} in eine Datei speichern"],
         ["saved to your downloads", "in deinen Downloads gespeichert"],
         ["Copy this flight", "Diesen Flug kopieren"],
         ["copied", "kopiert"],
