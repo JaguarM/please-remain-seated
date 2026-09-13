@@ -117,6 +117,8 @@
         "It has landed.": "Es ist gelandet.",
         "Click a person, the fire, or yourself. Anywhere else is a walk.":
             "Klick eine Person, das Feuer oder dich selbst an. Alles andere ist ein Weg.",
+        "Tap a person, the fire, or yourself. Anywhere else is a walk.":
+            "Tipp eine Person, das Feuer oder dich selbst an. Alles andere ist ein Weg.",
         "You, at {where}": "Du, {where}",
         "The fire · {where}": "Das Feuer · {where}",
         "Click for what you can do with {who}": "Klicken für das, was mit {who} geht",
@@ -219,6 +221,11 @@
         ["Click a person, the fire, or yourself to see what you can do. Click anywhere else to " +
          "walk there, and back onto your own trail to take a walk back.",
          "Klick eine Person an, das Feuer oder dich selbst, um zu sehen, was geht. Klick " +
+         "irgendwo anders hin, um dorthin zu gehen — und zurück auf deine eigene Spur, um einen " +
+         "Weg rückgängig zu machen."],
+        ["Tap a person, the fire, or yourself to see what you can do. Tap anywhere else to " +
+         "walk there, and back onto your own trail to take a walk back.",
+         "Tipp eine Person an, das Feuer oder dich selbst, um zu sehen, was geht. Tipp " +
          "irgendwo anders hin, um dorthin zu gehen — und zurück auf deine eigene Spur, um einen " +
          "Weg rückgängig zu machen."],
         ["The basin", "Das Waschbecken"],

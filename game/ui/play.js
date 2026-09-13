@@ -167,9 +167,16 @@
                     { seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }), "open");
         st.log(S, T("The clock only moves when you do. Every action costs seconds. " +
                     "You cannot put this fire out."), "rule");
-        st.log(S, T("Click a person, the fire, or yourself to see what you can do. " +
-                    "Click anywhere else to walk there, and back onto your own trail to take a " +
-                    "walk back."), "rule");
+        // The same sentence with the verb a finger does. Two keys rather than one sentence with
+        // a word swapped in it, because a language is allowed to disagree about which verb it
+        // is and about where in the sentence it goes.
+        st.log(S, PRS.util.touching()
+            ? T("Tap a person, the fire, or yourself to see what you can do. " +
+                "Tap anywhere else to walk there, and back onto your own trail to take a " +
+                "walk back.")
+            : T("Click a person, the fire, or yourself to see what you can do. " +
+                "Click anywhere else to walk there, and back onto your own trail to take a " +
+                "walk back."), "rule");
 
         paint();
         loop();
@@ -949,7 +956,9 @@
                                      text: T("You are at {where}", { where: bits.join(" · ") }) }));
         box.appendChild(el("span", { class: "here-hint", text: S.clock.landed
             ? T("It has landed.")
-            : T("Click a person, the fire, or yourself. Anywhere else is a walk.") }));
+            : PRS.util.touching()
+                ? T("Tap a person, the fire, or yourself. Anywhere else is a walk.")
+                : T("Click a person, the fire, or yourself. Anywhere else is a walk.") }));
     }
 
     // ------------------------------------------------------------------------- the tooltip ---

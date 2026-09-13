@@ -802,16 +802,19 @@
             el("div", { class: "help" }, [
                 el("h3", { text: T("How to play") }),
                 helpLine(PRS.atlas.icon("pax_worried", 2, PRS.pax.palette(someone)),
-                    T("Click a person"),
+                    PRS.util.touching() ? T("Tap a person") : T("Click a person"),
                     T("to talk to them, treat them, or pick them up and carry them to a green " +
                       "end of the aeroplane. Nobody counts until they are there.")),
-                helpLine(PRS.atlas.icon("fire_2", 2), T("Click the fire"),
+                helpLine(PRS.atlas.icon("fire_2", 2),
+                    PRS.util.touching() ? T("Tap the fire") : T("Click the fire"),
                     T("to fight it. Nothing puts it out. Everything buys time.")),
-                helpLine(PRS.atlas.icon("pax", 2, you), T("Click yourself"),
+                helpLine(PRS.atlas.icon("pax", 2, you),
+                    PRS.util.touching() ? T("Tap yourself") : T("Click yourself"),
                     T("for everything about where you are standing - the tap, the lockers, the " +
                       "trolley - and for the things in your bag.")),
                 helpLine(PRS.atlas.icon("floor_aisle", 2),
-                    T("Click anywhere else to walk there."),
+                    PRS.util.touching() ? T("Tap anywhere else to walk there.")
+                                        : T("Click anywhere else to walk there."),
                     T("Whatever is under the pointer lights up, with the price. Arrow keys " +
                       "step.")),
                 helpLine(el("span", { class: "help-clock", text: "0:09" }),

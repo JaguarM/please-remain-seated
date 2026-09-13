@@ -183,9 +183,22 @@
         },
     };
 
+    /**
+     * Whether the thing pointing at the aeroplane is a finger.
+     *
+     * It decides one word. Every sentence the game says about how to play it has a verb in it,
+     * and on a telephone that verb is not click. It is asked rather than remembered because a
+     * laptop with a touchscreen is both and can change its mind mid-flight, and it errs towards
+     * the mouse: `(pointer: coarse)` is the primary pointer being blunt, which a trackpad is
+     * not and a finger is.
+     */
+    function touching() {
+        return !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
+    }
+
     PRS.util = {
         makeRng, hashSeed, seedFromString, clamp, clamp01, lerp, inv, mmss, costLabel,
-        plural, shade,
+        plural, shade, touching,
         listSentence, el, $, $$, clear, store,
     };
 })(window);

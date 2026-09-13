@@ -178,11 +178,21 @@
         const down = (clientY - r.top - band) / ((r.height - band) / (box.down - box.band));
         // Undo the quarter turn: down the screen is along the aeroplane, and across it is the
         // seat letters, right to left.
-        const px = view.down ? down : across;
-        const py = view.down ? cabin.H - across : down;
-        const x = Math.floor(px), y = Math.floor(py);
+        //
+        // The tile is counted from the whole part of each and never from the turned coordinate,
+        // because `H - across` and `H - 1 - floor(across)` are the same number everywhere
+        // except on a tile's own edge, where they are one seat apart. That edge is every
+        // fortieth column of pixels at the size a telephone draws this, so it is not a corner
+        // case: it is one tap in forty landing on the wrong person.
+        const ia = Math.floor(across), id = Math.floor(down);
+        const x = view.down ? id : ia;
+        const y = view.down ? cabin.H - 1 - ia : id;
         if (!cabin.inBounds(x, y)) return null;
-        return { x: x, y: y, fx: px - x, fy: py - y };
+        // Where in the tile, in cabin coordinates. Across a turned cabin the seat letters run
+        // the other way, so the fraction does too.
+        return { x: x, y: y,
+                 fx: view.down ? down - id : across - ia,
+                 fy: view.down ? 1 - (across - ia) : down - id };
     }
 
     // ------------------------------------------------------------------------------- faces ---

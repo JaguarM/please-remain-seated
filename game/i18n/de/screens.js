@@ -130,7 +130,15 @@
         ["VOI␟voice, on a stat bar", "STM"],
 
         // ---------------------------------------------------------------------------- the help ---
+        // Each of these four has a second form for a screen that is touched rather than
+        // pointed at. Antippen takes the same separable prefix as anklicken, so the sentences
+        // are the same shape - which is the exception and not the rule, and the reason they are
+        // four more lines here rather than one word swapped somewhere in the engine.
         ["Click a person", "Klick eine Person an"],
+        ["Tap a person", "Tipp eine Person an"],
+        ["Tap the fire", "Tipp das Feuer an"],
+        ["Tap yourself", "Tipp dich selbst an"],
+        ["Tap anywhere else to walk there.", "Tipp irgendwo anders hin, um dorthin zu gehen."],
         ["to talk to them, treat them, or pick them up and carry them to a green end of the " +
          "aeroplane. Nobody counts until they are there.",
          "um mit ihr zu reden, sie zu versorgen oder sie hochzunehmen und an ein grünes Ende " +
