@@ -80,6 +80,10 @@
     function mount(node) { host = node; }
     function show(builder) {
         if (PRS.play && PRS.play.destroy) PRS.play.destroy();
+        // The cabin behind the title is a flight in its own right and it stops here, before the
+        // node it was drawing into is cleared, so that leaving the title screen by any of its
+        // four doors puts the aeroplane out.
+        if (PRS.backdrop) PRS.backdrop.stop();
         clear(host);
         builder(host);
         window.scrollTo(0, 0);
@@ -93,6 +97,11 @@
             root.className = "screen title";
             const book = PRS.logbook.load();
             const ch = PRS.data.characters.byId(choice.characterId);
+            // The aeroplane goes in first, because it goes behind. It is a real flight on a
+            // random seed with a bot at the controls, and `show()` puts it out on the way to any
+            // other screen. If it fails to start there is no cabin and the title screen is what
+            // it was before, which is the only thing that matters here.
+            PRS.backdrop.start(root);
             root.appendChild(el("div", { class: "title-inner" }, [
                 el("div", { class: "kicker", text: T("TRANSNATIONAL 447 · 31,000 FT · DESCENT") }),
                 el("h1", { text: T("PLEASE REMAIN SEATED") }),
@@ -107,7 +116,9 @@
                     fact("61", T("souls on board")),
                     fact("15:00", T("to touchdown")),
                     fact(String(PRS.actions.count()), T("things you can do")),
-                    fact("0", T("ways to put it out")),
+                    // The one that is not a boast. It is the rule the whole game is built on and
+                    // it is the only number on this screen the colour of the fire.
+                    fact("0", T("ways to put it out"), "fire"),
                 ]),
                 pass(),
                 // A first flight is one click. The roster and the previous flights appear once
@@ -126,8 +137,9 @@
         });
     }
 
-    function fact(n, label) {
-        return el("div", { class: "fact" }, [el("b", { text: n }), el("i", { text: label })]);
+    function fact(n, label, tone) {
+        return el("div", { class: "fact" + (tone ? " fact-" + tone : "") },
+                  [el("b", { text: n }), el("i", { text: label })]);
     }
 
     /** One sentence about the book: how far it has got, and what the souls turn over next. */
@@ -159,15 +171,48 @@
     function pass() {
         const ch = PRS.data.characters.byId(choice.characterId);
         return el("div", { class: "pass" }, [
-            PRS.atlas.icon("pax", 3, PRS.pax.palette(ch)),
-            el("div", { class: "pass-who" }, [
-                el("b", { text: ch.name }),
-                el("i", { text: T("{title} · seat {seat}",
-                                  { title: T(ch.title), seat: ch.seat }) }),
-                el("u", { class: "pass-lean", text: T(ch.lean) }),
+            el("div", { class: "pass-main" }, [
+                el("div", { class: "pass-fields" }, [
+                    passField(T("PASSENGER"), ch.name),
+                    passField(T("SEAT"), ch.seat),
+                ]),
+                el("div", { class: "pass-who" }, [
+                    PRS.atlas.icon("pax", 3, PRS.pax.palette(ch)),
+                    el("div", {}, [
+                        el("i", { text: T(ch.title) }),
+                        el("u", { class: "pass-lean", text: T(ch.lean) }),
+                    ]),
+                ]),
+                barcode(ch.id, 44),
             ]),
-            el("button", { class: "big pass-go", text: T("Board"), onclick: begin }),
+            el("div", { class: "pass-stub" }, [
+                passField(T("FLIGHT"), "TN 447"),
+                passField(T("SEAT"), ch.seat),
+                el("button", { class: "big pass-go", text: T("Board"), onclick: begin }),
+                barcode(ch.id + "stub", 16),
+            ]),
         ]);
+    }
+
+    /** A field on the ticket: the small printed label, and what was printed under it. */
+    function passField(label, value) {
+        return el("div", { class: "pass-field" },
+                  [el("i", { text: label }), el("b", { text: value })]);
+    }
+
+    /**
+     * The bars along the bottom of a ticket. They are not a real symbology and they do not encode
+     * anything, but they are the same bars for the same person every time, because a boarding pass
+     * whose barcode reshuffled while you looked at it would be a boarding pass you did not believe.
+     */
+    function barcode(key, count) {
+        const rng = PRS.util.makeRng(PRS.util.seedFromString("barcode:" + key));
+        const bars = [];
+        for (let i = 0; i < count; i++) {
+            bars.push(el("i", { style: { width: (rng.irange(1, 3)) + "px",
+                                         opacity: rng.chance(0.22) ? "0.25" : "1" } }));
+        }
+        return el("div", { class: "pass-barcode" }, bars);
     }
 
     // --------------------------------------------------------------------------- the slots ---

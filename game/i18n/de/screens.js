@@ -39,8 +39,12 @@
         [" · next outfit at {n} souls.", " · nächste Ausstattung bei {n} Seelen."],
 
         // ------------------------------------------------------------------ the boarding pass ---
-        ["{title} · seat {seat}", "{title} · Sitz {seat}"],
         ["Board", "Einsteigen"],
+        // The printed fields on the ticket. Set in capitals by the stylesheet, not here, so the
+        // German keeps its own capitalisation wherever it is read rather than looked at.
+        ["PASSENGER", "PASSAGIER"],
+        ["SEAT", "SITZ"],
+        ["FLIGHT", "FLUG"],
         ["as you are", "wie du bist"],
         ["wearing", "Kleidung"],
         ["nothing", "nichts"],

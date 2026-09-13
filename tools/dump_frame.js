@@ -10,14 +10,15 @@ const fs = require("fs");
 const path = require("path");
 
 const src = fs.readFileSync(path.join(__dirname, "simulate.js"), "utf8")
-    .replace(/\nmain\(\);\s*$/, "\nmodule.exports = { load, BOTS, setCoin };\n");
+    .replace(/\nmain\(\);\s*$/, "\nmodule.exports = { load };\n");
 const mod = { exports: {} };
 new Function("module", "exports", "require", "__dirname", "__filename", src)(
     mod, mod.exports, require, __dirname, path.join(__dirname, "simulate.js"));
 
 const PRS = mod.exports.load();
-const BOTS = mod.exports.BOTS;
-const setCoin = mod.exports.setCoin;
+// The bots live in the game (game/sim/bots.js), which simulate.js loads with the rest of it.
+const BOTS = PRS.bots.BOTS;
+const setCoin = PRS.bots.setCoin;
 const cabin = PRS.cabin;
 
 const args = process.argv.slice(2);

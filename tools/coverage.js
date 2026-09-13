@@ -23,7 +23,7 @@ function requireSim() {
     // the two functions out, which keeps the file list in exactly one place.
     const fs = require("fs");
     const src = fs.readFileSync(path.join(__dirname, "simulate.js"), "utf8")
-        .replace(/\nmain\(\);\s*$/, "\nmodule.exports = { load, playOne, BOTS };\n");
+        .replace(/\nmain\(\);\s*$/, "\nmodule.exports = { load, playOne };\n");
     const mod = { exports: {} };
     new Function("module", "exports", "require", "__dirname", "__filename", src)(
         mod, mod.exports, require, __dirname, path.join(__dirname, "simulate.js"));

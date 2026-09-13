@@ -20,6 +20,12 @@
   --fire:      #ff7a10;
   --bad:       #d4483a;
   --gold:      #ffd54a;
+  /* The boarding pass is printed on something, and it is the only pale surface in the game. */
+  --paper:      #e9e2d4;
+  --paper-ink:  #1c1e24;
+  --paper-body: #3d4149;
+  --paper-dim:  #7b7466;
+  --paper-line: #b9b0a0;
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
@@ -52,8 +58,46 @@ button:active { transform: translateY(1px); }
 
 .screen { min-height: 100vh; }
 
-.title { display: grid; place-items: center; padding: 40px 20px; }
-.title-inner { max-width: 760px; text-align: center; }
+.title {
+  display: grid; place-items: center; padding: 40px 20px;
+  position: relative; overflow: hidden;
+}
+.title-inner { max-width: 760px; text-align: center; position: relative; z-index: 1; }
+
+/* ------------------------------------------------------------- the cabin behind the title */
+
+/* A real flight, drawn by the real renderer, with a bot flying it slowly. Everything here is in
+   service of the words staying readable over it: it is dimmed, it is vignetted towards the
+   middle where the title sits, and it fades into the background colour at the top and bottom so
+   that the aeroplane has no edges. Nothing in it is clickable - the whole layer is inert. */
+.backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+/* The renderer draws a strip above the aeroplane where the state of the cabin is written -
+   HELPING, PANIC, the meters - which is for a player and not for a menu, so it is clipped off
+   the top. 1.5 tiles of a 10.5-tile canvas is 14.29% of it, and the 57.14% below is the
+   aeroplane: centring that rather than the whole canvas is what the second translate is for. */
+.backdrop-cabin {
+  position: absolute; left: -21%; width: 142%; height: auto; top: 50%;
+  transform: translateY(-57.14%);
+  clip-path: inset(14.29% 0 0 0);
+  image-rendering: pixelated;
+  opacity: .85;
+  /* The aeroplane has to stop somewhere and a straight line across the screen is not it, so it
+     is faded out at its own top and bottom rather than at the window's. The mask is on the
+     canvas because only the canvas knows where the aeroplane actually ends. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 14%, #000 34%,
+                                      #000 76%, transparent 99%);
+          mask-image: linear-gradient(to bottom, transparent 14%, #000 34%,
+                                      #000 76%, transparent 99%);
+}
+.backdrop::after {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(ellipse 46% 40% at 50% 44%,
+                    rgba(22, 25, 31, .97) 20%, rgba(22, 25, 31, .78) 62%,
+                    rgba(22, 25, 31, .10) 100%),
+    linear-gradient(rgba(22, 25, 31, .55), rgba(22, 25, 31, 0) 24%,
+                    rgba(22, 25, 31, 0) 74%, rgba(22, 25, 31, .55));
+}
 .kicker {
   font: 11px/1 var(--mono); letter-spacing: .22em; color: var(--ink-faint);
   margin-bottom: 22px;
@@ -67,6 +111,7 @@ button:active { transform: translateY(1px); }
 .title-facts { display: flex; gap: 26px; justify-content: center; flex-wrap: wrap; margin-bottom: 30px; }
 .fact { text-align: center; }
 .fact b { display: block; font: 700 26px/1 var(--mono); color: var(--gold); }
+.fact-fire b { color: var(--fire); }
 .fact i { font-style: normal; font-size: 11px; color: var(--ink-faint); letter-spacing: .06em; }
 .title-buttons { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 24px 0; }
 .title-buttons.sticky {
@@ -470,26 +515,86 @@ button.chip { padding: 2px 5px; font-size: 11px; line-height: normal; }
 
 /* ---------------------------------------------------------------------------- the pass */
 
-/* The boarding pass on the title: who the button puts on the aeroplane, with their face, their
-   seat, and the loadout row - what they are wearing and the three things on them, each a chip
-   that opens a menu unless it is part of who they are. One click on the button boards. */
+/* The boarding pass on the title: who the button puts on the aeroplane.
+
+   It is printed rather than panelled - warm paper, dark ink, a tear-off stub with the button in
+   it - because it is the one object on this screen a passenger would actually be holding, and
+   because against a dimmed cabin the only pale thing on the page is the thing to press. The
+   notches are two circles the colour of nothing, punched over the perforation from both edges. */
 .pass {
-  display: inline-grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center;
-  text-align: left; padding: 12px 14px 12px 12px; margin: 0 0 2px; max-width: 720px;
-  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  --stub-w: 168px;
+  display: inline-grid; grid-template-columns: minmax(0, 1fr) var(--stub-w);
+  text-align: left; margin: 0 0 2px; width: min(720px, 100%);
+  background: var(--paper); color: var(--paper-ink);
+  border-radius: 5px; position: relative; isolation: isolate;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, .55), 0 2px 0 rgba(255, 255, 255, .12) inset;
 }
-@media (max-width: 600px) {
-  .pass { grid-template-columns: auto 1fr; }
-  .pass .pass-go { grid-column: 1 / -1; }
+.pass-main { padding: 16px 18px 12px; min-width: 0; }
+.pass-stub {
+  display: grid; gap: 8px; align-content: start; justify-items: start;
+  padding: 16px 18px 12px; border-left: 2px dashed var(--paper-line);
 }
-.pass-who b { display: block; font-size: 15px; line-height: 1.2; }
-.pass-who i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint); }
+/* Punched out of both edges, exactly on the perforation. */
+.pass::before, .pass::after {
+  content: ""; position: absolute; right: var(--stub-w); width: 14px; height: 14px;
+  background: var(--bg); border-radius: 50%; margin-right: -7px; z-index: 1;
+}
+.pass::before { top: -7px; }
+.pass::after { bottom: -7px; }
+
+/* A printed field: the small label above, what was typed under it below. */
+.pass-field i {
+  display: block; font: 9px/1.4 var(--mono); letter-spacing: .18em;
+  color: var(--paper-dim); font-style: normal;
+}
+.pass-field b {
+  display: block; font: 600 15px/1.25 var(--sans); letter-spacing: .01em;
+  text-transform: uppercase; color: var(--paper-ink);
+}
+.pass-fields { display: flex; gap: 28px; margin-bottom: 12px; }
+.pass-fields .pass-field:last-child b { font-family: var(--mono); }
+
+.pass-who { display: flex; gap: 12px; align-items: flex-start; }
+.pass-who i {
+  display: block; font-style: normal; font-size: 11px; color: var(--paper-dim);
+  text-transform: uppercase; letter-spacing: .1em;
+}
 /* One sentence about what this person is for, where the five loadout boxes used to be. */
 .pass-who .pass-lean {
-  display: block; text-decoration: none; margin-top: 6px;
-  font-size: 12px; line-height: 1.35; color: var(--ink-dim); max-width: 46ch;
+  display: block; text-decoration: none; margin-top: 5px;
+  font-size: 12.5px; line-height: 1.4; color: var(--paper-body); max-width: 42ch;
 }
-.pass-go { align-self: center; }
+.pass-stub .pass-field b { font-family: var(--mono); font-size: 14px; }
+button.pass-go {
+  justify-self: stretch; margin-top: 2px; width: 100%;
+  background: var(--fire); border-color: #c85c06; color: #1b1206;
+  font: 700 13px/1 var(--sans); letter-spacing: .14em; text-transform: uppercase;
+  padding: 12px 20px; border-radius: 3px;
+}
+button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
+
+/* Bars along the bottom edge of each half. They encode nothing; they are the same bars for the
+   same person every time, which is the only thing a barcode has to be. */
+.pass-barcode {
+  display: flex; align-items: flex-end; gap: 2px; height: 22px; margin-top: 14px;
+  overflow: hidden;
+}
+.pass-stub .pass-barcode { margin-top: 10px; }
+.pass-barcode i { display: block; height: 100%; background: var(--paper-ink); }
+
+@media (max-width: 620px) {
+  /* A phone is not wide enough to hold thirty rows and still show anybody's face, so it holds
+     about a third of the aeroplane instead, which is enough to see that it is one. */
+  .backdrop-cabin { left: -62%; width: 224%; }
+  .pass { grid-template-columns: minmax(0, 1fr); }
+  .pass-stub {
+    border-left: 0; border-top: 2px dashed var(--paper-line);
+    grid-auto-flow: column; align-items: center; justify-content: start; gap: 20px;
+  }
+  .pass::before, .pass::after { display: none; }
+  .pass-stub .pass-barcode { display: none; }
+  .pass-go { justify-self: end; }
+}
 .logline { margin-top: 6px; color: var(--ink-dim); }
 
 /* The loadout: what you are wearing and the three things on you, as four boxes under the face.

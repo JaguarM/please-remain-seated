@@ -158,9 +158,13 @@ What is in it
   screen: what you changed, what the book credited for it, and the locked person you came
   nearest to.
 - A **flight recorder** on the report, which keeps your last thirty flights and plays them back.
+- A **title screen that is flying**. The cabin behind the boarding pass is not artwork: it is the
+  simulation, on a random seed, with one of the bots from `game/sim/bots.js` at the controls,
+  slowed down to a speed a person can watch and muted so that a menu never makes a noise at
+  somebody who has not pressed anything. It lands, and another one takes off.
 - 31 synthesised sounds and no audio files.
 - **English and German**, every word of both, from the title screen to the sixty passengers'
-  refusals to the incident report: 1,062 lines, and a scanner that says what a language is
+  refusals to the incident report: 1,134 lines, and a scanner that says what a language is
   missing before a player finds out.
 
 How it is built
@@ -172,13 +176,13 @@ How it is built
       engine/             the dice (one seed, a stream per named thing), DOM sugar, sprite
                           atlas, synthesised audio, renderer
       sim/                cabin geometry, fire, passengers, crew, the action engine, undo,
-                          scoring, the log book that carries over between flights, and the
-                          flight recorder
+                          scoring, the log book that carries over between flights, the
+                          flight recorder, and the bots
       data/               characters, outfits, items, the roster, events, medals, endings, the
                           action decks
       i18n/               the translator, and one folder of catalogues per language
       ui/                 hotspots (what a click means), the play screen, the other screens,
-                          the settings panel
+                          the settings panel, and the cabin behind the title
       style.css
     pixel-workshop/       the art generator: every sprite is an ASCII map plus a palette, and
                           --preview draws the whole set on one sheet, in context and by name
