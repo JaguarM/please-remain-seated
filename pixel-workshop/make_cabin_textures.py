@@ -131,6 +131,7 @@ SEAT_ROW = {
     "h": "..dllllllllnhhhd",   # the cushion beside the headrest cover
 }
 SEAT_CUSHION = "CcchhhhhhccC"    # twelve rows of cushion, the same on all three tiles
+SEAT_CUSHION_SOLO = "CchhhhhhcC"  # ten, for a bank of one, which has two edges to pay for
 
 # Top to bottom of a bank, in row types: armrest, line, cushion, armrest, line, cushion,
 # armrest, line, cushion, armrest, line. Sixteen rows a tile, so the inside armrests straddle
@@ -139,6 +140,12 @@ SEAT_POS = {
     "top": "aad" + SEAT_CUSHION + "a",
     "mid": "ad" + SEAT_CUSHION + "aa",
     "bot": "d" + SEAT_CUSHION + "aad",
+    # A bank of one, which is what a nineteen-seat turboprop has either side of its aisle. It is
+    # not a third of a bank of three: it is its own piece of furniture, so it has the outside
+    # edge at both ends - armrest, armrest, shadow - rather than an inside armrest straddling a
+    # join with a seat that is not there. Six rows of frame leaves ten for the cushion instead of
+    # twelve, and a single seat on a commuter turboprop is in fact a smaller seat.
+    "solo": "aad" + SEAT_CUSHION_SOLO + "aad",
 }
 
 SEAT_PALETTE = {"d": "#131822", "a": "#8590a0", "l": "#42557d", "n": "#28344f",

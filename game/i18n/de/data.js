@@ -8,6 +8,11 @@
     const PRS = global.PRS = global.PRS || {};
 
     PRS.i18n.add("de", [
+        // The medal named after the animal in the cabin. The animals have names - Bruno and
+        // Bosun - and a name is not translated; this is what it falls back to if an aeroplane
+        // ever carries one without one.
+        ["The animal", "Das Tier"],
+
         // How near this flight got to the medal that turns a card over, printed after a count -
         // "2 von 3 Leuten, die dir gesagt haben, du sollst dich setzen". Each is a bare plural
         // noun phrase so the number can go in front of it.
@@ -182,7 +187,6 @@
         ["A child, forward", "Ein Kind, nach vorn"],
         ["Got one of the children out of the rows and down on the floor by a door.",
          "Eines der Kinder aus den Reihen geholt und bei einer Tür am Boden abgelegt."],
-        ["Bruno", "Bruno"],
         ["The dog got out. This was not free and you knew that.",
          "Der Hund ist herausgekommen. Das war nicht umsonst, und das wusstest du."],
 

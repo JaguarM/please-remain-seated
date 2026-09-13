@@ -185,8 +185,11 @@
      * this, the sink is a tile you can only find by already knowing it is there.
      */
     function sinkAt(S, x, y) {
+        // `!== null` rather than a bare comparison: an aeroplane with one lavatory says the
+        // second one is null, and null === null would make every tile with no y a basin.
         return x === cabin.AFT_GALLEY_X &&
-               (y === cabin.LAV_LEFT_Y || y === cabin.LAV_RIGHT_Y);
+               ((cabin.LAV_LEFT_Y !== null && y === cabin.LAV_LEFT_Y) ||
+                (cabin.LAV_RIGHT_Y !== null && y === cabin.LAV_RIGHT_Y));
     }
 
     /** Is there a fire on this tile worth clicking. Embers count; a warm carpet does not. */
@@ -469,8 +472,12 @@
         // a basin with a jet in it.
         const tap = wantsTap ? PRS.fire.tapLav(S) : null;
         if (tap) {
+            // Which of them, on an aeroplane with two. On one with a single lavatory there is
+            // nothing to tell apart and "the left one" would be a distinction about nothing.
+            const oneLav = cabin.LAV_LEFT_Y === null || cabin.LAV_RIGHT_Y === null;
             stops.push({ x: tap.x, y: tap.y,
-                         label: tap.y === cabin.LAV_LEFT_Y
+                         label: oneLav ? T("Walk to the lavatory")
+                             : tap.y === cabin.LAV_LEFT_Y
                              ? T("Walk to the left aft lavatory")
                              : T("Walk to the right aft lavatory"),
                          exact: true, detail: T("There is a tap in there.") });

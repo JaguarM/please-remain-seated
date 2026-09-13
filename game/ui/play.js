@@ -161,9 +161,9 @@
         for (const entry of S.log) pushLog(entry);
 
         st.log(S, T(S.character.open), "open");
-        st.log(S, T("Transnational 447, thirty-one thousand feet, beginning the descent. " +
-                    "Sixty-one souls. There is something burning in the locker above {seat} " +
-                    "and you are the only person on this aeroplane who has noticed.",
+        // Which aeroplane this is, and how much of it has already happened. A scenario may
+        // have its own version of that sentence; otherwise the aircraft's own.
+        st.log(S, T((S.scenario && S.scenario.opening) || S.aircraft.opening,
                     { seat: cabin.ORIGIN.row + cabin.ORIGIN.letter }), "open");
         st.log(S, T("The clock only moves when you do. Every action costs seconds. " +
                     "You cannot put this fire out."), "rule");
@@ -415,8 +415,9 @@
             (diff > 0 ? T("you are {n} ahead", { n: diff })
              : diff < 0 ? T("you are {n} behind", { n: -diff })
              : T("level with you")) +
-            (ghost.landed() ? " · " + T("they finished with {n} of 60",
-                                        { n: ghost.claim.survived }) : "");
+            (ghost.landed() ? " · " + T("they finished with {n} of {of}",
+                                        { n: ghost.claim.survived,
+                                          of: S.pax.length + 1 }) : "");
     }
 
     /** Where the brackets go for the thing the card is open on: round a body, or round a tile. */

@@ -189,7 +189,11 @@ button.big:hover { background: #4b6191; }
 /* `manipulation` drops the wait a browser spends finding out whether a tap was the first half
    of a double tap to zoom. On a clock that only moves when you act, a third of a second of
    nothing after every tap reads as the game not having heard you. */
-.cabin { display: block; width: 100%; height: auto; touch-action: manipulation; }
+/* `margin: auto` is for the short aeroplanes. render.js caps the canvas at its own pixel width
+   so a fifteen-tile cabin is not blown up to fill a page built for thirty; this is what puts
+   the space that leaves over on both sides of it rather than all of it on the right. */
+.cabin { display: block; width: 100%; height: auto; margin-inline: auto;
+         touch-action: manipulation; }
 
 /* ---------------------------------------------------------------- the aeroplane turned ---
 
@@ -334,7 +338,11 @@ button.big:hover { background: #4b6191; }
 .grade-E, .grade-F { border-color: var(--bad); }
 
 .rep-map { background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 10px; overflow-x: auto; }
-.rep-canvas { width: 100%; max-width: 100%; min-width: 480px; }
+/* `margin-inline: auto` for the short aeroplanes: screens.js caps the canvas so a tile is the
+   same size on both, and this puts what that leaves over on both sides. `min-width` still wins
+   over the cap on a narrow page, which is what keeps the photograph readable on a telephone. */
+.rep-canvas { display: block; width: 100%; max-width: 100%; min-width: 480px;
+              margin-inline: auto; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }
 .leg { display: inline-flex; gap: 5px; align-items: center; font-size: 11px; color: var(--ink-faint); }
 .leg i { width: 9px; height: 9px; border-radius: 2px; display: block; }
@@ -702,6 +710,34 @@ button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
 .slot-empty { width: 48px; height: 48px; display: grid; place-items: center; font: 700 18px var(--mono); color: #2f3540; }
 .slot-lock { position: absolute; top: 3px; right: 4px; font: 8px var(--mono); letter-spacing: .1em; color: var(--ink-faint); }
 .slot-caret { position: absolute; top: 2px; right: 5px; font-size: 10px; color: var(--gold); }
+
+/* The line under the boarding pass on a first flight: what the four-minute cut is, and the way
+   past it. A button that reads as a sentence rather than as a control, because it is the second
+   thing offered and must not compete with BOARD. */
+.title-skip { margin: 6px auto 0; max-width: 640px; text-align: center; }
+.linky {
+  background: none; border: 0; padding: 0; font: inherit; color: var(--gold);
+  text-decoration: underline; text-underline-offset: 2px; cursor: pointer;
+}
+.linky:hover { color: #fff; }
+
+/* Which aeroplane, above the loadout. Two wide buttons rather than the small square boxes the
+   loadout uses, because an aircraft is a sentence and not an icon: the flight number is the
+   name, the type is what it is, and the third line is the two numbers that change how the
+   fifteen minutes go - how many people are on board and how long you have. */
+.fleet-box { margin-top: 10px; }
+.slot-head { display: block; font: 9px var(--mono); letter-spacing: .12em; color: var(--ink-faint); }
+.fleet-row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.fleet {
+  display: grid; gap: 1px; flex: 1 1 150px; text-align: left;
+  padding: 7px 9px; background: #1a1d23; border: 1px solid var(--line); border-radius: 4px;
+  font: inherit; color: inherit; cursor: pointer;
+}
+.fleet:hover { border-color: var(--gold); background: #232833; }
+.fleet.on { border-color: var(--gold); background: #232833; }
+.fleet b { font: 700 12px var(--mono); letter-spacing: .06em; }
+.fleet i { font-style: normal; font-size: 11px; color: var(--ink); }
+.fleet u { text-decoration: none; font: 9px var(--mono); color: var(--ink-faint); }
 
 /* The pages a slot opens. */
 .option-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 8px; }

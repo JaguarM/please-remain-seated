@@ -62,6 +62,55 @@ The rules
   undone is a refusal again, whatever you do first. Anything that told you something new stays
   done.
 
+Two aeroplanes, and where to start
+----------------------------------
+
+**The last four minutes** is the first thing on the title screen and the flight to fly first. It
+is not a cut-down version of the game: it is the last four minutes of a real one, on an aeroplane
+you can see all of at once, and it exists because the full fifteen spends its first third telling
+you there is a fire and its second third telling you that you cannot put it out. The part that is
+actually the game is the last third, and this is that, on its own.
+
+Three things are true of it and all three are decisions:
+
+- **Four minutes.** Long enough to carry three people. Short enough that a first flight ends
+  while you still want another one.
+- **The fire never goes blue.** The second stage is the best rule in the game and the worst one
+  to meet first, because it is a rule that says everything you learnt in the last six minutes
+  has stopped applying. What is burning here is an ordinary fire that an ordinary person could
+  understand.
+- **The danger is the manifest instead.** An ordinary locker fire is survivable in a cabin that
+  can walk out. This one cannot walk: it is the island hospital run, and on it are seven people
+  over seventy-four, a woman whose chair is in the hold, a nine-month-old and a child. Nothing
+  about the fire is turned up. The people are simply people the fire is enough for, which is the
+  truest thing this game has to say and the hardest thing to put in a tooltip.
+
+**Coastal Link 2231** is the aeroplane that flight is on, and it is a whole aircraft rather than
+a tutorial set: a Beechcraft 1900D, nineteen seats one either side of the aisle, ten minutes from
+the island to the mainland. Pick it on the seed screen and fly the full sector. What makes it a
+different game rather than a smaller one:
+
+- **No cabin crew.** Two pilots, a locked door and an interphone. The six-phase procedure that
+  runs on TN 447 whatever you do does not exist here - there is nobody on board to run it. Two of
+  its six phases happen: somebody notices, and the flight deck is told. Nothing walks aft with a
+  bottle and nothing ever puts the people you carried back in their seats for landing, which is
+  not a kindness. It is the same fact as the other three.
+- **One lavatory, one basin.** On the big aeroplane the basin is a choice between two and one of
+  them can burn through. Here it is the only place in the aircraft to put the thing down, it is
+  at the back, and the fire is four tiles from it.
+- **Three doors, no two on the same side.** The airstair forward left, the overwing exit on the
+  right, the aft door back left. There is no such thing as "the near door" on this aeroplane.
+- **A ceiling you can just stand under.** Six foot, against a narrowbody's seven and a bit, and
+  smoke fills from the ceiling down.
+
+Ten minutes and not fifteen, and that is physics rather than a difficulty knob: the same fire in
+a box half the size fills it twice as far into the flight. Flown at fifteen, doing nothing saves
+one person in nineteen and doing everything right saves fourteen, which is not a game. At ten the
+bots land in the same order they do on the narrowbody.
+
+**The day's flight is always TN 447**, whatever the pass said before you pressed it. A daily that
+could be flown on either aeroplane is not a daily.
+
 Languages
 ---------
 
@@ -249,16 +298,23 @@ remakes them, and the copy that matters is the one itch.io is serving.
 What is in it
 -------------
 
-- **81 actions** across seven decks, each with a cost, a condition and a line of text. Every one
+- **Two aeroplanes and a scenario.** A single-aisle narrowbody with sixty passengers and three
+  cabin crew, and a nineteen-seat turboprop with eighteen and none. An aeroplane is a grid, a
+  list of landmarks down it and a roster, all of it in `game/data/aircraft.js`; a third one is
+  that object and a list of people, and nothing else in the game knows how many there are.
+- **83 actions** across seven decks, each with a cost, a condition and a line of text. Every one
   changes a number the score depends on. The ones that did not are in git history.
 - **Nine characters, six outfits and a bag of three from a pool of nine.** Two characters are
   free; the rest are earned by playing a particular way. The outfits open with the souls total.
-- **60 named passengers** with a weight, a temperament, a seat and an opinion, and a helper
-  system that is the only thing in the game that scales. All sixty have faces: one map, sixty
+- **78 named passengers** across the two aeroplanes - sixty on TN 447 and eighteen on CL 2231 -
+  with a weight, a temperament, a seat and an opinion, and a helper
+  system that is the only thing in the game that scales. All of them have faces: one map, sixty
   palettes, five expressions from five pixels moved.
 - A **fire, smoke and heat simulation** over a 30×9 grid, with a core that suppression cannot
   reach.
-- Cabin crew running a **six-phase procedure** that is excellent and is for a different fire.
+- Cabin crew running a **six-phase procedure** that is excellent and is for a different fire -
+  on the aeroplane that has cabin crew. On the one that has not, two of those phases happen and
+  the other four are things nobody on board can do.
 - Seven events, 26 medals that each say one thing about the arithmetic, six endings, and an
   **incident report** in the flat voice of an air accident investigator: every soul by seat,
   your own actions quoted back in order, and where the fifteen minutes went. Then one more
@@ -291,12 +347,14 @@ How it is built
       art/                cabin-sprites.js, generated by pixel-workshop/make_cabin_textures.py
       engine/             the dice (one seed, a stream per named thing), DOM sugar, sprite
                           atlas, synthesised audio, renderer
-      sim/                cabin geometry, fire, passengers, crew, the action engine, undo,
+      sim/                cabin geometry (which aeroplane is loaded, and the one object every
+                          other file holds a reference to), fire, passengers, crew, the action
+                          engine, undo,
                           scoring, the log book that carries over between flights, the
                           flight recorder, the day's aeroplane, the flight as a line of
                           text, and the bots
-      data/               characters, outfits, items, the roster, events, medals, endings, the
-                          action decks
+      data/               the fleet and the scenarios, characters, outfits, items, the
+                          rosters, events, medals, endings, the action decks
       i18n/               the translator, and one folder of catalogues per language
       ui/                 hotspots (what a click means), the play screen, the other screens,
                           the settings panel, and the cabin behind the title
@@ -305,6 +363,13 @@ How it is built
                           --preview draws the whole set on one sheet, in context and by name
     tools/                the play-testers, replay and harm, the frame renderer and the
                           animator that is the same renderer in a loop, a dev server
+
+An aeroplane is data too, and the reason the second one was a file rather than a rewrite is one
+line in `cabin.js`: every other file in the game does `const cabin = PRS.cabin` at load and reads
+`cabin.W` through that reference, so `cabin.use(id)` writes the new geometry onto that object
+instead of handing back a new one. Forty files change aeroplane without knowing there is more
+than one. The rule for anybody working in that file is that the export at the bottom is built
+once and never replaced.
 
 Everything assigns to one global, `window.PRS`, because the game has to run from a double-clicked
 file and `file://` will not load an ES module. `game/sim/actions.js` has the only function that
@@ -351,18 +416,22 @@ Testing it
     node tools/simulate.js 8 --seed=1         # every bot once, one aeroplane: the plans alone
     node tools/harm.js 60 --strategy=idle     # where the harm at touchdown comes from, by part
     node tools/replay.js flights.json         # play recorded flights back against the bots
-    node tools/coverage.js                    # every action performed at least once
+    node tools/coverage.js                    # every action performed at least once, and which
+                                              # of them each aeroplane can and cannot reach
     node tools/test_fire_strats.js            # every known way to play the fire, flown: nobody
                                               # saves sixty, and fighting it is neither the whole
                                               # game nor a waste of the seconds
     node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll,
                                               # and a second played slowly is the same second
     node tools/test_share.js                  # every bot flight written out as a code and flown
-                                              # again from it alone: the same sixty people in the
+                                              # again from it alone, spread over both aeroplanes
+                                              # and the four-minute cut: the same people in the
                                               # same condition, and a code from another build
                                               # refused rather than quietly flown
     node tools/i18n_scan.js                   # what each language has, and what it is missing
     node tools/dump_frame.js --at=540 --seed=606 && python tools/render_frame.py --out=docs/cabin.png
+    node tools/dump_frame.js --scenario=lastfour --at=150    # the same, on the small aeroplane
+    node tools/simulate.js 60 --aircraft=be1900d             # the bot table for the turboprop
     node tools/dump_flight.js --seed=606 && python tools/render_gif.py   # the whole flight, moving
     python tools/trim_actions.py --list       # every action id; pass ids to remove them cleanly
 
@@ -390,8 +459,29 @@ again; if the best of them falls to the idle line, it has stopped being worth do
 a thing to remember: `node tools/test_fire_strats.js` asserts it, and fails with a sentence saying
 which of the two happened.
 
-The bottom six rows are lines real playtesters found, and they are in the file because two of them
-returned sixty of sixty before they were bots. What the table says now is the shape the game is
+**The other two flights**, sixty flights each, as Priya. The full sector on CL 2231, and then
+the four-minute cut on the same aircraft:
+
+| bot | CL 2231, of 19 | the last four minutes, of 19 |
+|---|---|---|
+| idle | 3.7 | 8.0 |
+| fire | 6.5 | 7.2 |
+| carry | 9.1 | 11.4 |
+| good | - | 12.9 |
+| blend | 13.9 | 11.1 |
+| sink | 10.9 | - |
+| sinkthen | 17.3 | 7.8 |
+
+Two things in that table are the design and not an accident. On the full sector the bots land in
+the same order they do on the narrowbody, which is what says the small aeroplane is the same game:
+the basin is the strongest thing you can do to the fire, and doing that and then turning round to
+move people beats it. In the four-minute cut the order inverts - `sinkthen` drops *below* doing
+nothing and `good` wins - because in four minutes there is no time to solve the fire, and the
+tutorial's whole lesson is that people are what you spend the clock on. A first flight that
+rewarded the fire deck would teach the wrong game.
+
+The bottom six rows of the first table are lines real playtesters found, and they are in the file
+because two of them returned sixty of sixty before they were bots. What the table says now is the shape the game is
 meant to have: moving the vape is the strongest thing you can do to the fire (`sink`, `aftline`),
 doing it and then turning round and moving people beats it (`sinkthen`), never opening the locker
 is worse than doing nothing at all (`hold`), and carrying the burning case the length of the cabin

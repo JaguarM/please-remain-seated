@@ -55,6 +55,11 @@
         finally { if (PRS.audio) PRS.audio.setEnabled(heard); }
     }
 
+    // Which aeroplane is flying behind the pass. Set by `start`, so the cabin behind the
+    // boarding pass is the cabin the pass is made out for: pick the turboprop on the seed screen
+    // and the thing burning behind the title is a turboprop.
+    let aircraft = null;
+
     /** A new flight, already burning. Random in every respect, and read by nothing. */
     function takeOff() {
         const chars = PRS.data.characters.CHARACTERS;
@@ -62,7 +67,8 @@
         const rng = PRS.util.makeRng(seed);
         const ch = rng.pick(chars);
 
-        S = PRS.state.create({ characterId: ch.id, items: ch.bag, seed: seed });
+        S = PRS.state.create({ characterId: ch.id, items: ch.bag, seed: seed,
+                               aircraft: aircraft });
         // The report's "what the same flight does with nobody in it" is a second fifteen minutes
         // of physics and nothing here is ever going to read it.
         S.counterfactual = false;
@@ -171,7 +177,8 @@
      * browser with no canvas, a sprite sheet that did not boot, an action that throws on a state
      * the bots have not reached. The title screen has to come up either way.
      */
-    function start(host) {
+    function start(host, which) {
+        aircraft = which || null;
         stop();
         let wrap = null;
         try {

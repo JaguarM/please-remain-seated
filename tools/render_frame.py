@@ -168,7 +168,10 @@ def render(frame, sprites, scale):
     for x in range(W):
         if not frame["tiles"][1][x]["bin"]:
             continue
-        for y, key in ((1, "binOpenL"), (7, "binOpenR")):
+        # 1 and H-2 are the outboard seat rows either side of the aisle: A and F on a
+        # narrowbody, A and C on a nineteen-seat turboprop. It was 1 and 7 while there was one
+        # aeroplane, and 7 is off the bottom of a cabin five tiles deep.
+        for y, key in ((1, "binOpenL"), (H - 2, "binOpenR")):
             t = frame["tiles"][y][x]
             oy = (T - 6 * scale) if y == 1 else ((H - 1) * T)
             blit(img, sprites, "bin_open" if t[key] else "bin_closed", x * T, oy, scale)

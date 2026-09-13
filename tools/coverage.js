@@ -45,15 +45,30 @@ function build(opts) {
         // Everything, including the crew's kit, which normally has to be asked for.
         items: PRS.data.items.ITEMS.map((i) => i.id),
         seed: opts.seed || 4242,
+        aircraft: opts.aircraft,
     });
 
-    if (opts.elapsed) PRS.actions.spend(S, opts.elapsed, { tags: [] });
+    // The scenarios below are written in seconds of a fifteen-minute flight - "four minutes in",
+    // "nearly down". On a ten-minute sector those are different parts of the flight and 700 is
+    // past the end of it, so they are read as a fraction of the flight rather than as a clock.
+    if (opts.elapsed) {
+        const share = opts.elapsed / PRS.state.FLIGHT_SECONDS;
+        PRS.actions.spend(S, Math.min(S.clock.remaining - 1, share * S.clock.total),
+                          { tags: [] });
+    }
 
     // Make the fire real without waiting for it.
     if (opts.fire !== false) {
         const c = S.fire.core;
-        for (let d = -2; d <= 2; d++) {
-            for (const y of [2, 3, 5]) {
+        // Five columns of it on a thirty-column cabin. On a fifteen-column one that is twice as
+        // much aeroplane alight for the same number, so it is a share of the cabin and not a
+        // count of tiles.
+        const reach = Math.max(1, Math.round(cabin.W / 12));
+        for (let d = -reach; d <= reach; d++) {
+            // Either side of the aisle and on it, wherever the aisle happens to be: the two
+            // aeroplanes do not have it in the same row.
+            for (const y of [cabin.AISLE_Y - 2, cabin.AISLE_Y - 1, cabin.AISLE_Y + 1]) {
+                if (y < 1 || y > cabin.H - 2) continue;
                 if (!cabin.inBounds(c.x + d, y)) continue;
                 const i = cabin.idx(c.x + d, y);
                 S.fire.intensity[i] = 34 + Math.abs(d) * 4;
@@ -149,20 +164,41 @@ function build(opts) {
 }
 
 /** Everywhere worth standing, in the order most likely to unlock something. */
+/**
+ * The short list of places worth standing, asked of the cabin rather than written down: it used
+ * to name row 11, row 23 and y=7, which are three things a nineteen-seat turboprop has not got.
+ * Every lavatory it actually has, every service end it actually has, and the row in the middle
+ * of it, whatever those turn out to be.
+ */
 function places(S) {
     const c = S.fire.core;
-    return [
+    const mid = Math.round((cabin.FWD_ROWS.first + lastRow()) / 2);
+    const spots = [
         [c.x, cabin.AISLE_Y], [c.x, c.y], [c.x - 1, c.y],
-        [cabin.AFT_GALLEY_X, 7],                       // the aft lavatory
-        [cabin.AFT_GALLEY_X, 3], [cabin.AFT_GALLEY_X, cabin.AISLE_Y],
-        [cabin.FWD_GALLEY_X, 3], [cabin.FWD_GALLEY_X, cabin.AISLE_Y],
+        [cabin.AFT_GALLEY_X, cabin.AISLE_Y], [cabin.FWD_GALLEY_X, cabin.AISLE_Y],
         [cabin.FWD_CROSS_X, cabin.AISLE_Y], [cabin.FWD_CROSS_X, 0],
-        [cabin.OVERWING_X, cabin.AISLE_Y], [cabin.OVERWING_X, 8],
+        [cabin.OVERWING_X, cabin.AISLE_Y], [cabin.OVERWING_X, cabin.H - 1],
         [cabin.AFT_CROSS_X, cabin.AISLE_Y],
-        [cabin.xOfRow(11), cabin.AISLE_Y], [cabin.xOfRow(11), 2],
-        [cabin.xOfRow(1), cabin.AISLE_Y], [cabin.xOfRow(23), cabin.AISLE_Y],
-        [1, cabin.AISLE_Y], [0 + 1, 1],
-    ].filter(([x, y]) => cabin.inBounds(x, y) && !cabin.solid(x, y));
+        [cabin.xOfRow(mid), cabin.AISLE_Y], [cabin.xOfRow(mid), 1],
+        [cabin.xOfRow(cabin.FWD_ROWS.first), cabin.AISLE_Y],
+        [cabin.xOfRow(lastRow()), cabin.AISLE_Y],
+        [1, cabin.AISLE_Y],
+    ];
+    // Both lavatories, or the one. And the galley tile beside each service end's aisle.
+    for (let y = 1; y <= cabin.H - 2; y++) {
+        if (y === cabin.AISLE_Y) continue;
+        for (const x of [cabin.AFT_GALLEY_X, cabin.FWD_GALLEY_X]) {
+            const kind = cabin.kindAt(x, y);
+            if (kind === "lav" || kind === "galley") spots.push([x, y]);
+        }
+    }
+    return spots.filter(([x, y]) => cabin.inBounds(x, y) && !cabin.solid(x, y));
+}
+
+/** The number of the last row on whichever aeroplane is loaded. */
+function lastRow() {
+    const B = cabin.AFT_ROWS;
+    return B.first + (B.x1 - B.x0);
 }
 
 // The worlds to try, in order. Each one unlocks a different family of actions.
@@ -205,10 +241,11 @@ function everywhere() {
     return out;
 }
 
-function tryDef(def, wide) {
+function tryDef(def, wide, aircraft) {
     for (const ch of CHARACTERS) {
         for (const scenario of SCENARIOS) {
-            const S = build(Object.assign({ character: ch }, scenario.opts));
+            const S = build(Object.assign({ character: ch, aircraft: aircraft },
+                                         scenario.opts));
             const spots = wide ? everywhere() : places(S);
             for (const [x, y] of spots) {
                 PRS.actions.moveTo(S, x, y);
@@ -231,7 +268,8 @@ function tryDef(def, wide) {
                     return { ok: false, where: "perform", err: err, ch: ch,
                              scenario: scenario.name, label: entry.label };
                 }
-                return { ok: true, ch: ch, scenario: scenario.name, place: cabin.placeName(x, y),
+                return { ok: true, ch: ch, scenario: scenario.name, aircraft: aircraft,
+                         place: cabin.placeName(x, y),
                          label: entry.label, cost: entry.cost, text: out && out.text };
             }
         }
@@ -244,28 +282,56 @@ function main() {
     const unreachable = [];
     const broken = [];
     let ok = 0;
+    // Every aeroplane in the fleet, and an action counts as reachable if it is reachable on one
+    // of them. That is not a loosening of the test: a nineteen-seat turboprop carries no cabin
+    // crew, so the whole crew deck is unreachable on it on purpose, and a tool that called that
+    // a failure would be a tool nobody could leave switched on. What it prints instead is what
+    // each aeroplane can and cannot reach, which is the thing worth knowing.
+    const fleet = PRS.data.aircraft.ids();
+    const reach = {};
+    const missing = {};
+    for (const id of fleet) { reach[id] = 0; missing[id] = []; }
 
     for (const def of defs) {
-        let r = tryDef(def, false);
-        // The short list of places did not find it. Try standing everywhere, which is slow and
-        // is only ever run for the handful that get this far.
-        if (!r.ok && r.where === "unreachable") r = tryDef(def, true);
-        if (r.ok) {
+        let found = null;
+        for (const id of fleet) {
+            let r = tryDef(def, false, id);
+            // The short list of places did not find it. Try standing everywhere, which is slow
+            // and is only ever run for the handful that get this far.
+            if (!r.ok && r.where === "unreachable") r = tryDef(def, true, id);
+            if (r.ok) { reach[id]++; found = found || r; continue; }
+            missing[id].push(def.id);
+            if (r.where !== "unreachable") { found = r; break; }
+        }
+        if (found && found.ok) {
             ok++;
             if (VERBOSE || ONLY) {
-                console.log("\n" + def.id + "  [" + r.ch + " / " + r.scenario + " / " + r.place +
-                            "]  " + r.cost + "s");
-                console.log("  " + r.label);
-                if (r.text) console.log("  " + String(r.text).replace(/\n/g, "\n  "));
+                console.log("\n" + def.id + "  [" + found.ch + " / " + found.aircraft + " / " +
+                            found.scenario + " / " + found.place + "]  " + found.cost + "s");
+                console.log("  " + found.label);
+                if (found.text) console.log("  " + String(found.text).replace(/\n/g, "\n  "));
             }
-        } else if (r.where === "unreachable") {
+        } else if (!found || found.where === "unreachable") {
             unreachable.push(def.id);
         } else {
-            broken.push({ id: def.id, r: r });
+            broken.push({ id: def.id, r: found });
         }
     }
 
     console.log("\n" + ok + " of " + defs.length + " actions performed at least once.");
+    console.log("By aeroplane:");
+    for (const id of fleet) {
+        const ac = PRS.data.aircraft.byId(id);
+        console.log("  " + (ac.flightNo + " " + PRS.t(ac.name)).padEnd(28) +
+                    String(reach[id]).padStart(3) + " of " + defs.length);
+        // What an aeroplane cannot reach is as much a fact about it as what it can. CL 2231
+        // carries no cabin crew, so the crew deck is not a gap in the game - it is the game
+        // saying that nobody is coming. Printed rather than asserted, because the right number
+        // here is a design decision and not a constant.
+        if (missing[id].length && missing[id].length < defs.length) {
+            console.log("      not on this one: " + missing[id].join(" "));
+        }
+    }
     if (unreachable.length) {
         console.log("\nNEVER AVAILABLE (" + unreachable.length + "):");
         for (const id of unreachable) console.log("  " + id);

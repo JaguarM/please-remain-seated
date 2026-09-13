@@ -10,6 +10,110 @@
     const PRS = global.PRS = global.PRS || {};
 
     PRS.i18n.add("de", [
+        // ------------------------------------------------------------------------ the fleet ---
+        //
+        // An aircraft type is a proper noun and stays in English: a German pilot says
+        // "Beechcraft 1900D" too. The descriptions are not, and "narrowbody" has no German noun
+        // that anybody says out loud - "Schmalrumpfflugzeug" is a word in a dictionary - so it
+        // is what the thing is: one aisle.
+        ["Transnational 447", "Transnational 447"],
+        ["Single-aisle narrowbody", "Einzelgang-Schmalrumpf"],
+        ["Sixty-one souls, twenty-three rows and three cabin crew. Fifteen minutes.",
+         "Einundsechzig Seelen, dreiundzwanzig Reihen und drei Flugbegleiter. Fünfzehn Minuten."],
+        ["Coastal Link 2231", "Coastal Link 2231"],
+        ["Beechcraft 1900D", "Beechcraft 1900D"],
+        ["Nineteen seats, one lavatory, and no cabin crew. You are what this aeroplane has.",
+         "Neunzehn Sitze, eine Toilette und keine Flugbegleiter. Du bist das, was dieses " +
+         "Flugzeug hat."],
+
+        // Painted down the side of a galley: one short word, and it has to fit on one tile.
+        ["GALLEY", "BORDKÜCHE"],
+        ["CLOSET", "SCHRANK"],
+        ["BAGS", "GEPÄCK"],
+
+        ["Coastal Link 2231, eleven thousand feet, island to mainland, nineteen souls and no " +
+         "cabin crew. There is something burning in the locker above {seat}. The flight deck " +
+         "is a locked door and everyone else on board is older than you or asleep.",
+         "Coastal Link 2231, elftausend Fuß, von der Insel aufs Festland, neunzehn Seelen und " +
+         "keine Flugbegleiter. Im Gepäckfach über {seat} brennt etwas. Das Cockpit ist eine " +
+         "verschlossene Tür, und alle anderen an Bord sind älter als du oder schlafen."],
+
+        // ------------------------------------------------------------ the last four minutes ---
+        //
+        // "Schlussvier" was tried and dropped: it is a coinage, and the whole point of the
+        // scenario's name is that it says plainly what you are getting.
+        ["The last four minutes", "Die letzten vier Minuten"],
+        ["Four minutes, nineteen seats, and a cabin that cannot walk itself out. Start here.",
+         "Vier Minuten, neunzehn Sitze und eine Kabine, die nicht allein hinauskommt. Fang " +
+         "hier an."],
+        ["Coastal Link 2231, four minutes out, nineteen souls and no cabin crew. The locker " +
+         "above {seat} has been alight for three minutes and you have spent one of those " +
+         "deciding it was really happening. Almost nobody on this aeroplane can get themselves " +
+         "off it.",
+         "Coastal Link 2231, vier Minuten vor der Landung, neunzehn Seelen und keine " +
+         "Flugbegleiter. Das Gepäckfach über {seat} brennt seit drei Minuten, und eine davon " +
+         "hast du damit verbracht, dir einzugestehen, dass es wirklich passiert. Fast niemand " +
+         "in diesem Flugzeug kommt allein heraus."],
+
+        // The tutorial's own lines. They arrive in the log in the middle of a flight, so they
+        // are the same voice as every other rule the game states: flat, present tense, second
+        // person, and never a word of encouragement.
+        ["The clock moved because you moved. It is the only thing that moves it: stand still " +
+         "and read the cabin for as long as you like, it costs you nothing.",
+         "Die Uhr ist gelaufen, weil du gelaufen bist. Nur das bewegt sie: Bleib stehen und " +
+         "lies die Kabine, so lange du willst, es kostet dich nichts."],
+        ["Nobody is going to take your word for it, and they are right not to. Show them " +
+         "something instead: the open locker, the photograph, your hand. A sceptic is not " +
+         "talked round. A sceptic is shown.",
+         "Niemand nimmt dir das einfach ab, und das zu Recht. Zeig ihnen stattdessen etwas: " +
+         "das offene Fach, das Foto, deine Hand. Einen Skeptiker überredet man nicht. Einem " +
+         "Skeptiker zeigt man es."],
+        ["That one works for the rest of the flight without being asked again. Every other " +
+         "pair of hands on this aeroplane is worth more than anything in your bag.",
+         "Diese Person arbeitet den Rest des Fluges weiter, ohne noch einmal gefragt zu " +
+         "werden. Jedes weitere Paar Hände in diesem Flugzeug ist mehr wert als alles in " +
+         "deiner Tasche."],
+        ["By the doors is where people live. Not because the air is good there - it will not " +
+         "be - but because it is the only floor the fire has to cross the whole cabin to reach.",
+         "An den Türen überleben die Leute. Nicht weil die Luft dort gut ist - das wird sie " +
+         "nicht sein - sondern weil das Feuer für diesen Boden als einzigen die ganze Kabine " +
+         "durchqueren muss."],
+        ["You cannot put this out. What you are buying is a walkable aisle and less smoke in " +
+         "it, and on this aeroplane that is worth buying - but it is not the thing that saves " +
+         "anybody. People are.",
+         "Du kannst das nicht löschen. Was du kaufst, ist ein begehbarer Gang und weniger " +
+         "Rauch darin, und in diesem Flugzeug lohnt sich das - aber gerettet wird dadurch " +
+         "niemand. Durch Menschen schon."],
+        ["Two minutes. Whoever is still in a seat aft of the wing is a decision now rather " +
+         "than a plan.",
+         "Zwei Minuten. Wer hinter der Tragfläche noch auf einem Sitz sitzt, ist jetzt eine " +
+         "Entscheidung und kein Plan mehr."],
+        ["You cannot save everybody, and this is the part where that stops being a sentence " +
+         "in a rulebook.",
+         "Du kannst nicht alle retten, und das hier ist der Teil, an dem das aufhört, ein Satz " +
+         "in einem Regelwerk zu sein."],
+
+        // ---------------------------------------------------------------- the flight deck ---
+        ["Call the flight deck on the interphone", "Das Cockpit über die Bordsprechanlage rufen"],
+        ["The handset is on the bulkhead. They cannot see the cabin and they have never heard " +
+         "your voice before.",
+         "Der Hörer hängt an der Trennwand. Sie sehen die Kabine nicht und haben deine Stimme " +
+         "noch nie gehört."],
+        ["“Flight deck.” You tell them, and you hear the other pilot say something you do not " +
+         "catch. Then: “Understood. Sit down and hold on to something.” The nose drops before " +
+         "you have put the handset back.",
+         "„Cockpit.“ Du sagst es ihnen, und du hörst den anderen Piloten etwas sagen, das du " +
+         "nicht verstehst. Dann: „Verstanden. Hinsetzen und irgendwo festhalten.“ Die Nase " +
+         "geht runter, bevor du den Hörer zurückgehängt hast."],
+        ["“Sir, I need you to go back to your seat and speak to a member of crew.” There is no " +
+         "member of crew. You can hear them not believing you, and you can hear that they have " +
+         "written it down, which is not nothing.",
+         "„Gehen Sie bitte zurück auf Ihren Platz und wenden Sie sich an das Kabinenpersonal.“ " +
+         "Es gibt kein Kabinenpersonal. Du hörst, dass sie dir nicht glauben, und du hörst, " +
+         "dass sie es notiert haben, und das ist nicht nichts."],
+
+        ["Walk to the lavatory", "Zur Toilette gehen"],
+
         // ------------------------------------------------------------------------ the fire ---
         ["There is nothing burning within reach of you.",
          "In deiner Reichweite brennt nichts."],

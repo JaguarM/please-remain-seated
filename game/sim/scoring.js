@@ -208,16 +208,34 @@
      *
      * Flown in silence. It is not your flight and it must not sound like one.
      */
+    /**
+     * The same flight with nobody in it.
+     *
+     * Building a second state loads that state's aeroplane into `PRS.cabin`, which is the one
+     * object the whole game reads its geometry through - so this puts the aircraft back
+     * afterwards even though it is now flying the same one. It is the same aeroplane today and
+     * the cost of being wrong about that later is a report drawn on the wrong cabin, which is
+     * exactly the bug this comment exists because of.
+     */
     function withoutYou(S) {
         if (PRS.audio) PRS.audio.hush(true);
+        const was = PRS.cabin.aircraft.id;
         try { return idleFlight(S); }
-        finally { if (PRS.audio) PRS.audio.hush(false); }
+        finally {
+            PRS.cabin.use(was);
+            if (PRS.audio) PRS.audio.hush(false);
+        }
     }
 
     function idleFlight(S) {
         const L = S.loadout;
+        // The same aeroplane and the same flight, or it is not the counterfactual: the number
+        // this returns is what the log book credits you with, and "the same fifteen minutes with
+        // you asleep in 9C" means nothing if the aircraft underneath it is a different one.
+        // `loadout` carries both, which is what it is for.
         const B = st.create({ characterId: L.characterId, outfitId: L.outfitId, items: L.items,
-                              seed: S.seed });
+                              seed: S.seed, daily: S.daily,
+                              aircraft: L.aircraft, scenario: L.scenario });
         B.quiet = true;
         // In the steps a person would take, so an early descent shortens this flight as it would
         // have shortened yours, instead of being flown straight through.

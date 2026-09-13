@@ -9,20 +9,80 @@
     const cabin = PRS.cabin;
     const { clamp, clamp01 } = PRS.util;
 
+    // What a flight is if nobody says otherwise. The aircraft carries its own length now and
+    // a scenario may shorten it; this is the fallback, and the number the game was written to.
     const FLIGHT_SECONDS = 900;   // fifteen minutes to the runway
+
+    /**
+     * Which seat you are actually in on this aeroplane.
+     *
+     * A character's seat is written on their card - Priya is in 9C and has been since there was
+     * one aeroplane - and on a nineteen-seat turboprop a card that says 22B is describing a seat
+     * that is not there. So the seat on the card is a preference: taken if it exists and is
+     * empty, and otherwise the aeroplane's own spare seat, and otherwise the first empty one
+     * from the nose. Every roster leaves at least one seat free, which is the rule that makes
+     * this terminate.
+     *
+     * Worked out from the aircraft definition and never from `PRS.cabin`, because the boarding
+     * pass on the title screen asks this about an aeroplane that is not the one loaded - there
+     * is a different one flying behind the pass at the time - and an answer that had to switch
+     * the cabin over to work it out would land in the middle of that flight.
+     */
+    function seatsOf(ac) {
+        const out = [];
+        for (const band of [ac.FWD_ROWS, ac.AFT_ROWS]) {
+            for (let x = band.x0; x <= band.x1; x++) {
+                const row = band.first + (x - band.x0);
+                for (let y = 1; y <= ac.H - 2; y++) {
+                    if (y === ac.AISLE_Y) continue;
+                    const letter = ac.SEAT_LETTERS[y - 1];
+                    if (!letter) continue;
+                    // A tile the aeroplane has renamed - the closet in the corner where 1A
+                    // would be - is not a seat and nobody sits in it.
+                    if (ac.overrides && ac.overrides[x + "," + y]) continue;
+                    out.push(row + letter);
+                }
+            }
+        }
+        return out;
+    }
+
+    function seatFor(ac, ch) {
+        const taken = {};
+        for (const row of (PRS.data.passengers[ac.rosterKey] || [])) taken[row[1]] = true;
+        const seats = seatsOf(ac);
+        for (const want of [ch.seat, ac.defaultSeat]) {
+            if (want && !taken[want] && seats.indexOf(want) >= 0) return want;
+        }
+        for (const seat of seats) if (!taken[seat]) return seat;
+        return ac.defaultSeat;
+    }
 
     function create(opts) {
         const seed = (opts.seed === undefined || opts.seed === null ? (Date.now() >>> 0)
                                                                     : opts.seed) >>> 0;
+        // The aeroplane goes on before anything else does. `cabin.use` writes the new geometry
+        // onto the object every other file in the game is already holding, so everything below
+        // this line - and every action, every bot and the renderer - is asking about the right
+        // aircraft from here on.
+        const scenario = PRS.data.scenarios ? PRS.data.scenarios.byId(opts.scenario) : null;
+        // A scenario names its own aeroplane and that beats anything the caller asked for: the
+        // four-minute cut is a flight on CL 2231 and there is no version of it that is not.
+        const ac = cabin.use((scenario && scenario.aircraft) || opts.aircraft
+                             || PRS.data.aircraft.DEFAULT);
+        const seconds = (scenario && scenario.seconds) || ac.seconds;
         const ch = PRS.data.characters.byId(opts.characterId);
         const outfit = PRS.data.outfits.byId(opts.outfitId) || null;
         const derived = PRS.data.characters.derive(ch, outfit);
-        const seatRow = parseInt(ch.seat, 10);
-        const seatY = cabin.yOfLetter(ch.seat.replace(/[0-9]/g, ""));
+        const seat = seatFor(ac, ch);
+        const seatRow = parseInt(seat, 10);
+        const seatY = cabin.yOfLetter(seat.replace(/[0-9]/g, ""));
         const items = (opts.items || ch.bag).slice();
 
         const S = {
             seed: seed,
+            aircraft: ac,
+            scenario: scenario,
             // The date this seed is the flight for, when it is one, and null when the seed came
             // off the dice or out of a box. Nothing in the simulation reads it; the report, the
             // log book of days and the share string all do.
@@ -31,11 +91,12 @@
             outfit: outfit,
             derived: derived,
             // Exactly what the flight was started with, so the recorder can start it again.
-            loadout: { characterId: ch.id, outfitId: outfit ? outfit.id : null, items: items },
+            loadout: { characterId: ch.id, outfitId: outfit ? outfit.id : null, items: items,
+                       aircraft: ac.id, scenario: scenario ? scenario.id : null },
 
             clock: {
-                total: FLIGHT_SECONDS,
-                remaining: FLIGHT_SECONDS,
+                total: seconds,
+                remaining: seconds,
                 elapsed: 0,
                 landed: false,
                 descentCalled: false,
@@ -45,7 +106,7 @@
                 // Out of the seat already, in the aisle at your row: the fifteen minutes start
                 // with you standing up, because you are the one who noticed.
                 x: cabin.xOfRow(seatRow), y: cabin.AISLE_Y,
-                seat: ch.seat,
+                seat: seat,
                 homeX: cabin.xOfRow(seatRow), homeY: seatY,
                 smokeDose: 0,
                 burns: 0,
@@ -76,8 +137,9 @@
                 masksDropped: false,
                 detectorSounded: false,
                 paLive: false,
-                cartOut: true,
-                cartX: cabin.xOfRow(11),
+                // No trolley on an aeroplane with no cabin crew to push it.
+                cartOut: ac.cartRow !== null,
+                cartX: ac.cartRow === null ? null : cabin.xOfRow(ac.cartRow),
                 aisleBlocked: {},         // x -> seconds of blockage remaining
                 binsOpen: {},
                 ventsTaped: {},           // x -> the gaspers down that row are taped over
@@ -111,14 +173,22 @@
         PRS.crew.create(S);
 
         // Two of the crew are in the aisle with the trolley, which is a wall you cannot pass.
-        S.cabinFlags.aisleBlocked[S.cabinFlags.cartX] = 9999;
+        if (S.cabinFlags.cartX !== null) S.cabinFlags.aisleBlocked[S.cabinFlags.cartX] = 9999;
+
+        // A flight that starts in the middle. The fire burns on its own first, then the scenario
+        // says what else is already true - in that order, because `open` is written against a
+        // cabin the fire has already been in.
+        if (scenario) {
+            if (scenario.preburn) PRS.fire.preburn(S, scenario.preburn);
+            if (scenario.open) scenario.open(S);
+        }
 
         return S;
     }
 
     function buildPassengers(S) {
         const data = PRS.data.passengers;
-        S.pax = data.ROSTER.map(function (row, n) {
+        S.pax = (data[S.aircraft.rosterKey] || data.ROSTER).map(function (row, n) {
             const id = "p" + n;
             const [name, seat, kg, hairKey, skinKey, shirtKey, traits, says, refuse,
                    carries] = row;
@@ -373,7 +443,7 @@
     }
 
     PRS.state = {
-        FLIGHT_SECONDS, create, reindex, paxAt, paxById, reachable, withinEarshot,
+        FLIGHT_SECONDS, seatFor, seatsOf, create, reindex, paxAt, paxById, reachable, withinEarshot,
         inventoryHas, inventoryAll, slotOf, useCharge, give, buildStash,
         has, setFlag, wearing,
         movedCount, downCount, helperCount, log, line, dice, hazard, rearm,

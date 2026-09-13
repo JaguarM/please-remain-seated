@@ -10,9 +10,29 @@
     const PRS = global.PRS = global.PRS || {};
 
     PRS.i18n.add("de", [
-        // A flight number and an altitude are not translated. Feet are what the altimeter says.
-        ["TRANSNATIONAL 447 · 31,000 FT · DESCENT",
-         "TRANSNATIONAL 447 · 31.000 FT · SINKFLUG"],
+        // ------------------------------------------------------------ which flight this is ---
+        //
+        // The kicker over the title. "SINKFLUG" for descent, and the type comes from the fleet
+        // catalogue in prose.js, already upper-cased by the screen.
+        ["{flight} · {type} · DESCENT", "{flight} · {type} · SINKFLUG"],
+        ["THE AEROPLANE", "DIE MASCHINE"],
+        // "Wo die fünfzehn Minuten geblieben sind" was the heading while every flight was
+        // fifteen minutes. The number is a field now, and German wants the count in the
+        // genitive-ish phrase rather than glued on, so the minutes are their own key.
+        ["Where the {mins} went", "Wo die {mins} geblieben sind"],
+        ["{n} minutes", "{n} Minuten"],
+        ["AIR ACCIDENTS INVESTIGATION · PRELIMINARY REPORT · {flight}",
+         "FLUGUNFALLUNTERSUCHUNG · VORLÄUFIGER BERICHT · {flight}"],
+        ["{n} souls, the ones who walked off first and the ones who did not last. " +
+         "Point at anybody.",
+         "{n} Seelen, die, die zuerst hinausgingen, und die, die nicht durchhielten. " +
+         "Zeig auf irgendjemanden."],
+        ["{souls} souls · {mins}", "{souls} Seelen · {mins}"],
+        ["Or fly the full fifteen minutes", "Oder die vollen fünfzehn Minuten fliegen"],
+        ["Flying beside you: {who}, who got {n} of {of} off this aeroplane.",
+         "Neben dir fliegt {who}, mit {n} von {of} aus dieser Maschine heraus."],
+        ["they finished with {n} of {of}", "sie sind bei {n} von {of} gelandet"],
+
 
         // One line under the title, and it has to stay one line, so the German is built short
         // rather than translated long. "nur du" rather than "der Einzige", because most of the
@@ -177,8 +197,6 @@
         ["Forget every flight", "Jeden Flug vergessen"],
 
         // ---------------------------------------------------------------------------- the report ---
-        ["AIR ACCIDENTS INVESTIGATION · PRELIMINARY REPORT · TRANSNATIONAL 447",
-         "FLUGUNFALLUNTERSUCHUNG · VORLÄUFIGER BERICHT · TRANSNATIONAL 447"],
         ["Souls on board", "Seelen an Bord"],
         ["on board", "an Bord"],
         ["walked off", "selbst ausgestiegen"],
@@ -238,10 +256,6 @@
         ["was helping, at {where}", "hat mitgeholfen, {where}"],
         ["{state}, at {where}", "{state}, {where}"],
         ["{name} (you)", "{name} (du)"],
-        ["Sixty-one souls, the ones who walked off first and the ones who did not last. " +
-         "Point at anybody.",
-         "Einundsechzig Seelen, die Ausgestiegenen zuerst und die Vermissten zuletzt. " +
-         "Zeig auf irgendwen."],
         ["{kg}kg", "{kg} kg"],
         // What a person's afternoon cost them, in the arithmetic the report scored them with.
         ["smoke they had breathed", "eingeatmeter Rauch"],
@@ -261,7 +275,6 @@
         ["something over their face", "etwas vor dem Gesicht"],
         ["low, out of the smoke layer", "tief, unter der Rauchschicht"],
         ["hooded", "mit Rauchhaube"],
-        ["Where the fifteen minutes went", "Wohin die fünfzehn Minuten gegangen sind"],
         ["Carrying people", "Menschen tragen"],
         ["Fighting the fire", "Das Feuer bekämpfen"],
         ["Talking to people", "Mit Menschen reden"],

@@ -11,7 +11,7 @@
 // somebody else's afternoon, in the same cabin, and it will not look wrong.
 //
 // So the only test worth having is the whole round trip. Fly it, write it, read it back, fly it
-// again from the code alone, and insist that the same sixty people come off the aeroplane in the
+// again from the code alone, and insist that the same people come off the aeroplane in the
 // same condition. This asserts that, and it asserts the two ways a code is allowed to be refused
 // - a corrupted one and one from another build - because those are the paths a player meets when
 // somebody pastes them something, and a refusal that does not happen is a flight that lands in
@@ -28,8 +28,9 @@ const rng = PRS.util.makeRng(20260913);
 const bots = PRS.bots.names();
 const chars = PRS.data.characters.CHARACTERS.map((c) => c.id);
 
-function fly(strategy, char, seed, day) {
-    const S = PRS.state.create({ characterId: char, seed: seed, daily: day || null });
+function fly(strategy, char, seed, day, aircraft, scenario) {
+    const S = PRS.state.create({ characterId: char, seed: seed, daily: day || null,
+                                 aircraft: aircraft, scenario: scenario });
     S.counterfactual = false;               // nothing here reads it and it doubles the work
     PRS.bots.setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     const bot = PRS.bots.BOTS[strategy];
@@ -64,12 +65,19 @@ for (let i = 0; i < N; i++) {
     // One flight in four is a daily, because the date rides in the code and a date that came
     // back as null would send somebody to the wrong aeroplane with the right numbers on it.
     const day = rng.chance(0.25) ? PRS.daily.shift("2026-09-13", rng.irange(-400, 400)) : null;
+    // And the flights are spread over the fleet, because the aeroplane rides in the code too
+    // and a code that came back on the wrong one is a cabin with the right numbers written on
+    // a different set of people. A daily is always the aeroplane the day is flown on.
+    const scenario = !day && rng.chance(0.2) ? rng.pick(PRS.data.scenarios.ids()) : null;
+    const aircraft = day || scenario ? null
+                   : rng.chance(0.35) ? rng.pick(PRS.data.aircraft.ids()) : null;
 
-    const S = fly(strategy, char, seed, day);
+    const S = fly(strategy, char, seed, day, aircraft, scenario);
     const R = S.result;
     const text = PRS.share.text(S, R);
     const code = PRS.share.find(text);
-    const what = strategy + " / " + char + " / " + seed + (day ? " / " + day : "");
+    const what = strategy + " / " + char + " / " + seed + (day ? " / " + day : "") +
+                 " / " + S.aircraft.id + (scenario ? " / " + scenario : "");
 
     if (!code) { fails.push(what + ": would not encode"); continue; }
     total += code.length;
@@ -85,6 +93,12 @@ for (let i = 0; i < N; i++) {
     }
     if ((plan.day || null) !== (S.daily || null)) {
         fails.push(what + ": the day came back as " + plan.day);
+    }
+    if (plan.aircraft !== S.aircraft.id) {
+        fails.push(what + ": the aeroplane came back as " + plan.aircraft);
+    }
+    if ((plan.scenario || null) !== (S.scenario ? S.scenario.id : null)) {
+        fails.push(what + ": the flight came back as " + plan.scenario);
     }
     if (plan.items.join(",") !== S.loadout.items.slice().sort().join(",")) {
         // The bag comes back in the order the code writes it, which is the order of the ids.
@@ -110,7 +124,7 @@ for (let i = 0; i < N; i++) {
     if (VERBOSE) {
         console.log("  " + what.padEnd(42) + " " + String(S.actions.length).padStart(4) +
                     " actions  " + String(code.length).padStart(4) + " chars  " +
-                    R.survivors + " of 60");
+                    R.survivors + " of " + (S.pax.length + 1));
     }
 }
 
@@ -200,6 +214,6 @@ if (fails.length) {
     for (const f of fails.slice(0, 20)) console.log("  " + f);
     process.exit(1);
 }
-console.log("Every one replays to the same sixty people in the same condition.");
+console.log("Every one replays to the same people in the same condition, on both aeroplanes.");
 console.log("A flight flown in German replays in English.");
 console.log("A damaged code is refused, and so is one from another build.");

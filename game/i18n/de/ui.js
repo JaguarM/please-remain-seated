@@ -36,7 +36,6 @@
 
         // --------------------------------------------------------------- game/engine/render ---
         // Painted into one tile. There is no room for a longer word and no second line.
-        "GALLEY␟written down the side of a galley, one short word": "BORDKÜCHE",
         "LAV␟written across a lavatory door, three letters at most": "WC",
         "CLEAR␟the air by a door, painted on the floor": "FREI",
 

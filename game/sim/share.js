@@ -26,8 +26,13 @@
     const PRS = global.PRS = global.PRS || {};
     const T = PRS.t, K = PRS.k;
 
-    const VERSION = 1;
-    const TAG = "TN447-";          // what a code looks like in a wall of chat
+    // Two, because the header has an aeroplane in it now and a version-1 code read with this
+    // layout would land somebody on the wrong aircraft without ever looking wrong.
+    const VERSION = 2;
+    // What a code looks like in a wall of chat. One per aeroplane, so a pasted code says which
+    // aircraft it is before anything decodes it - and `find` will take any of them, which is
+    // what keeps a code from a third aeroplane readable by a build that has one.
+    const TAG = "TN447-";
     const EPOCH = "2000-01-01";    // dates are kept as days from here, in sixteen bits
 
     // The widths of everything in the header, in bits. They are wider than the game needs,
@@ -35,6 +40,9 @@
     // reason a code stops fitting.
     const W = {
         version: 4, stamp: 16, seed: 32, day: 16,
+        // Four bits each: sixteen aeroplanes and fifteen scenarios plus "none", which is more
+        // of either than this game is going to have and cheaper than being wrong about it.
+        aircraft: 4, scenario: 4,
         character: 5, outfit: 4, bagN: 3, item: 5,
         survived: 6, saved: 7, grade: 3, count: 12, check: 16,
     };
@@ -137,9 +145,14 @@
      */
     function stamp() {
         const parts = PRS.actions.all().map((d) => d.id).sort()
-            .concat(characters(), outfits(), items());
+            .concat(characters(), outfits(), items(), aircraft(), scenarios());
         return PRS.util.seedFromString(parts.join("|")) & 0xffff;
     }
+
+    /** Every aeroplane, in an order no language can change. Same contract as `characters`. */
+    function aircraft() { return PRS.data.aircraft.ids(); }
+
+    function scenarios() { return PRS.data.scenarios ? PRS.data.scenarios.ids() : []; }
 
     /**
      * Everything you could do at this moment, in an order no language can change.
@@ -166,6 +179,7 @@
         const S = PRS.state.create({
             characterId: plan.characterId, outfitId: plan.outfitId,
             items: plan.items.slice(), seed: plan.seed, daily: plan.day,
+            aircraft: plan.aircraft, scenario: plan.scenario,
         });
         // Not your flight: it writes nothing down, makes no noise, and does not need the
         // counterfactual the report prints, which is a second fifteen minutes of physics.
@@ -190,6 +204,8 @@
         return write({
             seed: S.seed,
             day: S.daily || null,
+            aircraft: S.loadout.aircraft,
+            scenario: S.loadout.scenario,
             characterId: S.loadout.characterId,
             outfitId: S.loadout.outfitId,
             items: S.loadout.items,
@@ -207,7 +223,8 @@
      */
     function choicesFor(seed, loadout, keys, day) {
         const S = freshState({ seed: seed, characterId: loadout.characterId,
-                               outfitId: loadout.outfitId, items: loadout.items, day: day });
+                               outfitId: loadout.outfitId, items: loadout.items, day: day,
+                               aircraft: loadout.aircraft, scenario: loadout.scenario });
         const out = [];
         for (const key of keys) {
             if (S.clock.landed) break;
@@ -228,6 +245,9 @@
         w.write(stamp(), W.stamp);
         w.write(plan.seed >>> 0, W.seed);
         w.write(plan.day && PRS.daily ? PRS.daily.daysBetween(EPOCH, plan.day) : 0, W.day);
+        const A = aircraft(), SC = scenarios();
+        w.write(Math.max(0, A.indexOf(plan.aircraft || PRS.data.aircraft.DEFAULT)), W.aircraft);
+        w.write(plan.scenario ? SC.indexOf(plan.scenario) + 1 : 0, W.scenario);
         w.write(Math.max(0, C.indexOf(plan.characterId)), W.character);
         w.write(plan.outfitId ? O.indexOf(plan.outfitId) + 1 : 0, W.outfit);
         const bag = (plan.items || []).filter((id) => I.indexOf(id) >= 0);
@@ -241,15 +261,33 @@
         const body = w.close();
         const tail = writer();
         tail.write(sum(body), W.check);
-        return TAG + toBase64(body.concat(tail.close()));
+        return PRS.data.aircraft.byId(plan.aircraft).tag
+             + toBase64(body.concat(tail.close()));
     }
 
     // ------------------------------------------------------------------------------ reading ---
 
     /** The first code in a paste, which may be a whole message with one somewhere in it. */
+    /**
+     * The first code in a paste, whichever aeroplane's badge it is wearing. Longest tag first,
+     * so a badge that is a prefix of another one cannot swallow it.
+     */
     function find(text) {
-        const hit = String(text || "").match(new RegExp(TAG + "([A-Za-z0-9_-]+)"));
-        return hit ? hit[0] : null;
+        const s = String(text || "");
+        let best = null, at = Infinity;
+        for (const tag of PRS.data.aircraft.tags()) {
+            const hit = s.match(new RegExp(tag + "([A-Za-z0-9_-]+)"));
+            if (hit && hit.index < at) { at = hit.index; best = hit[0]; }
+        }
+        return best;
+    }
+
+    /** Which badge a code is wearing, and therefore where its body starts. */
+    function tagOf(code) {
+        for (const tag of PRS.data.aircraft.tags()) {
+            if (String(code).startsWith(tag)) return tag;
+        }
+        return TAG;
     }
 
     /**
@@ -261,7 +299,7 @@
         if (!code) return { ok: false, why: T("That is not a flight code. One starts with " +
                                               "TN447- and has no spaces in it.") };
         let bytes;
-        try { bytes = fromBase64(code.slice(TAG.length)); }
+        try { bytes = fromBase64(code.slice(tagOf(code).length)); }
         catch (e) { return { ok: false, why: T("That code has something in it that is not " +
                                                "part of one.") }; }
         // The check is the last two bytes; everything before it is what was checked.
@@ -299,6 +337,10 @@
         plan.seed = r.read(W.seed) >>> 0;
         const day = r.read(W.day);
         plan.day = day && PRS.daily ? PRS.daily.shift(EPOCH, day) : null;
+        const A = aircraft(), SC = scenarios();
+        plan.aircraft = A[r.read(W.aircraft)] || PRS.data.aircraft.DEFAULT;
+        const scen = r.read(W.scenario);
+        plan.scenario = scen ? (SC[scen - 1] || null) : null;
         plan.characterId = C[r.read(W.character)] || C[0];
         const outfit = r.read(W.outfit);
         plan.outfitId = outfit ? (O[outfit - 1] || null) : null;
@@ -450,7 +492,13 @@
                      other: "⬜", never: "⬛" };
 
     function minutes(S) {
-        const total = Math.ceil(PRS.state.FLIGHT_SECONDS / 60);
+        // The strip is as long as the flight was scheduled to be, which is fifteen blocks on a
+        // narrowbody and four on the four-minute cut. The clock's `total` is the scheduled
+        // length less whatever an emergency descent took off it, so the length of the strip
+        // comes off the aircraft and the scenario rather than off a constant.
+        const scheduled = (S.scenario && S.scenario.seconds)
+                       || (S.aircraft && S.aircraft.seconds) || PRS.state.FLIGHT_SECONDS;
+        const total = Math.ceil(scheduled / 60);
         const spent = [];
         for (let i = 0; i < total; i++) spent.push({ carry: 0, fire: 0, social: 0, other: 0 });
         for (const a of S.actions) {
@@ -462,7 +510,7 @@
             // An action's seconds are paid at its start and go by across whatever minutes they
             // reach, which is why a ninety-second carry colours two of these and not one.
             let from = a.t, left = Math.max(1, a.cost);
-            while (left > 0 && from < PRS.state.FLIGHT_SECONDS) {
+            while (left > 0 && from < scheduled) {
                 const m = Math.floor(from / 60);
                 const take = Math.min(left, (m + 1) * 60 - from);
                 if (spent[m]) spent[m][kind] += take;
@@ -488,14 +536,19 @@
      * an invitation.
      */
     function block(o) {
+        // Which flight, rather than the flight: the same four lines are sent from more than one
+        // aeroplane now, and "TN 447" on a nineteen-seat turboprop would be the only untrue
+        // thing in a block whose whole job is being checkable.
         const head = o.day
-            ? T("PLEASE REMAIN SEATED · TN 447 · daily {day}", { day: o.day })
-            : T("PLEASE REMAIN SEATED · TN 447 · seed {seed}", { seed: o.seed });
+            ? T("PLEASE REMAIN SEATED · {flight} · daily {day}",
+                { flight: o.flight, day: o.day })
+            : T("PLEASE REMAIN SEATED · {flight} · seed {seed}",
+                { flight: o.flight, seed: o.seed });
         const score = o.saved === null || o.saved === undefined
-            ? T("{n} of 60 off alive · {grade} · {who}",
-                { n: o.survived, grade: o.grade, who: o.who })
-            : T("{n} of 60 off alive · {saved} who would not have been · {grade} · {who}",
-                { n: o.survived, saved: o.saved, grade: o.grade, who: o.who });
+            ? T("{n} of {of} off alive · {grade} · {who}",
+                { n: o.survived, of: o.of, grade: o.grade, who: o.who })
+            : T("{n} of {of} off alive · {saved} who would not have been · {grade} · {who}",
+                { n: o.survived, of: o.of, saved: o.saved, grade: o.grade, who: o.who });
         return [head, score, o.strip,
                 o.code || T("(this flight will not encode)")].join("\n");
     }
@@ -505,6 +558,7 @@
         const R = result || S.result;
         return block({
             day: S.daily, seed: S.seed, survived: R.survivors, saved: R.saved,
+            flight: S.aircraft.flightNo, of: R.souls,
             grade: R.grade.key, who: S.character.name,
             strip: minutes(S), code: encode(S, R),
         });
@@ -518,16 +572,26 @@
     function textForCode(code) {
         const got = decode(code);
         if (!got.ok) return null;
-        const plan = got.plan;
+        // Flying somebody else's code loads their aeroplane, and this is called from a screen
+        // that is standing on yours. Put it back before returning, whatever happens.
+        const was = PRS.cabin.aircraft.id;
+        try { return codeText(got.plan, code); }
+        finally { PRS.cabin.use(was); }
+    }
+
+    function codeText(plan, code) {
         const flown = replay(plan);
         const ch = PRS.data.characters.byId(plan.characterId);
         return block({
             day: plan.day, seed: plan.seed,
             survived: plan.claim.survived, saved: plan.claim.saved, grade: plan.claim.grade,
+            flight: PRS.data.aircraft.byId(plan.aircraft).flightNo,
+            of: flown.S.pax.length + 1,
             who: ch ? ch.name : "", strip: minutes(flown.S), code: find(code),
         });
     }
 
-    PRS.share = { VERSION, TAG, stamp, encode, decode, find,
+    PRS.share = { VERSION, TAG, tagOf, tags: () => PRS.data.aircraft.tags(),
+                  stamp, encode, decode, find,
                   replay, stepper, ghost, text, textForCode };
 })(window);

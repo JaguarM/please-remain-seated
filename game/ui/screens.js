@@ -32,7 +32,10 @@
     // `ghost` is a flight somebody sent, for the same reason and one more: it is a thing that
     // arrived, and a thing that arrived should not still be there next month.
     const choice = { characterId: "ansel", outfitId: null, items: null,
-                     seed: null, seedText: "", daily: null, ghost: null };
+                     seed: null, seedText: "", daily: null, ghost: null,
+                     // Which aeroplane, and which flight on it. `scenario` wins over `aircraft`
+                     // when it is set, because a scenario names its own aircraft.
+                     aircraft: null, scenario: null };
     let choiceLoaded = false;
 
     /**
@@ -45,6 +48,7 @@
             const saved = store.get("choice", null);
             if (saved && typeof saved === "object") {
                 if (typeof saved.characterId === "string") choice.characterId = saved.characterId;
+                if (typeof saved.aircraft === "string") choice.aircraft = saved.aircraft;
                 if (typeof saved.outfitId === "string") choice.outfitId = saved.outfitId;
                 if (Array.isArray(saved.items)) choice.items = saved.items.slice();
                 if (typeof saved.seedText === "string") setSeed(saved.seedText);
@@ -60,6 +64,12 @@
             } catch (e) { /* no address bar to read */ }
         }
         const C = PRS.data.characters, O = PRS.data.outfits, D = PRS.data.items, L = PRS.logbook;
+        // An aeroplane that has been taken out of the fleet, or a saved id from an older build,
+        // is the aeroplane the game was written on.
+        if (!choice.aircraft || !PRS.data.aircraft.byId(choice.aircraft)
+            || PRS.data.aircraft.byId(choice.aircraft).id !== choice.aircraft) {
+            choice.aircraft = PRS.data.aircraft.DEFAULT;
+        }
         if (!L.isUnlocked(C.byId(choice.characterId))) choice.characterId = C.CHARACTERS[0].id;
         const ch = C.byId(choice.characterId);
         const o = O.byId(choice.outfitId);
@@ -78,7 +88,11 @@
                               // A day is a seed, but it is not a seed anybody typed, and saving
                               // the date in the box that hashes what is in it would hand the
                               // next session a different aeroplane under the same name.
-                              seedText: choice.daily ? "" : choice.seedText });
+                              seedText: choice.daily ? "" : choice.seedText,
+                              // The aeroplane, but never the scenario: the four-minute cut is
+                              // something you choose each time and never something you find
+                              // yourself in because you flew it last week.
+                              aircraft: choice.aircraft });
     }
 
     /** A seed typed or pasted: digits are the seed itself, and a word is hashed into one. */
@@ -97,6 +111,12 @@
         choice.daily = key;
         choice.seedText = key;
         choice.seed = PRS.daily.seedFor(key);
+        // The day is the same aeroplane for everybody who boards it, and that has to mean the
+        // same aircraft as well as the same seed - otherwise "I got 44" is a sentence about a
+        // cabin nobody else was in. So the day is always TN 447, whatever the pass said before
+        // the button was pressed.
+        choice.aircraft = PRS.data.aircraft.DEFAULT;
+        choice.scenario = null;
     }
 
     /**
@@ -119,6 +139,11 @@
         }
         const plan = got.plan;
         if (plan.day) setDaily(plan.day); else setSeed(String(plan.seed));
+        // A flight brings its aeroplane with it. Without this a code from CL 2231 would put a
+        // ghost from a nineteen-seat turboprop into a narrowbody and the two cabins under each
+        // other would be two different aircraft on the same clock.
+        choice.aircraft = plan.aircraft || PRS.data.aircraft.DEFAULT;
+        choice.scenario = plan.scenario || null;
         choice.ghost = plan;
         return { ok: true, plan: plan };
     }
@@ -147,9 +172,21 @@
             // random seed with a bot at the controls, and `show()` puts it out on the way to any
             // other screen. If it fails to start there is no cabin and the title screen is what
             // it was before, which is the only thing that matters here.
-            PRS.backdrop.start(root);
+            // The aeroplane behind the pass is the aeroplane on the pass.
+            PRS.backdrop.start(root, currentFlight().ac.id);
+            // The first time anybody opens this, the pass is made out for the four-minute cut
+            // rather than the full fifteen. Not a lesser version of the game: the last four
+            // minutes of a real one, on an aeroplane you can see all of at once, with the part
+            // that is actually the game in it and nothing in front of that part. It reverts to
+            // TN 447 the moment there is a log book, and the line under the pass is the way
+            // past it for somebody who does not want to be taught anything.
+            if (!book.flights && choice.scenario === null && !choice.daily) {
+                choice.scenario = PRS.data.scenarios.LASTFOUR.id;
+            }
+            const F = currentFlight();
             root.appendChild(el("div", { class: "title-inner" }, [
-                el("div", { class: "kicker", text: T("TRANSNATIONAL 447 · 31,000 FT · DESCENT") }),
+                el("div", { class: "kicker", text: T("{flight} · {type} · DESCENT",
+                    { flight: F.ac.flightNo, type: T(F.ac.type).toUpperCase() }) }),
                 el("h1", { text: T("PLEASE REMAIN SEATED") }),
                 // One line, not the premise. The locker, the fifteen minutes and the clock that
                 // only moves when you do are all in the opening lines of the log in play.js,
@@ -159,14 +196,19 @@
                 el("p", { class: "tag", text:
                     T("There is a fire. You are the only one who has noticed.") }),
                 el("div", { class: "title-facts" }, [
-                    fact("61", T("souls on board")),
-                    fact("15:00", T("to touchdown")),
+                    fact(String(F.souls), T("souls on board")),
+                    fact(PRS.util.mmss(F.seconds), T("to touchdown")),
                     fact(String(PRS.actions.count()), T("things you can do")),
                     // The one that is not a boast. It is the rule the whole game is built on and
                     // it is the only number on this screen the colour of the fire.
                     fact("0", T("ways to put it out"), "fire"),
                 ]),
                 pass(),
+                F.scen ? el("p", { class: "footnote title-skip" }, [
+                    el("span", { text: T(F.scen.blurb) + " " }),
+                    el("button", { class: "linky", text: T("Or fly the full fifteen minutes"),
+                                   onclick: () => { choice.scenario = null; title(); } }),
+                ]) : null,
                 // From the second flight, with the roster and the previous flights. A first
                 // flight is one click, and "the same aeroplane as everybody else today" is not
                 // an offer that means anything to somebody who has not been on this one yet.
@@ -175,6 +217,14 @@
                 // there is a log book to put them in.
                 el("div", { class: "title-buttons" }, [
                     book.flights ? el("button", { text: T("Change who you are"), onclick: setup }) : null,
+                    // Always available, and never the default after the first time. Four minutes
+                    // is the right length for showing somebody the game, which is a thing a
+                    // player does for another player more often than for themselves.
+                    book.flights && !F.scen
+                        ? el("button", { text: T("The last four minutes"),
+                                         onclick: () => { choice.scenario = "lastfour";
+                                                          choice.daily = null; title(); } })
+                        : null,
                     el("button", { text: T("How to play"), onclick: () => help(root, ch) }),
                     book.flights ? el("button", { text: T("Previous flights ({n})",
                                                           { n: book.flights }),
@@ -185,6 +235,20 @@
                 book.flights ? el("p", { class: "footnote logline", text: logLine(book) }) : null,
             ]));
         });
+    }
+
+    /**
+     * The flight the boarding pass is currently describing: which aeroplane, which scenario if
+     * any, how many souls are on it and how long it is. Everything on the title that used to be
+     * a number typed into the markup comes from here now, because two of the numbers were
+     * sixty-one and fifteen minutes and neither of those is true of every flight any more.
+     */
+    function currentFlight() {
+        const scen = choice.scenario ? PRS.data.scenarios.byId(choice.scenario) : null;
+        const ac = PRS.data.aircraft.byId(scen ? scen.aircraft : choice.aircraft);
+        const roster = PRS.data.passengers[ac.rosterKey] || [];
+        return { ac: ac, scen: scen, souls: roster.length + 1,
+                 seconds: (scen && scen.seconds) || ac.seconds };
     }
 
     function fact(n, label, tone) {
@@ -269,11 +333,15 @@
      */
     function pass() {
         const ch = PRS.data.characters.byId(choice.characterId);
+        const F = currentFlight();
+        // A card that says 22B is describing a seat a nineteen-seat turboprop has not got, so
+        // the pass prints the seat you are actually in rather than the one on the card.
+        const seat = PRS.state.seatFor(F.ac, ch);
         return el("div", { class: "pass" }, [
             el("div", { class: "pass-main" }, [
                 el("div", { class: "pass-fields" }, [
                     passField(T("PASSENGER"), ch.name),
-                    passField(T("SEAT"), ch.seat),
+                    passField(T("SEAT"), seat),
                 ]),
                 el("div", { class: "pass-who" }, [
                     PRS.atlas.icon("pax", 3, PRS.pax.palette(ch)),
@@ -285,8 +353,8 @@
                 barcode(ch.id, 44),
             ]),
             el("div", { class: "pass-stub" }, [
-                passField(T("FLIGHT"), "TN 447"),
-                passField(T("SEAT"), ch.seat),
+                passField(T("FLIGHT"), F.ac.flightNo),
+                passField(T("SEAT"), seat),
                 el("button", { class: "big pass-go", text: T("Board"), onclick: begin }),
                 barcode(ch.id + "stub", 16),
             ]),
@@ -592,8 +660,12 @@
         if (g && !pasteSaid) {
             const ch = PRS.data.characters.byId(g.characterId);
             pasteSaid = { kind: "good",
-                          text: T("Flying beside you: {who}, who got {n} of 60 off this " +
-                                  "aeroplane.", { who: ch ? ch.name : "", n: g.claim.survived }) };
+                          text: T("Flying beside you: {who}, who got {n} of {of} off this " +
+                                  "aeroplane.",
+                                  { who: ch ? ch.name : "", n: g.claim.survived,
+                                    of: (PRS.data.passengers[
+                                            PRS.data.aircraft.byId(g.aircraft).rosterKey]
+                                         || []).length + 1 }) };
         }
         const said = el("p", { class: "paste-said" + (pasteSaid ? " " + pasteSaid.kind : ""),
                                text: pasteSaid ? pasteSaid.text : "" });
@@ -706,10 +778,13 @@
                 el("div", {}, [
                     el("b", { text: ch.name }),
                     el("i", { text: T("{age} · {title} · seat {seat}",
-                                      { age: ch.age, title: T(ch.title), seat: ch.seat }) }),
+                                      { age: ch.age, title: T(ch.title),
+                                        seat: PRS.state.seatFor(
+                                            PRS.data.aircraft.byId(choice.aircraft), ch) }) }),
                 ]),
             ]),
             el("div", { class: "char-stats big-stats" }, statBars(ch, outfit)),
+            fleet(repaint),
             slots(ch, setup),
             el("div", { class: "sub", text: outfit
                 ? T("{name}. {note}", { name: T(outfit.name), note: T(outfit.note) })
@@ -729,6 +804,50 @@
               "aeroplane, clothes by the souls in the book.") }));
         root.appendChild(el("div", { class: "picker-body" }, [chars, panel]));
         window.scrollTo(0, y);
+    }
+
+    /**
+     * Which aeroplane. Two buttons and a line, above the loadout, because it is the same kind
+     * of decision as what is in your bag and a bigger one than what you are wearing: it changes
+     * how many people are on board, how far a carry is, whether there is anybody whose job any
+     * of this is, and how long the flight is.
+     *
+     * The four-minute cut is not in here. It is a flight rather than an aircraft, it is on the
+     * title screen where somebody looking for it will be, and putting it in a row of aeroplanes
+     * would make it look like a third one.
+     */
+    function fleet(repaint) {
+        const F = PRS.data.aircraft;
+        const now = F.byId(choice.aircraft);
+        const row = el("div", { class: "fleet-row" });
+        for (const ac of F.ALL) {
+            const n = (PRS.data.passengers[ac.rosterKey] || []).length + 1;
+            row.appendChild(el("button", {
+                class: "fleet" + (ac.id === now.id ? " on" : ""),
+                onclick: function () {
+                    choice.aircraft = ac.id;
+                    // Picking an aeroplane means flying that aeroplane, whole. A scenario names
+                    // its own aircraft, so leaving one set here would make the pass and this
+                    // row disagree about which flight the button is for.
+                    choice.scenario = null;
+                    // The day is one aeroplane for everybody; choosing another one is choosing
+                    // not to fly it.
+                    if (choice.daily) { choice.daily = null; setSeed(""); }
+                    saveChoice();
+                    repaint();
+                },
+            }, [
+                el("b", { text: ac.flightNo }),
+                el("i", { text: T(ac.type) }),
+                el("u", { text: T("{souls} souls · {mins}", { souls: n,
+                                                              mins: PRS.util.mmss(ac.seconds) }) }),
+            ]));
+        }
+        return el("div", { class: "fleet-box" }, [
+            el("span", { class: "slot-head", text: T("THE AEROPLANE") }),
+            row,
+            el("div", { class: "sub", text: T(now.blurb) }),
+        ]);
     }
 
     /**
@@ -775,12 +894,23 @@
             items: choice.items.slice(),
             seed: choice.seed === null ? (Math.random() * 0xffffffff) >>> 0 : choice.seed,
             daily: choice.daily,
+            aircraft: choice.aircraft,
+            scenario: choice.scenario,
         });
+        // The four-minute cut is flown once per press. Leaving it set would mean the button on
+        // the report that says "again" quietly meant "the tutorial again", forever.
+        choice.scenario = null;
         // Somebody else's fifteen minutes, if one was pasted, and only on the aeroplane it was
         // flown on: two flights on different seeds side by side would be two different fires
         // and nothing to compare.
-        S.ghostFlight = choice.ghost && choice.ghost.seed === S.seed
-            ? PRS.share.ghost(choice.ghost) : null;
+        // Somebody else's minutes, and only when they are the same minutes: the same seed, on
+        // the same aeroplane, on the same flight. Any of those different and the two cabins are
+        // two different fires with nothing to compare.
+        const g = choice.ghost;
+        S.ghostFlight = g && g.seed === S.seed
+            && (g.aircraft || PRS.data.aircraft.DEFAULT) === S.aircraft.id
+            && (g.scenario || null) === (S.scenario ? S.scenario.id : null)
+            ? PRS.share.ghost(g) : null;
         PRS.current = S;
         PRS.audio.unlock();
         PRS.audio.startRoar();
@@ -950,8 +1080,12 @@
             const inner = el("div", { class: "report-inner" });
 
             inner.appendChild(el("div", { class: "rep-head" }, [
+                // Which aeroplane, because there is more than one and an investigator's report
+                // that named the wrong aircraft would be the one thing on this page that is
+                // not checkable against the flight it describes.
                 el("div", { class: "rep-kicker", text:
-                    T("AIR ACCIDENTS INVESTIGATION · PRELIMINARY REPORT · TRANSNATIONAL 447") }),
+                    T("AIR ACCIDENTS INVESTIGATION · PRELIMINARY REPORT · {flight}",
+                      { flight: T(S.aircraft.name).toUpperCase() }) }),
                 el("h1", { text: T(R.ending.title) }),
             ]));
 
@@ -961,7 +1095,7 @@
             // The numbers, in the order the report puts them.
             inner.appendChild(el("h3", { text: T("Souls on board") }));
             inner.appendChild(el("div", { class: "tally" }, [
-                tallyBox("61", T("on board"), ""),
+                tallyBox(String(R.souls), T("on board"), ""),
                 tallyBox(String(R.tally.unhurt), T("walked off"), "t-unhurt"),
                 tallyBox(String(R.tally.treated), T("treated"), "t-treated"),
                 tallyBox(String(R.tally.serious), T("serious"), "t-serious"),
@@ -980,6 +1114,10 @@
             const cv = el("canvas", { class: "rep-canvas" });
             cv.width = PRS.cabin.W * 8;
             cv.height = PRS.cabin.H * 8;
+            // Capped so a tile is about the same size on both aeroplanes: a fifteen-column
+            // cabin stretched across the width a thirty-column one wants is a photograph at
+            // twice the scale, which reads as a different picture rather than a smaller one.
+            cv.style.maxWidth = (PRS.cabin.W * 28) + "px";
             inner.appendChild(el("h3", { text: T("The cabin at touchdown") }));
             inner.appendChild(el("div", { class: "rep-map" }, [cv, el("div", { class: "legend" }, [
                 legend("#5fd67a", T("walked off")), legend("#e8c53a", T("treated")),
@@ -990,7 +1128,11 @@
             inner.appendChild(el("h3", { text: T("Manifest") }));
             inner.appendChild(groupPhoto(S, R, cv));
 
-            inner.appendChild(el("h3", { text: T("Where the fifteen minutes went") }));
+            // "the fifteen minutes" was true while every flight was fifteen minutes long. It
+            // is four on the short cut and ten on the turboprop, so the heading says how long
+            // the flight it is about actually was.
+            inner.appendChild(el("h3", { text: T("Where the {mins} went",
+                { mins: T("{n} minutes", { n: Math.round(S.clock.total / 60) }) }) }));
             inner.appendChild(el("div", { class: "spend" }, [
                 spendBar(T("Carrying people"), R.time.carrying, R.time.total, "#5fd67a"),
                 spendBar(T("Fighting the fire"), R.time.fighting, R.time.total, "#e08a2a"),
@@ -1003,7 +1145,8 @@
                 inner.appendChild(el("h3", { text: T("Other observations") }));
                 inner.appendChild(el("div", { class: "medals" },
                     R.medals.map((m) => el("div", { class: "medal" }, [
-                        el("b", { text: T(m.name) }), el("i", { text: T(m.text) })]))));
+                        el("b", { text: PRS.medals.nameOf(m, S) }),
+                        el("i", { text: T(m.text) })]))));
             }
 
             // Two drawers. Both are about the flight you have just read about, both are long,
@@ -1627,8 +1770,9 @@
         PRS.render.drawSummary(ctx, S, 0.5, null);
 
         return el("div", {}, [
-            el("p", { class: "sec-note", text: T("Sixty-one souls, the ones who walked off " +
-                "first and the ones who did not last. Point at anybody.") }),
+            el("p", { class: "sec-note", text: T("{n} souls, the ones who walked off " +
+                "first and the ones who did not last. Point at anybody.",
+                { n: S.pax.length + 1 }) }),
             wrap,
         ]);
     }

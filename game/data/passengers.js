@@ -313,6 +313,102 @@
         K("“I'm sorry. I'm sorry. I'm sorry I said that to you.”"),
     ];
 
+    // ------------------------------------------------------------- Coastal Link 2231 ---
+    //
+    // Eighteen people on a nineteen-seat turboprop, and 9C is yours.
+    //
+    // This is the eight-forty from the island to the mainland, which is the aeroplane people
+    // take to see a consultant and come home again the same day. So the manifest is not a
+    // cross-section of anybody: it is seven people over seventy-four, a woman whose chair is in
+    // the hold, a nine-month-old, a child, and three adults who could carry any of them.
+    //
+    // That is the whole design of it. On the big aeroplane the fire is the threat and the
+    // people are the clock. Here the people are the threat: an ordinary locker fire that a fit
+    // cabin could walk away from is lethal in this one, because almost nobody in it can walk.
+    // Nothing about the fire needs turning up. The manifest does the work.
+    //
+    // Lewin Carbis is in 7C, which is the seat under the locker. He is sixty-nine and he has
+    // done nothing at all.
+    const ROSTER_BE19 = [
+        ["Morwenna Pascoe", "1C", 61, "grey_long", "b", "scrubs", ["medical", "helpful"],
+         K("“I'm the district nurse. I know that smell and it isn't the ovens.”"),
+         K("“Don't carry me, I'm the one thing on here that's any use. Point me at someone.”"),
+         "first_aid"],
+        ["Eileen Trethowan", "2A", 71, "white_long", "a", "plum", ["elderly"],
+         K("“We only went over for the hip. We're meant to be home by ten.”"),
+         K("“Take Alec first. He'll not go if he doesn't see me go, but take him first.”")],
+        ["Alec Trethowan", "2C", 79, "white", "a", "tan", ["elderly", "sceptic"],
+         K("“Fifty-one years on this run. It has always smelt like that.”"),
+         K("“Where's Eileen. I'm not going anywhere in front of Eileen.”")],
+        ["Davey Nancarrow", "3A", 106, "bald", "b", "olive", ["large"],
+         K("“I'd help you if I could stand up in here. I can't stand up in here.”"),
+         K("“You'll not manage me on your own, and I'd not think less of you for it.”"),
+         "multitool"],
+        ["Sister Bernadette Quill", "3C", 74, "grey_long", "a", "black", ["elderly", "sceptic"],
+         K("“If there were a fire, young man, there would be an announcement about it.”"),
+         K("“Show me. Not tell me. I have been told things my whole life.”")],
+        ["Nan Hoyle", "4A", 82, "white_long", "a", "cream", ["elderly", "asleep"],
+         K("(asleep since the island, and she has the window seat she always has)"),
+         K("(she wakes, sees your face, and stops asking anything at all)")],
+        ["Tomas Egede", "4C", 79, "dark", "d", "denim", ["helpful"],
+         K("“Tell me where and I'll go. I'm the only one on here under sixty who isn't a baby.”"),
+         K("“No. Put me down and give me someone to carry. That's two of us working.”"),
+         "tape"],
+        ["Iris Pellow", "5A", 57, "grey", "a", "teal", ["immobile"],
+         K("“My chair goes in the hold. It always goes in the hold.”"),
+         K("“Under the knees and behind the back. I'll tell you if you've got it wrong.”")],
+        ["Rafferty Blood", "5C", 74, "ginger", "a", "tracksuit", ["headphones"],
+         K("(the headphones are the big kind, and he has not heard one word of this)"),
+         K("“WHAT? — oh. Oh God. Yeah. Yeah, okay, go, go.”"),
+         "water_big"],
+        ["Saoirse Dunlevy", "6A", 63, "auburn_long", "a", "white", ["nervous"],
+         K("“Is it the engine? Tell me it isn't the engine. He's nine months old.”"),
+         K("“Him first. HIM FIRST. I'll walk, I'll walk, just take him.”")],
+        ["Fionn Dunlevy", "6C", 9, "ginger", "a", "pink", ["infant"],
+         K("(nine months old, in the seat beside his mother, entirely unbothered)"),
+         K("(he weighs nothing and he holds on to your collar like he was built for it)")],
+        ["Hattie Gwynn", "7A", 68, "white", "b", "pink", ["elderly"],
+         K("“It's warm just here. Is it meant to be warm just here?”"),
+         K("“I know. I know, my love. You can't take everybody. I know.”")],
+        ["Lewin Carbis", "7C", 84, "grey", "a", "steel", ["elderly"],
+         K("“Something's dripping on me. Something is dripping on me out of the locker.”"),
+         K("“It's above me, isn't it. It's been above me the whole time.”")],
+        ["Bryn Tregidga", "8A", 101, "brown", "c", "mustard", ["large", "hostile"],
+         K("“Sit down. You're frightening the old girls. Sit DOWN.”"),
+         K("“Get off. Get — right. Right. I can smell it. Say nothing.”")],
+        ["Ora Kestell", "8C", 24, "black_long", "f", "crimson", ["child"],
+         K("“Are you a doctor? My mum's at the back. Can I go and sit with my mum?”"),
+         K("“I can run. I'm fast. Let me go in front and I'll show them where.”")],
+        ["Gethin Pryce", "9A", 88, "white", "a", "suit", ["elderly", "hostile"],
+         K("“I have written to them about this aircraft twice.”"),
+         K("“Unhand me. Unhand — oh. Oh, that's real, isn't it. That's a real one.”")],
+        ["Wenna Kestell", "10A", 66, "black_long", "f", "forest", ["helpful"],
+         K("“That's my daughter in 8C. Whatever you need, you have it.”"),
+         K("“Get Ora and I'll take the far end. We'll meet in the middle.”")],
+        ["Bosun", "10C", 11, "tan", "a", "tan", ["pet"],
+         K("(a collie in a soft crate, and he has been growling at the ceiling for a minute)"),
+         K("(he does not struggle, which is worse, somehow, than if he did)")],
+    ];
+
+    // Nobody's job is any of this.
+    //
+    // A Beechcraft 1900D is flown by two pilots and carries no cabin crew, which is not a
+    // simplification of the big aeroplane's roster - it is the thing that makes this one a
+    // different game. There is no trolley in the aisle, no BCF bottle coming aft, nobody with a
+    // manual and thirty-one years on type, and the six-phase procedure that runs on TN 447 with
+    // or without you does not exist here. The flight deck is a locked door and an interphone,
+    // and everything on the other side of it has to be asked for.
+    //
+    // Reidar Vang is not in the cabin. He is in the right-hand seat with a headset on, and the
+    // only reason he is on this list at all is that on an aeroplane this size he can get out of
+    // it - which is the single biggest thing you can make happen on CL 2231, and it costs you
+    // the walk to the front and somebody who believes you.
+    const CREW_BE19 = [
+        { id: "fo", name: "Reidar Vang", role: K("First officer"), sprite: "crew",
+          seat: "deck", hair: "#d9b16a", skin: SKIN.a, shirt: "#141c30",
+          line: K("“Say again? You're breaking up. Stand by.”") },
+    ];
+
     // A trait is an id everywhere in the simulation and a word on a card. The ids stay
     // English because the rules are written against them; this is the word.
     const TRAIT = {
@@ -326,6 +422,7 @@
     function traitName(id) { return T(TRAIT[id] || id); }
 
     PRS.data = PRS.data || {};
-    PRS.data.passengers = { SKIN, HAIR, SHIRT, ROSTER, CREW, AMBIENT, LATE, TRAIT,
+    PRS.data.passengers = { SKIN, HAIR, SHIRT, ROSTER, CREW, ROSTER_BE19, CREW_BE19,
+                            AMBIENT, LATE, TRAIT,
                             traitName, hairOf };
 })(window);

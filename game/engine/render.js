@@ -105,6 +105,11 @@
         canvas.height = Math.round(box.down * TILE * s);
         canvas.style.width = "100%";
         canvas.style.height = "auto";
+        // A fifteen-tile cabin stretched across a page meant for thirty is a cabin drawn at
+        // twice the size of every sprite in it, and it does not fit down the page either. So
+        // the canvas never renders wider than it actually is: a tile is a tile on every
+        // aeroplane, and a short one is centred in the space rather than blown up to fill it.
+        canvas.style.maxWidth = canvas.width + "px";
         return s;
     }
 
@@ -115,14 +120,45 @@
      * so they go two and two and the strip is twice as deep.
      */
     function statusGrid(across) {
-        return across >= 20 ? { cols: 4, rows: 1 } : { cols: 2, rows: 2 };
+        return across >= 14 ? { cols: 4, rows: 1 } : { cols: 2, rows: 2 };
+    }
+
+    /**
+     * How far through its procedure the crew are, as a fraction - counted against the phases
+     * this aeroplane actually runs. On TN 447 that is all six. On CL 2231 it is two, and a bar
+     * that sat at one sixth all flight would be saying the crew were about to do something.
+     */
+    function crewProgress(S) {
+        const path = PRS.crew.path(S);
+        let done = 0;
+        for (const p of path) if (S.crewPhase >= p) done++;
+        return (done + 1) / (path.length + 1);
+    }
+
+    /**
+     * The middle of one of the two banks of seats, as a y in tiles: where a word painted across
+     * the cabin goes. Three seats deep on a narrowbody and one on a turboprop, so it is asked
+     * for rather than being the 2 and the 6 it was while there was one aeroplane.
+     */
+    function bankMid(lower) {
+        return lower ? (cabin.AISLE_Y + 1 + cabin.H - 2) / 2 : (1 + cabin.AISLE_Y - 1) / 2;
     }
 
     /** The readout on a canvas of its own, which is what a turned cabin needs. */
+    // How wide the readout draws when it is on a canvas of its own, in tiles. It used to be
+    // the cabin's depth, because a turned cabin is that many tiles across and the readout sits
+    // over it - which is nine on a narrowbody and five on a turboprop, and five tiles is not
+    // enough room for "OUT OF SEATS" beside "HELPING". Both are stretched to the width of the
+    // page by the CSS anyway, so the readout asks for the room the words need and lets the
+    // cabin below it be whatever width it is.
+    const STATUS_TILES = 9;
+
+    function statusWidth() { return Math.max(STATUS_TILES, cabin.H); }
+
     function fitStatus(canvas, scale) {
         const s = scale || DRAW_SCALE;
-        canvas.width = cabin.H * TILE * s;
-        canvas.height = Math.round(BAND * statusGrid(cabin.H).rows * TILE * s);
+        canvas.width = statusWidth() * TILE * s;
+        canvas.height = Math.round(BAND * statusGrid(statusWidth()).rows * TILE * s);
         canvas.style.width = "100%";
         canvas.style.height = "auto";
         return s;
@@ -302,7 +338,7 @@
                        box: shift(spriteBox(sprite), dx, dy) });
         }
         const crewFace = S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax";
-        for (const c of S.crew) {
+        for (const c of PRS.crew.inCabin(S)) {
             if (c.x !== x || c.y !== y) continue;
             out.push({ kind: "crew", id: c.id, who: c, sprite: crewFace, dx: 0, dy: 0,
                        box: spriteBox(crewFace) });
@@ -669,7 +705,9 @@
         // locker is.
         for (let x = 0; x < cabin.W; x++) {
             if (cabin.rowAt(x) === null) continue;
-            for (const y of [1, 7]) {
+            // The outboard seat row on each side of the aisle: A and F on a narrowbody, A and C
+            // on a turboprop, which is 1 and H-2 on both and was 1 and 7 while there was one.
+            for (const y of [1, cabin.H - 2]) {
                 const side = y < cabin.AISLE_Y ? "left" : "right";
                 const open = S.cabinFlags.binsOpen[cabin.binKey(x, side)];
                 const py = y === 1 ? (T - 6 * scale) : ((cabin.H - 1) * T);
@@ -785,7 +823,7 @@
         // which is exactly the problem, and they stop being calm at the same moment they start
         // being right.
         const crewFace = S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax";
-        for (const c of S.crew) {
+        for (const c of PRS.crew.inCabin(S)) {
             const spot = drawnAt(ns + "c:" + c.id, c.x, c.y, dt);
             const [ux, uy] = upright(ctx, pixels(spot.x, scale), pixels(spot.y, scale), T);
             atlas.blit(ctx, crewFace, ux, uy, scale, paletteOf(c));
@@ -948,10 +986,12 @@
 
     // The two ends of the aeroplane. The overwing exit row is drawn as what it is - a clear
     // column of floor with a door at each end - and it is not a zone, so it is not painted.
-    const ZONES = [cabin.FWD_GALLEY_X, cabin.FWD_CROSS_X, cabin.AFT_CROSS_X, cabin.AFT_GALLEY_X];
+    // The floor in front of the doors, asked for rather than remembered: which columns those
+    // are depends on which aeroplane is on the screen.
+    const zones = () => cabin.DOOR_ENDS;
 
     function drawZones(ctx, S, T, t) {
-        for (const zx of ZONES) {
+        for (const zx of zones()) {
             const air = zoneAir(S, zx);
             const tier = air.bad > 0.62 ? 2 : air.bad > 0.24 ? 1 : 0;
             ctx.save();
@@ -1164,24 +1204,49 @@
         // rather than across it. Across the page that is a column and the word is turned to go
         // down it; down the page the galley is already lying the way the word reads, and the
         // turn would be putting back the one the cabin has just had.
+        // Where the words go is asked of the cabin rather than written down here, because the
+        // two aeroplanes do not put the lavatories in the same places and one of them has a
+        // service end that is also its only cross-aisle. So: the word goes down the middle of
+        // whatever run of galley tiles there actually is on that side of the aisle, and the
+        // lavatory word goes on the lavatory tiles, wherever those turn out to be.
         ctx.fillStyle = "rgba(20,32,36,0.8)";
-        for (const [gx, gy] of [[cabin.FWD_GALLEY_X, 2], [cabin.FWD_GALLEY_X, 6],
-                                [cabin.AFT_GALLEY_X, 2.5], [cabin.AFT_GALLEY_X, 5.5]]) {
-            const [ux, uy] = upright(ctx, gx * T, gy * T, T);
-            ctx.save();
-            if (view.down) {
-                ctx.translate(ux + T / 2, uy + T * 0.64);
-            } else {
-                ctx.translate(ux + T * 0.64, uy + T / 2);
-                ctx.rotate(-Math.PI / 2);
+        for (const gx of [cabin.FWD_GALLEY_X, cabin.AFT_GALLEY_X]) {
+            // A vestibule that is also a door is labelled with the state of its air instead:
+            // that word is the one a player needs and two words on one tile is neither.
+            if (gx === cabin.FWD_CROSS_X || gx === cabin.AFT_CROSS_X) continue;
+            const word = gx === cabin.FWD_GALLEY_X ? cabin.aircraft.fwdGalleyWord
+                                                   : cabin.aircraft.aftGalleyWord;
+            for (const lower of [false, true]) {
+                const ys = [];
+                for (let y = 1; y <= cabin.H - 2; y++) {
+                    if (y === cabin.AISLE_Y || (y > cabin.AISLE_Y) !== lower) continue;
+                    if (cabin.kindAt(gx, y) === "galley") ys.push(y);
+                }
+                if (!ys.length) continue;
+                const gy = (ys[0] + ys[ys.length - 1]) / 2;
+                const [ux, uy] = upright(ctx, gx * T, gy * T, T);
+                ctx.save();
+                if (view.down) {
+                    ctx.translate(ux + T / 2, uy + T * 0.64);
+                } else {
+                    ctx.translate(ux + T * 0.64, uy + T / 2);
+                    ctx.rotate(-Math.PI / 2);
+                }
+                // `PRS.t` and not `X`: the word is the aeroplane's own, marked with K() in
+                // aircraft.js, so the key is that word and nothing else - noting it here would
+                // look it up with a note the scanner cannot see it being given. And `PRS.t`
+                // spelled out, because `T` inside this function is the tile size.
+                ctx.fillText(PRS.t(word), 0, 0);
+                ctx.restore();
+                settle(ctx);
             }
-            ctx.fillText(X("GALLEY", "written down the side of a galley, one short word"), 0, 0);
-            ctx.restore();
-            settle(ctx);
         }
         const lav = X("LAV", "written across a lavatory door, three letters at most");
-        label(lav, cabin.AFT_GALLEY_X, 1);
-        label(lav, cabin.AFT_GALLEY_X, 7);
+        for (const gx of [cabin.FWD_GALLEY_X, cabin.AFT_GALLEY_X]) {
+            for (let y = 1; y <= cabin.H - 2; y++) {
+                if (cabin.kindAt(gx, y) === "lav") label(lav, gx, y);
+            }
+        }
 
         // The floor by the doors at each end says what the air is like on it, and nothing more.
         // It is not a promise and it stops being good news the moment the smoke gets there.
@@ -1194,8 +1259,8 @@
             const word = [X("CLEAR", "the air by a door, painted on the floor"),
                           X("SMOKE", "the air by a door, painted on the floor"),
                           X("GONE", "the air by a door, painted on the floor")][tier];
-            label(word, zx, 2);
-            label(word, zx, 6);
+            label(word, zx, bankMid(false));
+            label(word, zx, bankMid(true));
         }
         ctx.restore();
 
@@ -1220,7 +1285,7 @@
         }
         ctx.font = "700 " + Math.round(T * TEXT.seat) + "px ui-monospace, monospace";
         ctx.fillStyle = "rgba(210,218,230,0.7)";
-        for (let y = 1; y <= 7; y++) {
+        for (let y = 1; y <= cabin.H - 2; y++) {
             const letter = cabin.seatLetter(y);
             if (!letter) continue;
             for (const x of [0, cabin.W - 1]) {
@@ -1308,15 +1373,22 @@
         ctx.fillRect(0, h * grid.rows - scale, W, scale);
 
         const cells = [
+            // Of however many are on this aeroplane, which is sixty on TN 447 and eighteen on
+            // a nineteen-seat turboprop. It was the literal 60 for as long as there was one
+            // aeroplane.
             { label: X("OUT OF SEATS", "readout along the top of the cabin"),
-              value: moved + " / 60", frac: moved / 60, colour: BAR_GOOD },
+              value: moved + " / " + S.pax.length, frac: moved / Math.max(1, S.pax.length),
+              colour: BAR_GOOD },
             { label: X("HELPING", "readout along the top of the cabin"),
               value: String(helping), frac: helping / cap, colour: BAR_GOOD },
             { label: X("PANIC", "readout along the top of the cabin"),
               value: Math.round(panic) + "%", frac: panic / 100, colour: BAR_PANIC[tier] },
             { label: X("CREW", "readout along the top of the cabin"),
-              value: PRS.t(phase.name), frac: (S.crewPhase + 1) / PRS.crew.PHASES.length,
-              colour: "#7fb0e8" },
+              // How far along the procedure this aeroplane's procedure is. An aeroplane with
+              // no cabin crew runs two of the six phases, so the bar is against the two it
+              // runs and not against six it never will.
+              value: PRS.t(phase.name),
+              frac: crewProgress(S), colour: "#7fb0e8" },
         ];
         const pad = Math.round(T * 0.35);
         const cw = (W - pad * 2) / grid.cols;

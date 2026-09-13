@@ -252,8 +252,13 @@
 
         if (text) st.log(S, text, kind);
         const done = { text: text, cost: cost, kind: kind, passage: null };
-        // Medals are looked at once the seconds have gone by, whenever that turns out to be.
-        const check = () => PRS.medals.check(S);
+        // Medals are looked at once the seconds have gone by, whenever that turns out to be,
+        // and so is anything the scenario has been waiting to say - which on a tutorial is a
+        // line about the thing that has just happened to you, in the log, with the clock still
+        // running. Medals first: a medal is a fact about the flight and a beat is a remark
+        // about it, and the remark goes underneath.
+        const check = () => { PRS.medals.check(S);
+                              if (PRS.data.scenarios) PRS.data.scenarios.check(S); };
         if (cost <= 0) {
             check();
             return done;

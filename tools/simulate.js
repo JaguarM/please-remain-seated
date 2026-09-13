@@ -70,6 +70,8 @@ const FILES = [
     "game/i18n/i18n.js",
     "game/engine/atlas.js",
     "game/engine/audio.js",
+    "game/data/aircraft.js",
+    "game/data/scenarios.js",
     "game/sim/cabin.js",
     "game/sim/fire.js",
     "game/sim/pax.js",
@@ -161,7 +163,8 @@ function playOne(PRS, opts) {
               : rng.chance(0.5) ? ch.bag
               : ch.kit.concat(rng.shuffle(free).slice(0, PRS.data.items.SLOTS - ch.kit.length));
     const S = PRS.state.create({ characterId: ch.id, outfitId: outfit, items: bag,
-                                 seed: seed });
+                                 seed: seed, aircraft: opts.aircraft,
+                                 scenario: opts.scenario });
     // The report works out what the same flight does with nobody in it, because that is what the
     // log book credits. Nothing here reads the number and it is a second fifteen minutes of
     // physics per flight, so a run of ten thousand does not pay for it.
@@ -222,14 +225,29 @@ function main() {
     const outfit = opt("outfit", undefined);
     const seedArg = opt("seed", null);
     const bagArg = opt("bag", null);
+    // Which aeroplane the table is for, and which flight on it. The balance the design aims at
+    // is TN 447's, so that stays the default; the other two are how you check that a change
+    // has not quietly made one of the other flights into something else.
+    const aircraft = opt("aircraft", undefined);
+    const scenario = opt("scenario", undefined);
 
     const PRS = load();
     console.log("Loaded " + PRS.atlas.boot() + " sprites, " + PRS.actions.count() +
                 " action definitions.");
     console.log("Decks: " + JSON.stringify(PRS.actions.deckCounts()));
     // How many concrete actions exist at the very start, before targets multiply further.
-    const probe = PRS.state.create({ characterId: "ansel", seed: 1 });
+    const probe = PRS.state.create({ characterId: "ansel", seed: 1,
+                                     aircraft: aircraft, scenario: scenario });
+    console.log("Aeroplane: " + probe.aircraft.flightNo + ", " + (probe.pax.length + 1) +
+                " souls, " + PRS.util.mmss(probe.clock.total) +
+                (probe.scenario ? " · " + PRS.t(probe.scenario.name) : ""));
     console.log("Concrete actions available on turn one: " + PRS.actions.available(probe).length);
+
+    // Of however many are on this aeroplane, and the column that used to be a literal "54+" is
+    // whatever nine tenths of them is: a very good flight, on whichever aircraft the table is
+    // for. Fifty-four of sixty-one and seventeen of nineteen are the same sentence.
+    const souls = probe.pax.length + 1;
+    const great = Math.round(souls * 0.9);
 
     const strategies = strategy ? strategy.split(",") : PRS.bots.names();
     const table = [];
@@ -247,6 +265,7 @@ function main() {
                 // The douse bot flies with what the playtest flew with, unless told otherwise.
                 bag: bagArg ? bagArg.split(",") : s === "douse" ? ["water_big", "wet_towel", "blanket"]
                                                               : null,
+                aircraft: aircraft, scenario: scenario,
                 verbose: verbose,
             });
             totalSteps += r.steps;
@@ -264,7 +283,7 @@ function main() {
             bot: s,
             runs: runs.length,
             survivedAvg: mean(survived), survivedMax: Math.max.apply(null, survived),
-            ninety: survived.filter((v) => v >= 54).length / runs.length,
+            ninety: survived.filter((v) => v >= great).length / runs.length,
             unhurtAvg: mean(runs.map((r) => r.result ? r.result.tally.unhurt : 0)),
             movedAvg: mean(runs.map((r) => r.result ? r.result.moved : 0)),
             helpersAvg: mean(runs.map((r) => r.S.stats.helpersRecruited)),
@@ -273,9 +292,9 @@ function main() {
         });
     }
 
-    console.log("\nSurvived of 60, and how.\n");
+    console.log("\nSurvived of " + souls + ", and how.\n");
     console.log(pad("bot", 10) + pad("runs", 6) + pad("survived", 10) + pad("best", 6) +
-                pad("54+", 6) + pad("walked", 8) + pad("moved", 7) + pad("helpers", 9) +
+                pad(great + "+", 6) + pad("walked", 8) + pad("moved", 7) + pad("helpers", 9) +
                 pad("pours", 7) + "actions");
     console.log("-".repeat(78));
     for (const row of table) {

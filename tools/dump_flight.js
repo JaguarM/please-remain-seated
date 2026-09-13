@@ -50,6 +50,7 @@ function fromBot() {
         characterId: opt("char", "ansel"), outfitId: opt("outfit", null) || null,
         items: bag ? bag.split(",") : undefined, seed: seed,
         daily: PRS.daily.isKey(opt("daily", "")) ? opt("daily", "") : null,
+        aircraft: opt("aircraft", undefined), scenario: opt("scenario", undefined),
     });
     PRS.bots.setCoin(PRS.util.makeRng((seed ^ 0x9e3779b9) >>> 0));
     return {
@@ -67,7 +68,8 @@ function fromCode(code) {
     if (!got.ok) throw new Error(got.why);
     const plan = got.plan;
     const S = PRS.state.create({ characterId: plan.characterId, outfitId: plan.outfitId,
-                                 items: plan.items, seed: plan.seed, daily: plan.day });
+                                 items: plan.items, seed: plan.seed, daily: plan.day,
+                                 aircraft: plan.aircraft, scenario: plan.scenario });
     S.quiet = true;
     S.counterfactual = false;
     const ch = PRS.data.characters.byId(plan.characterId);

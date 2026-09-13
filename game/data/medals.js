@@ -68,7 +68,14 @@
           when: (S) => S.pax.some((p) => PRS.pax.isChild(p) && p.moved && p.state !== "dead"),
           near: (S) => ({ have: S.pax.filter((p) => PRS.pax.isChild(p) && p.moved).length,
                           need: 1, note: K("children moved forward") }) },
-        { id: "dog", name: K("Bruno"),
+        // Named after whichever animal is on the aeroplane, because there is one on each and
+        // they are not the same one: Bruno is a French bulldog in 21B of TN 447 and Bosun is a
+        // collie in 10C of CL 2231. A medal is a sentence about what you did, and a sentence
+        // with the wrong dog's name in it is about somebody else's flight.
+        { id: "dog", name: (S) => {
+              const pet = S.pax.find((p) => PRS.pax.isPet(p));
+              return pet ? pet.name : K("The animal");
+          },
           text: K("The dog got out. This was not free and you knew that."),
           when: (S) => landed(S) && outOfTheRows(S, "pet")
                              .every((p) => p.moved && p.outcome !== "lost") },
@@ -141,6 +148,16 @@
     const BY_ID = {};
     for (const m of MEDALS) BY_ID[m.id] = m;
 
+    /**
+     * What to call a medal on this flight. Almost all of them are a fixed phrase; one is named
+     * after the animal in the cabin, and there is a different animal on each aeroplane. The log
+     * book never calls this - it keeps ids and nothing else - so a name is only ever asked for
+     * with a flight in front of it.
+     */
+    function nameOf(m, S) {
+        return T(typeof m.name === "function" ? m.name(S) : m.name);
+    }
+
     function check(S) {
         for (const m of MEDALS) {
             if (S.medals[m.id]) continue;
@@ -158,7 +175,7 @@
             if (!ok) continue;
             S.medals[m.id] = S.clock.elapsed;
             PRS.state.log(S, T("◆ {name} — {text}",
-                               { name: T(m.name), text: T(m.text) }) + opens(m.id), "medal");
+                               { name: nameOf(m, S), text: T(m.text) }) + opens(m.id), "medal");
         }
     }
 
@@ -178,5 +195,5 @@
         return MEDALS.filter((m) => S.medals[m.id]);
     }
 
-    PRS.medals = { MEDALS, BY_ID, check, earned };
+    PRS.medals = { MEDALS, BY_ID, check, earned, nameOf };
 })(window);

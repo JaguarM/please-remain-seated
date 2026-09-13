@@ -76,8 +76,8 @@
                       "highest-value action available on this aeroplane.",
                       { them: R.byHelpers, you: R.byYou }) +
                     "\n\n" +
-                    T("{n} of sixty got off alive. {walked} walked. {lost}",
-                      { n: R.survivors, walked: R.tally.unhurt,
+                    T("{n} of {of} got off alive. {walked} walked. {lost}",
+                      { n: R.survivors, of: R.souls, walked: R.tally.unhurt,
                         lost: R.lost ? T("{n} did not.", { n: R.lost })
                                      : T("Everybody who was on this aeroplane got off this " +
                                          "aeroplane.") }) +
@@ -150,9 +150,10 @@
                     "\n\n" +
                     T("The fire vented {vented} cells of a pack of nine. There were {left} left " +
                       "when the doors opened, and they went in the aircraft rescue foam nine " +
-                      "minutes later, one at a time, popping, while sixty people stood on a " +
+                      "minutes later, one at a time, popping, while {n} people stood on a " +
                       "taxiway in the rain and watched.",
-                      { vented: R.fire.vented, left: R.fire.cellsLeft }) +
+                      { vented: R.fire.vented, left: R.fire.cellsLeft,
+                        n: R.survivors }) +
                     "\n\n" +
                     T("You were right about the bin at {you} into the descent. Nobody else was " +
                       "right about the bin until {them}.",

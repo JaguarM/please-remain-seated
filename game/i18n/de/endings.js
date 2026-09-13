@@ -73,8 +73,8 @@
          "meiste Zeit der letzten vier Minuten hast du niemanden getragen, weil du gezeigt " +
          "hast, und Zeigen war, wie sich herausstellte, die wertvollste Handlung, die es in " +
          "diesem Flugzeug gab."],
-        ["{n} of sixty got off alive. {walked} walked. {lost}",
-         "{n} von sechzig sind lebend herausgekommen. {walked} sind selbst gegangen. {lost}"],
+        ["{n} of {of} got off alive. {walked} walked. {lost}",
+         "{n} von {of} sind lebend herausgekommen. {walked} sind selbst gegangen. {lost}"],
         ["{n} did not.", "{n} nicht."],
         ["Everybody who was on this aeroplane got off this aeroplane.",
          "Alle, die in diesem Flugzeug waren, sind aus diesem Flugzeug herausgekommen."],
@@ -138,10 +138,10 @@
          "kamen ins Krankenhaus und wurden dabehalten, und {lost} wurden nicht erfasst."],
         ["The fire vented {vented} cells of a pack of nine. There were {left} left when the " +
          "doors opened, and they went in the aircraft rescue foam nine minutes later, one at a " +
-         "time, popping, while sixty people stood on a taxiway in the rain and watched.",
+         "time, popping, while {n} people stood on a taxiway in the rain and watched.",
          "Das Feuer hat {vented} Zellen eines Neunerpakets abgeblasen. Als die Türen aufgingen, " +
          "waren noch {left} übrig, und die gingen neun Minuten später im Löschschaum der " +
-         "Flughafenfeuerwehr hoch, eine nach der anderen, mit einem Knall, während sechzig " +
+         "Flughafenfeuerwehr hoch, eine nach der anderen, mit einem Knall, während {n} " +
          "Menschen im Regen auf einem Rollweg standen und zusahen."],
         ["You were right about the bin at {you} into the descent. Nobody else was right about " +
          "the bin until {them}.",

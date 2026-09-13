@@ -30,7 +30,11 @@ const seed = Number(opt("seed", 20260908));
 const character = opt("char", "ansel");
 const out = opt("out", path.join(__dirname, "..", "docs", "frame.json"));
 
-const S = PRS.state.create({ characterId: character, seed: seed });
+const aircraft = opt("aircraft", undefined);
+const scenario = opt("scenario", undefined);
+
+const S = PRS.state.create({ characterId: character, seed: seed,
+                             aircraft: aircraft, scenario: scenario });
 
 // The bot's coin, seeded from the same number, so this file's whole promise - that a picture
 // regenerates from a seed - is actually true.

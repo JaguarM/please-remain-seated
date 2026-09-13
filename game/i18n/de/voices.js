@@ -15,6 +15,113 @@
     const PRS = global.PRS = global.PRS || {};
 
     PRS.i18n.add("de", [
+        // -------------------------------------------------- Coastal Link 2231, eighteen of them ---
+        //
+        // The island hospital run, and the register is older and plainer than TN 447's. Two
+        // things carried over deliberately: nobody is given a gender the roster did not give
+        // them, and the old people are not made quaint. Eileen and Alec are not a comic turn -
+        // they are two people who have been on this aeroplane together fifty-one times and
+        // neither will move first, and the German has to let them keep that.
+        ["“I'm the district nurse. I know that smell and it isn't the ovens.”",
+         "„Ich bin die Gemeindeschwester. Ich kenne diesen Geruch, und das sind nicht die Öfen.“"],
+        ["“Don't carry me, I'm the one thing on here that's any use. Point me at someone.”",
+         "„Trag mich nicht, ich bin das Einzige hier drin, das zu etwas taugt. Zeig mir, zu wem.“"],
+
+        ["“We only went over for the hip. We're meant to be home by ten.”",
+         "„Wir waren nur wegen der Hüfte drüben. Um zehn sollten wir zu Hause sein.“"],
+        ["“Take Alec first. He'll not go if he doesn't see me go, but take him first.”",
+         "„Nimm Alec zuerst. Er geht nicht, wenn er mich nicht gehen sieht, aber nimm ihn " +
+         "zuerst.“"],
+
+        ["“Fifty-one years on this run. It has always smelt like that.”",
+         "„Einundfünfzig Jahre auf dieser Strecke. Das hat immer so gerochen.“"],
+        ["“Where's Eileen. I'm not going anywhere in front of Eileen.”",
+         "„Wo ist Eileen. Ich gehe nirgendwohin vor Eileen.“"],
+
+        ["“I'd help you if I could stand up in here. I can't stand up in here.”",
+         "„Ich würde dir helfen, wenn ich hier drin aufstehen könnte. Ich kann hier drin nicht " +
+         "aufstehen.“"],
+        ["“You'll not manage me on your own, and I'd not think less of you for it.”",
+         "„Allein schaffst du mich nicht, und ich würde deswegen nicht schlechter von dir " +
+         "denken.“"],
+
+        ["“If there were a fire, young man, there would be an announcement about it.”",
+         "„Wenn es brennen würde, junger Mann, gäbe es eine Durchsage dazu.“"],
+        ["“Show me. Not tell me. I have been told things my whole life.”",
+         "„Zeig es mir. Sag es mir nicht. Mir ist mein Leben lang etwas gesagt worden.“"],
+
+        ["(asleep since the island, and she has the window seat she always has)",
+         "(schläft seit der Insel, und sie hat den Fensterplatz, den sie immer hat)"],
+        ["(she wakes, sees your face, and stops asking anything at all)",
+         "(sie wacht auf, sieht dein Gesicht und hört auf, überhaupt etwas zu fragen)"],
+
+        ["“Tell me where and I'll go. I'm the only one on here under sixty who isn't a baby.”",
+         "„Sag mir wohin, und ich gehe. Ich bin der Einzige hier unter sechzig, der kein Baby " +
+         "ist.“"],
+        ["“No. Put me down and give me someone to carry. That's two of us working.”",
+         "„Nein. Setz mich ab und gib mir jemanden zum Tragen. Dann arbeiten wir zu zweit.“"],
+
+        ["“My chair goes in the hold. It always goes in the hold.”",
+         "„Mein Rollstuhl kommt in den Frachtraum. Er kommt immer in den Frachtraum.“"],
+        ["“Under the knees and behind the back. I'll tell you if you've got it wrong.”",
+         "„Unter die Knie und hinter den Rücken. Ich sage dir, wenn du es falsch machst.“"],
+
+        ["(the headphones are the big kind, and he has not heard one word of this)",
+         "(die Kopfhörer sind die großen, und er hat kein Wort davon gehört)"],
+        ["“WHAT? — oh. Oh God. Yeah. Yeah, okay, go, go.”",
+         "„WAS? — oh. Oh Gott. Ja. Ja, okay, los, los.“"],
+
+        ["“Is it the engine? Tell me it isn't the engine. He's nine months old.”",
+         "„Ist es das Triebwerk? Sag mir, dass es nicht das Triebwerk ist. Er ist neun Monate " +
+         "alt.“"],
+        ["“Him first. HIM FIRST. I'll walk, I'll walk, just take him.”",
+         "„Ihn zuerst. IHN ZUERST. Ich laufe, ich laufe, nimm einfach ihn.“"],
+
+        ["(nine months old, in the seat beside his mother, entirely unbothered)",
+         "(neun Monate alt, auf dem Sitz neben seiner Mutter, vollkommen unbeeindruckt)"],
+        ["(he weighs nothing and he holds on to your collar like he was built for it)",
+         "(er wiegt nichts und hält sich an deinem Kragen fest, als wäre er dafür gebaut)"],
+
+        ["“It's warm just here. Is it meant to be warm just here?”",
+         "„Hier ist es warm. Soll es hier warm sein?“"],
+        ["“I know. I know, my love. You can't take everybody. I know.”",
+         "„Ich weiß. Ich weiß, mein Lieber. Du kannst nicht alle mitnehmen. Ich weiß.“"],
+
+        ["“Something's dripping on me. Something is dripping on me out of the locker.”",
+         "„Auf mich tropft etwas. Aus dem Gepäckfach tropft etwas auf mich.“"],
+        ["“It's above me, isn't it. It's been above me the whole time.”",
+         "„Es ist über mir, nicht wahr. Es war die ganze Zeit über mir.“"],
+
+        ["“Sit down. You're frightening the old girls. Sit DOWN.”",
+         "„Setz dich hin. Du machst den alten Damen Angst. Setz dich HIN.“"],
+        ["“Get off. Get — right. Right. I can smell it. Say nothing.”",
+         "„Lass los. Lass — gut. Gut. Ich rieche es. Sag nichts.“"],
+
+        ["“Are you a doctor? My mum's at the back. Can I go and sit with my mum?”",
+         "„Bist du Ärztin? Meine Mama sitzt hinten. Darf ich zu meiner Mama?“"],
+        ["“I can run. I'm fast. Let me go in front and I'll show them where.”",
+         "„Ich kann rennen. Ich bin schnell. Lass mich vorgehen, ich zeige ihnen, wo.“"],
+
+        ["“I have written to them about this aircraft twice.”",
+         "„Ich habe ihnen zweimal wegen dieser Maschine geschrieben.“"],
+        ["“Unhand me. Unhand — oh. Oh, that's real, isn't it. That's a real one.”",
+         "„Nimm die Hände weg. Nimm die — oh. Oh, das ist echt, nicht wahr. Das ist ein echtes.“"],
+
+        ["“That's my daughter in 8C. Whatever you need, you have it.”",
+         "„Das ist meine Tochter in 8C. Was immer du brauchst, du hast es.“"],
+        ["“Get Ora and I'll take the far end. We'll meet in the middle.”",
+         "„Hol Ora, und ich nehme das andere Ende. Wir treffen uns in der Mitte.“"],
+
+        ["(a collie in a soft crate, and he has been growling at the ceiling for a minute)",
+         "(ein Collie in einer weichen Box, und er knurrt seit einer Minute die Decke an)"],
+        ["(he does not struggle, which is worse, somehow, than if he did)",
+         "(er wehrt sich nicht, und das ist irgendwie schlimmer, als wenn er es täte)"],
+
+        // The first officer, who is on the other side of a locked door and stays there.
+        ["First officer", "Erster Offizier"],
+        ["“Say again? You're breaking up. Stand by.”",
+         "„Wiederholen? Du brichst ab. Warte.“"],
+
         ["“I have been watching you. You are the only one moving.”",
          "„Ich habe Sie beobachtet. Sie sind der Einzige, der sich bewegt.“"],
         ["“Yes. Fine. Take me. But then you go back for the others.”",

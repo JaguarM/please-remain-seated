@@ -27,7 +27,11 @@
     const T = PRS.t, K = PRS.k;
     const { clamp, clamp01 } = PRS.util;
 
-    const N = cabin.W * cabin.H;
+    // How many cells this aeroplane's grid has. A function and not a constant, because there is
+    // more than one aeroplane now and the cabin's width changes under this file between flights.
+    // Everywhere a fire is already in hand, `f.intensity.length` is the same number and says so
+    // without having to ask the cabin at all.
+    const cells = () => cabin.W * cabin.H;
 
     // When the pack goes blue, and what that is worth.
     //
@@ -75,6 +79,7 @@
     };
 
     function create(S) {
+        const N = cells();
         const st = PRS.state;
         // The fuel map, and the mark every tile has to reach before the fire jumps to it. Both
         // are drawn now, from the seed, so the fire on a seed is the same fire whatever you do.
@@ -142,7 +147,7 @@
     /** The number the HUD shows: the worst tile in the cabin, 0..100. */
     function worst(f) {
         let m = 0;
-        for (let i = 0; i < N; i++) if (f.intensity[i] > m) m = f.intensity[i];
+        for (let i = 0; i < f.intensity.length; i++) if (f.intensity[i] > m) m = f.intensity[i];
         return m;
     }
 
@@ -170,7 +175,10 @@
 
     /** The lavatory the taps are in, for anything that wants to send the player to one. */
     function tapLav(S) {
+        // One aeroplane has two lavatories and the other has one, so the second is a null to be
+        // skipped rather than a y to be tried.
         for (const y of [cabin.LAV_RIGHT_Y, cabin.LAV_LEFT_Y]) {
+            if (y === null || y === undefined) continue;
             if (tapUsable(S, cabin.AFT_GALLEY_X, y)) return { x: cabin.AFT_GALLEY_X, y: y };
         }
         return null;
@@ -178,14 +186,14 @@
 
     function burningTiles(f) {
         let n = 0;
-        for (let i = 0; i < N; i++) if (f.intensity[i] > 4) n++;
+        for (let i = 0; i < f.intensity.length; i++) if (f.intensity[i] > 4) n++;
         return n;
     }
 
     function totalSmoke(f) {
         let s = 0;
-        for (let i = 0; i < N; i++) s += f.smoke[i];
-        return s / N;
+        for (let i = 0; i < f.smoke.length; i++) s += f.smoke[i];
+        return s / f.smoke.length;
     }
 
     /** Everything above this line of smoke is unbreathable; below it you can crawl. */
@@ -287,13 +295,43 @@
      * is why a forty-second argument with a flight attendant is expensive in a way the player
      * feels immediately.
      */
+    /**
+     * The fire that was already going before the flight started.
+     *
+     * `actions.js` owns the clock and nothing else may move the fire - that rule is what makes
+     * a seed reproduce. This is the one exception and it is not really one: it runs before the
+     * first action, with nobody in the cabin and the clock still reading full, so it is not
+     * moving time forward. It is deciding how long the thing has been alight by the time the
+     * game opens on it.
+     *
+     * The passengers are not advanced with it, and that is a claim rather than a shortcut: a
+     * cell in a closed case in a closed bin smoulders for a long time and then breaks out all at
+     * once, so the cabin has had ninety seconds of this, not five minutes. What the cabin has
+     * had is in `open()` on the scenario, and it is a detector, some awareness and no dose.
+     */
+    function preburn(S, seconds) {
+        const f = S.fire;
+        if (!f || !(seconds > 0)) return;
+        const STEP = 6;
+        const saved = S.clock.elapsed;
+        for (let t = 0; t < seconds; t += STEP) {
+            const dt = Math.min(STEP, seconds - t);
+            // The fire asks the clock what time it is, for the second stage and for the log.
+            // While it is burning on its own, the time it is told is the time it has burned.
+            S.clock.elapsed = t;
+            advance(f, dt, S);
+        }
+        S.clock.elapsed = saved;
+        f.preburned = seconds;
+    }
+
     function advance(f, dt, S) {
         if (dt <= 0) return { vented: false, spread: 0 };
 
         // Ventilation limit. Everything alight is competing for the same air, so the cabin as a
         // whole has a ceiling and a big fire holds itself down.
         let burning = 0;
-        for (let i = 0; i < N; i++) burning += f.intensity[i];
+        for (let i = 0; i < f.intensity.length; i++) burning += f.intensity[i];
         f.oxygen = clamp(1.12 - burning / 2400, 0.30, 1.0);
         const spreadTo = [];
         let spread = 0;
@@ -301,7 +339,12 @@
         // The pack goes to its second stage, once, at six minutes, wherever it is and whatever
         // anybody has done to it. Nothing on the aeroplane stops this and nothing delays it: it
         // is not a consequence of how the fire is going, it is how long a pack takes.
-        if (!f.core.blue && S.clock.elapsed >= BLUE_AT) {
+        // When the pack goes over, on this flight. A scenario may move it, or say null and
+        // mean never - which is what the four-minute cut says, because the second stage is the
+        // best rule in the game and the worst one to meet first.
+        const blueAt = (S.scenario && S.scenario.blueAt !== undefined) ? S.scenario.blueAt
+                                                                      : BLUE_AT;
+        if (!f.core.blue && blueAt !== null && S.clock.elapsed >= blueAt) {
             f.core.blue = true;
             f.core.blueAt = S.clock.elapsed;
             const ci = cabin.idx(f.core.x, f.core.y);
@@ -556,7 +599,7 @@
      * layer height and one field for where it is thickest.
      */
     function advanceSmoke(f, dt, S) {
-        const next = new Float32Array(N);
+        const next = new Float32Array(f.smoke.length);
         const drift = 0.05;   // fore-aft airflow from the packs: aft is worse, not a grave
         const rate = clamp01(dt * 0.16);
         for (let x = 0; x < cabin.W; x++) {
@@ -582,7 +625,7 @@
         }
         // The packs scrub a little of it, and the recirculation filters take a little more.
         const scrub = 0.0022 * dt;
-        for (let i = 0; i < N; i++) f.smoke[i] = clamp(next[i] * (1 - scrub), 0, 100);
+        for (let i = 0; i < f.smoke.length; i++) f.smoke[i] = clamp(next[i] * (1 - scrub), 0, 100);
     }
 
     // ---------------------------------------------------------------------------- inspection ---
@@ -637,7 +680,7 @@
         return (100 - f.core.heat) / rate;
     }
 
-    PRS.fire = {
+    PRS.fire = { preburn,
         AGENTS, create, at, smokeAt, heatAt, worst, burningTiles, totalSmoke, smokeLayer,
         tapUsable, tapLav, basinGone,
         apply, coolCore, starve, advance, describe, describeSmoke, fireSprite, smokeSprite, ventEta,

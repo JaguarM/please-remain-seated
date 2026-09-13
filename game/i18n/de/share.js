@@ -68,14 +68,16 @@
          "seiner."],
 
         // The four lines themselves. The title is the name of the game and stays as it is.
-        ["PLEASE REMAIN SEATED · TN 447 · daily {day}",
-         "PLEASE REMAIN SEATED · TN 447 · Tagesflug {day}"],
-        ["PLEASE REMAIN SEATED · TN 447 · seed {seed}",
-         "PLEASE REMAIN SEATED · TN 447 · Startwert {seed}"],
-        ["{n} of 60 off alive · {grade} · {who}",
-         "{n} von 60 lebend heraus · {grade} · {who}"],
-        ["{n} of 60 off alive · {saved} who would not have been · {grade} · {who}",
-         "{n} von 60 lebend heraus · {saved} davon nur wegen dir · {grade} · {who}"],
+        // The flight number and the number on board are fields now, because the four lines are
+        // sent from more than one aeroplane. The German is otherwise the German it was.
+        ["PLEASE REMAIN SEATED · {flight} · daily {day}",
+         "PLEASE REMAIN SEATED · {flight} · Tagesflug {day}"],
+        ["PLEASE REMAIN SEATED · {flight} · seed {seed}",
+         "PLEASE REMAIN SEATED · {flight} · Startwert {seed}"],
+        ["{n} of {of} off alive · {grade} · {who}",
+         "{n} von {of} lebend heraus · {grade} · {who}"],
+        ["{n} of {of} off alive · {saved} who would not have been · {grade} · {who}",
+         "{n} von {of} lebend heraus · {saved} davon nur wegen dir · {grade} · {who}"],
         ["(this flight will not encode)", "(dieser Flug lässt sich nicht kodieren)"],
 
         // ----------------------------------------------------------- a flight somebody sent ---
@@ -87,8 +89,6 @@
         ["Take this flight", "Diesen Flug übernehmen"],
         ["Fly it alone", "Allein fliegen"],
         ["Nobody in the cabin beside you.", "Niemand in der Kabine neben dir."],
-        ["Flying beside you: {who}, who got {n} of 60 off this aeroplane.",
-         "Neben dir fliegt {who} - {n} von 60 aus dieser Maschine heraus."],
         ["The seed is set to theirs all the same.",
          "Der Startwert ist trotzdem auf ihren gesetzt."],
 
@@ -133,6 +133,5 @@
         ["you are {n} ahead", "du liegst {n} vorn"],
         ["you are {n} behind", "du liegst {n} zurück"],
         ["level with you", "gleichauf mit dir"],
-        ["they finished with {n} of 60", "am Ende {n} von 60"],
     ]);
 })(window);

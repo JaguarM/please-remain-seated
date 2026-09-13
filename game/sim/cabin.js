@@ -1,19 +1,17 @@
-// The aeroplane. A grid, nose at x=0 and tail at x=29, nine cells deep: the left wall, seats
-// A B C, the aisle, seats D E F, and the right wall. Everything else in the game addresses the
-// cabin through here, so the layout can change without the fire or the passengers noticing.
+// The aeroplane. A grid, nose at x=0 and tail at the far end, with the aisle across the middle
+// of it: the left wall, the seats above the aisle, the aisle, the seats below it, the right
+// wall. Everything else in the game addresses the cabin through here, so the layout can change
+// without the fire or the passengers noticing.
 //
-//   x=0   flight deck bulkhead, and the locked door at the aisle
-//   x=1   forward galley: steel, and the furthest floor in the aeroplane from the fire.
-//   x=2   the forward cross-aisle, doors L1 and R1.
-//   x=3..14   rows 1 to 12
-//   x=15  the overwing exit row, doors L3 and R3: a clear column of floor two rows from the
-//         locker that is burning.
-//   x=16..26  rows 13 to 23
-//   x=27  the aft cross-aisle, doors L2 and R2.
-//   x=28  the aft galley and the two lavatories, and a sink, which matters.
+// It changes twice now. There is more than one aeroplane in the game, and which one is on the
+// screen is `PRS.cabin.use(id)` - so this file holds no shape of its own any more. It reads one
+// out of `PRS.data.aircraft` and copies it onto itself.
 //
-// None of it is safe. Some of it has better air in it than the rest, for a while.
-//   x=29  the tail bulkhead
+// The copying is the point. Every other file in the game did `const cabin = PRS.cabin` at load
+// and then read `cabin.W` through that reference, which means swapping the object out would
+// leave forty files holding the old aeroplane. Writing the new numbers onto the same object
+// leaves all forty of them right. So `use` mutates and never replaces, and the one rule for
+// anybody adding to this file is that the export at the bottom is built once.
 //
 // Fuel is per-tile and it is what the fire eats: a seat is upholstery and foam and burns for a
 // long time, an aisle is carpet over an aluminium floor and barely burns at all, and a galley is
@@ -23,14 +21,6 @@
 
     const PRS = global.PRS = global.PRS || {};
     const T = PRS.t, X = PRS.tx, K = PRS.k;
-
-    const W = 30;
-    const H = 9;
-
-    const SEAT_LETTERS = ["A", "B", "C", null, "D", "E", "F"];  // by y-1, aisle is null
-    const AISLE_Y = 4;
-    const WALL_TOP = 0;
-    const WALL_BOTTOM = 8;
 
     // Tile kinds. `walk` is the base cost in seconds for an average person to cross the tile.
     const KIND = {
@@ -45,58 +35,108 @@
         bulkhead:{ walk: Infinity, fuel: 0.20, solid: true,  label: K("bulkhead") },
     };
 
-    // Where the rows are. Row 13 is the first one aft of the wing, which is why 14C is where it
-    // is: one row back from the overwing exit, in the bin, over the aisle seat.
-    const FWD_ROWS = { x0: 3, x1: 14, first: 1 };    // rows 1..12
-    const AFT_ROWS = { x0: 16, x1: 26, first: 13 };  // rows 13..23
-    const OVERWING_X = 15;
-    const FWD_CROSS_X = 2;
-    const AFT_CROSS_X = 27;
-    const FWD_GALLEY_X = 1;
-    const AFT_GALLEY_X = 28;
-    // The two aft lavatories, named the way the seats are: left of the aisle and right of it.
-    // Either of them will take the burning case and either of them can burn through, which is
-    // what makes it a choice rather than a destination. See fire.case_in_sink.
-    const LAV_LEFT_Y = 1;
-    const LAV_RIGHT_Y = 7;
+    // The aeroplane currently on the screen. Every geometry function below reads `A`, and `use`
+    // is the only thing that writes it.
+    let A = null;
+
+    // -------------------------------------------------------------------------- the fleet ---
+
+    /**
+     * Put an aeroplane on the screen. Copies its numbers onto `PRS.cabin` itself rather than
+     * handing back a new object, because everything in the game is already holding this one.
+     *
+     * Safe to call with the aeroplane that is already loaded; it is what starting a second
+     * flight on the same aircraft does.
+     */
+    function use(id) {
+        const ac = PRS.data.aircraft.byId(id);
+        A = ac;
+        const C = PRS.cabin;
+        C.aircraft = ac;
+        C.W = ac.W;
+        C.H = ac.H;
+        C.AISLE_Y = ac.AISLE_Y;
+        C.WALL_TOP = 0;
+        C.WALL_BOTTOM = ac.H - 1;
+        C.SEAT_LETTERS = ac.SEAT_LETTERS;
+        C.FWD_ROWS = ac.FWD_ROWS;
+        C.AFT_ROWS = ac.AFT_ROWS;
+        C.OVERWING_X = ac.OVERWING_X;
+        C.FWD_CROSS_X = ac.FWD_CROSS_X;
+        C.AFT_CROSS_X = ac.AFT_CROSS_X;
+        C.FWD_GALLEY_X = ac.FWD_GALLEY_X;
+        C.AFT_GALLEY_X = ac.AFT_GALLEY_X;
+        C.LAV_LEFT_Y = ac.LAV_LEFT_Y;
+        C.LAV_RIGHT_Y = ac.LAV_RIGHT_Y;
+        C.ORIGIN = ac.ORIGIN;
+        C.ceiling = ac.ceiling;
+        // There are no safe zones. There are doors, and the floor in front of them: the service
+        // end and the cross-aisle at each end, which is where anybody moving people puts them
+        // down because the door is right there and the fire is not. Whether the air there is any
+        // good by the time the gear comes down is the fire's business, and scoring.js asks the
+        // fire, not this list. The overwing exits are doors too, a row or two from the locker
+        // that is burning, so they count for how far a door is and nobody is put down there.
+        //
+        // On a small aeroplane the service end and the cross-aisle are the same column, so this
+        // list has the same number in it twice. Everything that reads it uses indexOf.
+        C.DOOR_ENDS = [ac.FWD_GALLEY_X, ac.FWD_CROSS_X, ac.AFT_CROSS_X, ac.AFT_GALLEY_X];
+        return ac;
+    }
+
+    /** Which aeroplane is loaded. */
+    function current() { return A; }
+
+    // ------------------------------------------------------------------------- the columns ---
 
     function rowAt(x) {
-        if (x >= FWD_ROWS.x0 && x <= FWD_ROWS.x1) return FWD_ROWS.first + (x - FWD_ROWS.x0);
-        if (x >= AFT_ROWS.x0 && x <= AFT_ROWS.x1) return AFT_ROWS.first + (x - AFT_ROWS.x0);
+        const F = A.FWD_ROWS, B = A.AFT_ROWS;
+        if (x >= F.x0 && x <= F.x1) return F.first + (x - F.x0);
+        if (x >= B.x0 && x <= B.x1) return B.first + (x - B.x0);
         return null;
     }
 
     function xOfRow(row) {
-        if (row >= FWD_ROWS.first && row <= FWD_ROWS.first + (FWD_ROWS.x1 - FWD_ROWS.x0)) {
-            return FWD_ROWS.x0 + (row - FWD_ROWS.first);
-        }
-        if (row >= AFT_ROWS.first && row <= AFT_ROWS.first + (AFT_ROWS.x1 - AFT_ROWS.x0)) {
-            return AFT_ROWS.x0 + (row - AFT_ROWS.first);
-        }
+        const F = A.FWD_ROWS, B = A.AFT_ROWS;
+        if (row >= F.first && row <= F.first + (F.x1 - F.x0)) return F.x0 + (row - F.first);
+        if (row >= B.first && row <= B.first + (B.x1 - B.x0)) return B.x0 + (row - B.first);
         return null;
     }
 
     function seatLetter(y) {
-        return SEAT_LETTERS[y - 1] || null;
+        return A.SEAT_LETTERS[y - 1] || null;
     }
 
     function yOfLetter(letter) {
-        const i = SEAT_LETTERS.indexOf(letter);
+        const i = A.SEAT_LETTERS.indexOf(letter);
         return i < 0 ? null : i + 1;
     }
 
     /**
-     * Where a seat is in its bank of three, as it sits on the screen: "top", "mid" or "bot".
-     * The art is one bank cut into three tiles that join up, so the renderer needs this and
-     * not the letter: the top seat of the left bank is by the window and the top seat of the
-     * right bank is by the aisle, and the drawing is the same. Null for anything not a seat row.
+     * Where a seat is in its bank, as it sits on the screen. The art is one bank of seats cut
+     * into tiles that join up, so the renderer needs this and not the letter: the top seat of
+     * the upper bank is by the window and the top seat of the lower bank is by the aisle, and
+     * the drawing is the same. Null for anything that is not a seat row.
+     *
+     * A bank of three is "top", "mid", "bot". A bank of one - which is what a nineteen-seat
+     * turboprop has either side of its aisle - is "solo", which is its own piece of furniture
+     * and not a third of somebody else's.
      */
+    const BANKS = {
+        1: ["solo"],
+        2: ["top", "bot"],
+        3: ["top", "mid", "bot"],
+    };
+
     function seatPos(y) {
-        if (y === AISLE_Y || y <= WALL_TOP || y >= WALL_BOTTOM) return null;
-        return ["top", "mid", "bot"][y < AISLE_Y ? y - 1 : y - AISLE_Y - 1];
+        if (y === A.AISLE_Y || y <= 0 || y >= A.H - 1) return null;
+        const above = y < A.AISLE_Y;
+        const size = above ? A.AISLE_Y - 1 : (A.H - 2) - A.AISLE_Y;
+        const i = above ? y - 1 : y - A.AISLE_Y - 1;
+        const bank = BANKS[size] || BANKS[3];
+        return bank[i] || bank[bank.length - 1];
     }
 
-    /** "14C" for a tile that is a seat, otherwise a name for the place. */
+    /** "14C" for a tile that is a seat, otherwise null. */
     function seatName(x, y) {
         const row = rowAt(x);
         const letter = seatLetter(y);
@@ -104,24 +144,49 @@
         return null;
     }
 
+    /** Which wall sides have a door at this column: "L" at the top, "R" at the bottom. */
+    function doorSides(x) {
+        const d = A.doors;
+        if (!d) return ["L", "R"];
+        return d[x] || [];
+    }
+
     function kindAt(x, y) {
-        if (x < 0 || y < 0 || x >= W || y >= H) return "wall";
-        if (y === WALL_TOP || y === WALL_BOTTOM) {
-            // The doors are holes in the wall, at the three cross-aisles.
-            if (x === FWD_CROSS_X || x === OVERWING_X || x === AFT_CROSS_X) return "exit";
+        if (x < 0 || y < 0 || x >= A.W || y >= A.H) return "wall";
+        // An aeroplane may say that one particular tile is not what the columns say it is: the
+        // closet in the corner where 1A would be on a Beechcraft is the only one so far.
+        if (A.overrides) {
+            const over = A.overrides[x + "," + y];
+            if (over) return over;
+        }
+        const top = y === 0, bottom = y === A.H - 1;
+        if (top || bottom) {
+            // The doors are holes in the wall, at the cross-aisles and over the wing - but only
+            // on the sides that aeroplane actually has one.
+            if (x === A.FWD_CROSS_X || x === A.OVERWING_X || x === A.AFT_CROSS_X) {
+                if (doorSides(x).indexOf(top ? "L" : "R") >= 0) return "exit";
+            }
             return "wall";
         }
-        if (x === 0) return y === AISLE_Y ? "cockpit" : "bulkhead";
-        if (x === W - 1) return "bulkhead";
-        if (x === FWD_GALLEY_X) return y === AISLE_Y ? "aisle" : "galley";
-        if (x === AFT_GALLEY_X) {
-            if (y === AISLE_Y) return "aisle";
-            return (y === LAV_LEFT_Y || y === LAV_RIGHT_Y) ? "lav" : "galley";
+        if (x === 0) return y === A.AISLE_Y ? "cockpit" : "bulkhead";
+        if (x === A.W - 1) return "bulkhead";
+        if (x === A.FWD_GALLEY_X) return y === A.AISLE_Y ? "aisle" : "galley";
+        if (x === A.AFT_GALLEY_X) {
+            if (y === A.AISLE_Y) return "aisle";
+            // One lavatory or two. The other side of the aft vestibule on a small aeroplane is
+            // the baggage bay, which is a galley as far as the fire is concerned.
+            //
+            // The `!== null` is load-bearing rather than defensive: an aeroplane with one
+            // lavatory says the second one is null, and `null === null` is true, so without
+            // this a call with y=null - which is what `yOfLetter` returns for a letter this
+            // aircraft has not got - comes back "lav" for a tile that does not exist.
+            return (A.LAV_LEFT_Y !== null && y === A.LAV_LEFT_Y)
+                || (A.LAV_RIGHT_Y !== null && y === A.LAV_RIGHT_Y) ? "lav" : "galley";
         }
-        if (x === FWD_CROSS_X || x === OVERWING_X || x === AFT_CROSS_X) {
-            return y === AISLE_Y ? "aisle" : "cross";
+        if (x === A.FWD_CROSS_X || x === A.OVERWING_X || x === A.AFT_CROSS_X) {
+            return y === A.AISLE_Y ? "aisle" : "cross";
         }
-        if (y === AISLE_Y) return "aisle";
+        if (y === A.AISLE_Y) return "aisle";
         return rowAt(x) === null ? "cross" : "seat";
     }
 
@@ -139,7 +204,7 @@
         return towards ? placeTo(x, y) : placeAt(x, y);
     }
 
-    /** Which of the nine places this tile is, as something the two namers can switch on. */
+    /** Which of the places this tile is, as something the two namers can switch on. */
     function placeKind(x, y) {
         const seat = seatName(x, y);
         if (seat) return { what: "seat", seat: seat };
@@ -147,27 +212,27 @@
         if (kind === "cockpit") return { what: "cockpit" };
         if (kind === "exit") {
             // L1, R2: the door numbering is the aircraft's, and it is the same in every language.
-            const side = y === WALL_TOP ? "L" : "R";
-            const n = x === FWD_CROSS_X ? 1 : x === OVERWING_X ? 3 : 2;
+            const side = y === 0 ? "L" : "R";
+            const n = x === A.FWD_CROSS_X ? 1 : x === A.OVERWING_X ? 3 : 2;
             return { what: "door", door: side + n };
         }
-        if (x === FWD_GALLEY_X) return { what: "fwdGalley" };
-        if (x === AFT_GALLEY_X) {
+        if (x === A.FWD_GALLEY_X) return { what: "fwdGalley" };
+        if (x === A.AFT_GALLEY_X) {
             if (kind !== "lav") return { what: "aftGalley" };
-            return { what: y === LAV_LEFT_Y ? "aftLavLeft" : "aftLav" };
+            return { what: y === A.LAV_LEFT_Y ? "aftLavLeft" : "aftLav" };
         }
         if (kind === "aisle") {
             const row = rowAt(x);
             if (row) return { what: "row", row: row };
-            if (x === FWD_CROSS_X) return { what: "fwdCross" };
-            if (x === OVERWING_X) return { what: "overwing" };
-            if (x === AFT_CROSS_X) return { what: "aftCross" };
+            if (x === A.FWD_CROSS_X) return { what: "fwdCross" };
+            if (x === A.OVERWING_X) return { what: "overwing" };
+            if (x === A.AFT_CROSS_X) return { what: "aftCross" };
             return { what: "aisle" };
         }
         if (kind === "cross") {
-            if (x === FWD_CROSS_X) return { what: "fwdCross" };
-            if (x === OVERWING_X) return { what: "overwing" };
-            if (x === AFT_CROSS_X) return { what: "aftCross" };
+            if (x === A.FWD_CROSS_X) return { what: "fwdCross" };
+            if (x === A.OVERWING_X) return { what: "overwing" };
+            if (x === A.AFT_CROSS_X) return { what: "aftCross" };
         }
         return { what: "cabin" };
     }
@@ -218,21 +283,13 @@
         }
     }
 
-    // There are no safe zones. There are doors, and the floor in front of them: the galley and
-    // the cross-aisle at each end, which is where anybody moving people puts them down because
-    // the door is right there and the fire is not. Whether the air there is any good by the time
-    // the gear comes down is the fire's business, and scoring.js asks the fire, not this list.
-    // The overwing exits are doors too, two rows from the locker that is burning, so they count
-    // for how far a door is and nobody is put down in front of them.
-    const DOOR_ENDS = [FWD_GALLEY_X, FWD_CROSS_X, AFT_CROSS_X, AFT_GALLEY_X];
-
     function byTheDoors(x) {
-        return DOOR_ENDS.indexOf(x) >= 0;
+        return PRS.cabin.DOOR_ENDS.indexOf(x) >= 0;
     }
 
     /** Columns from here to the nearest door at either end of the cabin. */
     function doorDistance(x) {
-        return Math.min(Math.abs(x - FWD_CROSS_X), Math.abs(x - AFT_CROSS_X));
+        return Math.min(Math.abs(x - A.FWD_CROSS_X), Math.abs(x - A.AFT_CROSS_X));
     }
 
     function solid(x, y) {
@@ -240,7 +297,7 @@
     }
 
     function inBounds(x, y) {
-        return x >= 0 && y >= 0 && x < W && y < H;
+        return x >= 0 && y >= 0 && x < A.W && y < A.H;
     }
 
     /** Base fuel load of a tile before anything has burned. Feeds fire.js. */
@@ -255,12 +312,12 @@
 
     /** Every tile that has a seat in it, front to back and window to window. */
     function eachSeat(fn) {
-        for (let x = 0; x < W; x++) {
-            const row = rowAt(x);
-            if (row === null) continue;
-            for (let y = 1; y <= 7; y++) {
-                if (y === AISLE_Y) continue;
-                fn(x, y, row, seatLetter(y));
+        for (let x = 0; x < A.W; x++) {
+            if (rowAt(x) === null) continue;
+            for (let y = 1; y <= A.H - 2; y++) {
+                if (y === A.AISLE_Y) continue;
+                if (kindAt(x, y) !== "seat") continue;
+                fn(x, y, rowAt(x), seatLetter(y));
             }
         }
     }
@@ -269,42 +326,44 @@
     function neighbours(x, y) {
         const out = [];
         if (x > 0) out.push([x - 1, y]);
-        if (x < W - 1) out.push([x + 1, y]);
+        if (x < A.W - 1) out.push([x + 1, y]);
         if (y > 0) out.push([x, y - 1]);
-        if (y < H - 1) out.push([x, y + 1]);
+        if (y < A.H - 1) out.push([x, y + 1]);
         return out;
     }
 
-    const idx = (x, y) => y * W + x;
-    const xOf = (i) => i % W;
-    const yOf = (i) => Math.floor(i / W);
+    const idx = (x, y) => y * A.W + x;
+    const xOf = (i) => i % A.W;
+    const yOf = (i) => Math.floor(i / A.W);
 
-    // The overhead bins run the length of the cabin over rows A-C and D-F. A bin belongs to a row
-    // and a side, and it is a bin fire that started all this.
+    // The overhead lockers run the length of the cabin over the seats either side. A bin belongs
+    // to a row and a side, and it is a bin fire that started all this.
     function binOf(x, y) {
         const row = rowAt(x);
-        if (row === null || y === AISLE_Y || y === 0 || y === 8) return null;
-        return { row: row, x: x, side: y < AISLE_Y ? "left" : "right" };
+        if (row === null || y === A.AISLE_Y || y === 0 || y === A.H - 1) return null;
+        if (kindAt(x, y) !== "seat") return null;
+        return { row: row, x: x, side: y < A.AISLE_Y ? "left" : "right" };
     }
 
     function binKey(x, side) {
         return x + ":" + side;
     }
 
-    // The seat of the fire. 14C: aft of the wing, aisle side, left bank of bins. Chosen because
-    // it is the furthest point in the aeroplane from both galleys, so every carry is long.
-    const ORIGIN = { row: 14, letter: "C" };
-
+    /** The seat whose locker is on fire, as a tile. */
     function originTile() {
-        return { x: xOfRow(ORIGIN.row), y: yOfLetter(ORIGIN.letter) };
+        return { x: xOfRow(A.ORIGIN.row), y: yOfLetter(A.ORIGIN.letter) };
     }
 
+    // Built once, filled in by `use`. Nothing here may be rebuilt: forty files are holding it.
     PRS.cabin = {
-        W, H, AISLE_Y, WALL_TOP, WALL_BOTTOM, KIND, SEAT_LETTERS,
-        FWD_ROWS, AFT_ROWS, OVERWING_X, FWD_CROSS_X, AFT_CROSS_X, FWD_GALLEY_X, AFT_GALLEY_X, LAV_LEFT_Y, LAV_RIGHT_Y,
-        ORIGIN, originTile,
+        KIND, SEAT_LETTERS: null,
+        use, current,
         rowAt, xOfRow, seatLetter, yOfLetter, seatPos, seatName, kindAt, placeName, placeTo,
-        DOOR_ENDS, byTheDoors, doorDistance, solid, inBounds, baseFuel, baseWalk, eachSeat, neighbours,
-        idx, xOf, yOf, binOf, binKey,
+        doorSides, byTheDoors, doorDistance, solid, inBounds, baseFuel, baseWalk, eachSeat,
+        neighbours, idx, xOf, yOf, binOf, binKey, originTile,
     };
+
+    // The game has to be able to ask the cabin about itself before anybody has chosen a flight -
+    // the title screen does, and so does every tool that loads the files and starts measuring.
+    use(PRS.data.aircraft.DEFAULT);
 })(window);

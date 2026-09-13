@@ -19,6 +19,19 @@
     }
     function cred(S, n) { S.credibility = Math.min(100, Math.max(0, S.credibility + n)); }
 
+    /**
+     * Standing where the handset is: the forward service end, or the flight deck door itself.
+     * On a narrowbody that is the galley at x=1; on a turboprop it is the vestibule, which is
+     * the same column as the airstair. Both aeroplanes have one, which is why this is asked of
+     * the cabin rather than being a tile.
+     */
+    function atHandset(S) {
+        const x = S.player.x, y = S.player.y;
+        if (x === cabin.FWD_GALLEY_X) return true;
+        // Right up against the flight deck door, which is the tile the aisle ends on.
+        return x === 1 && y === cabin.AISLE_Y;
+    }
+
     /** The crew's willingness to do a thing for you, before their mood. */
     function askScore(S, c, bonus) {
         let score = S.credibility + (bonus || 0);
@@ -253,5 +266,52 @@
           } },
 
         // ---------------------------------------------------------------------- flight deck ---
+        //
+        // The handset on the forward bulkhead, and the only thing in the game you can do to the
+        // two people who decide when this aeroplane touches the ground.
+        //
+        // It exists because of CL 2231. On a narrowbody you never need it: there are three cabin
+        // crew and one of them has an interphone and a reason to be believed, so `ask_interphone`
+        // above is the door to the flight deck and this is a worse way through the same one - it
+        // costs more, it wants more of you, and the voice at the other end has no idea who you
+        // are. On an aeroplane with no cabin crew it is the only door there is. Without it the
+        // biggest thing that happens on CL 2231 - the nose going down early - is something you
+        // watch rather than something you cause, and a scenario where the best move is passive
+        // is a scenario that is not asking you anything.
+        //
+        // Harder than asking a crew member, on purpose: 68 against 56. A voice on a handset
+        // saying there is a fire is a voice with nothing behind it, and the thing that gets you
+        // over the line is the same thing that gets you over every other line in this game -
+        // the photograph, the burn on your hand, and how much of the cabin is behind you by
+        // then.
+        { id: "flightdeck.interphone", deck: "crew", tags: ["social"], danger: "good",
+          when: (S) => S.crewPhase < 4 && atHandset(S),
+          label: K("Call the flight deck on the interphone"),
+          detail: K("The handset is on the bulkhead. They cannot see the cabin and they have " +
+                    "never heard your voice before."),
+          cost: 30,
+          run(S) {
+              // No crew member's goodwill in this one: there is nobody in the loop. What is
+              // left is you, what you are holding, and how much of the cabin is awake.
+              let score = S.credibility + S.derived.voiceMul * 12;
+              if (S.flags.havePhoto) score += 16;
+              if (S.player.burns > 20) score += 12;
+              if (st.wearing(S, "hivis")) score += 10;
+              if (S.cabinFlags.detectorSounded) score += 10;
+              if (S.cabinAwareness > 50) score += 8;
+              if (st.dice(S, "interphone:" + S.counts["flightdeck.interphone"]).range(0, 100)
+                  < score - 68) {
+                  C.setPhase(S, 4);
+                  return { text: T("“Flight deck.” You tell them, and you hear the other pilot " +
+                                   "say something you do not catch. Then: “Understood. Sit " +
+                                   "down and hold on to something.” The nose drops before you " +
+                                   "have put the handset back."), kind: "great" };
+              }
+              cred(S, 4);
+              return { text: T("“Sir, I need you to go back to your seat and speak to a member " +
+                               "of crew.” There is no member of crew. You can hear them not " +
+                               "believing you, and you can hear that they have written it " +
+                               "down, which is not nothing."), kind: "bad" };
+          } },
     ]);
 })(window);

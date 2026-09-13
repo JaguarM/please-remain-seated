@@ -33,10 +33,49 @@
           desc: K("Everybody sits down for landing. Including the ones you were carrying.") },
     ];
 
+    // Which of the six phases an aeroplane actually runs. A narrowbody runs all of them in
+    // order. An aeroplane with no cabin crew runs the two that do not need any: somebody
+    // notices, and then the flight deck is told - and the four in between, which are a crew
+    // member walking aft to look, a crew member emptying a bottle, and two crew members putting
+    // everybody back in their seats for landing, simply never happen, because there is nobody
+    // on board to do them.
+    //
+    // The last of those is worth saying out loud: CL 2231 never secures the cabin, so nobody
+    // ever undoes your carries. That is not a kindness. It is the same fact as the other three.
+    const PATHS = {
+        cabin:      [1, 2, 3, 4, 5],
+        flightdeck: [1, 4],
+    };
+
+    // Which readiness gate a jump is judged on, by the phase being jumped to. Climbing the
+    // chain one step at a time on a narrowbody, these are the same thing. Jumping 1 to 4 on an
+    // aeroplane with no crew is not gated on the flight deck's own row - there is no chain of
+    // crew to climb, so the evidence goes straight to the front - but it is not free either.
+    const GATE = { 1: 0, 2: 1, 3: 2, 4: 2, 5: 3 };
+
+    function model(S) {
+        return (S.aircraft && S.aircraft.crewModel) || "cabin";
+    }
+
+    function path(S) {
+        return PATHS[model(S)] || PATHS.cabin;
+    }
+
+    /** The next phase this aeroplane runs after the one it is in, or null at the end. */
+    function nextPhase(S) {
+        for (const p of path(S)) if (p > S.crewPhase) return p;
+        return null;
+    }
+
     function create(S) {
-        const roster = PRS.data.passengers.CREW;
+        const data = PRS.data.passengers;
+        const roster = data[(S.aircraft && S.aircraft.crewKey) || "CREW"] || data.CREW;
         S.crew = roster.map(function (c, i) {
             const fwd = c.seat === "fwd";
+            // A crew member on the flight deck is behind a locked door and is not in the cabin
+            // at all: not drawn, not walked past, not tapped on the shoulder, and not coming
+            // out. The interphone by the door is the whole of your access to them.
+            const deck = c.seat === "deck";
             // Yasmin boards the flight already out with the trolley, standing behind it.
             const withCart = c.id === "fa1" && S.cabinFlags.cartOut;
             return {
@@ -46,9 +85,12 @@
                 sprite: c.sprite,
                 hair: c.hair, skin: c.skin, shirt: c.shirt,
                 line: c.line,
-                x: withCart ? S.cabinFlags.cartX + 1 : fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
+                deck: deck,
+                x: deck ? 0
+                   : withCart ? S.cabinFlags.cartX + 1
+                   : fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
                 y: cabin.AISLE_Y + (i === 1 ? 0 : 0),
-                home: fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
+                home: deck ? 0 : fwd ? cabin.FWD_GALLEY_X : cabin.AFT_GALLEY_X,
                 task: "service",
                 busy: 0,
                 halon: c.id === "fa1" ? 1 : (c.id === "purser" ? 1 : 0),  // two BCF bottles on board
@@ -71,9 +113,14 @@
         return null;
     }
 
+    /** The crew who are actually in the cabin: the only ones you can walk up to. */
+    function inCabin(S) {
+        return S.crew.filter((c) => !c.deck);
+    }
+
     function nearest(S, x, y) {
         let best = null, bestD = 1e9;
-        for (const c of S.crew) {
+        for (const c of inCabin(S)) {
             const d = Math.abs(c.x - x) + Math.abs(c.y - y);
             if (d < bestD) { bestD = d; best = c; }
         }
@@ -82,7 +129,7 @@
 
     function adjacentCrew(S) {
         const out = [];
-        for (const c of S.crew) {
+        for (const c of inCabin(S)) {
             if (Math.abs(c.x - S.player.x) <= 1 && Math.abs(c.y - S.player.y) <= 1) out.push(c);
         }
         return out;
@@ -103,6 +150,9 @@
 
     function onPhaseEnter(S, phase) {
         const log = PRS.state.log;
+        // Phases 2, 3 and 5 are three people doing three things, and an aeroplane without them
+        // does not reach those phases at all. The guard is belt and braces: `path` already
+        // leaves them out.
         if (phase === 2) {
             S.cabinFlags.cartOut = false;
             delete S.cabinFlags.aisleBlocked[S.cabinFlags.cartX];
@@ -149,8 +199,11 @@
         const worst = PRS.fire.worst(f);
         const cred = S.credibility;
 
-        // Secure-cabin is on the clock and not on the evidence, so it jumps the queue.
-        if (S.crewPhase < 5 && S.clock.remaining < 190) {
+        // Secure-cabin is on the clock and not on the evidence, so it jumps the queue - on an
+        // aeroplane that has anybody to secure it. CL 2231 never reaches phase 5, so nothing
+        // ever puts your carries back in their seats there, and nothing ever will.
+        const runs5 = path(S).indexOf(5) >= 0;
+        if (runs5 && S.crewPhase < 5 && S.clock.remaining < 190) {
             setPhase(S, 5);
             return;
         }
@@ -159,13 +212,14 @@
         // cannot be fighting a fire they have not yet walked to.
         if (S.clock.elapsed - S.crewPhaseAt < DWELL[S.crewPhase]) return;
 
-        const next = S.crewPhase + 1;
+        const next = nextPhase(S);
+        if (next === null) return;
         const ready = [
             cred >= 14 || smoke > 1.6,
             cred >= 34 || smoke > 5 || S.cabinFlags.detectorSounded || worst > 24,
             cred >= 55 || worst > 34 || smoke > 11,
             cred >= 74 || worst > 55 || smoke > 18 || S.cabinFlags.masksDropped,
-        ][S.crewPhase];
+        ][GATE[next]];
         if (!ready) return;
         setPhase(S, next);
     }
@@ -187,6 +241,8 @@
         const core = f.core;
 
         for (const c of S.crew) {
+            // Two pilots, a locked door, and an aeroplane to fly. They do not come out.
+            if (c.deck) continue;
             if (c.busy > 0) { c.busy = Math.max(0, c.busy - dt); continue; }
 
             if (S.crewPhase <= 1) {
@@ -323,6 +379,7 @@
         return T("“BRACE POSITION. NOW. IN A SEAT. NOW.”");
     }
 
-    PRS.crew = { PHASES, create, byId, nearest, adjacentCrew, setPhase, checkPhase, advance,
+    PRS.crew = { PHASES, PATHS, path, model, inCabin,
+                 create, byId, nearest, adjacentCrew, setPhase, checkPhase, advance,
                  response };
 })(window);

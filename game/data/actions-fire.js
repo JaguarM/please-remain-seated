@@ -238,7 +238,11 @@
         { id: "fire.case_in_sink", deck: "fire", tags: ["fire", "carry", "hands"], danger: "good",
           targets(S) {
               const out = [];
+              // One lavatory or two: an aeroplane with one says the other is null, and that is
+              // the whole of the difference. On CL 2231 this offers a single row, which is the
+              // move the whole aeroplane turns on and the only place on board to make it.
               for (const y of [cabin.LAV_LEFT_Y, cabin.LAV_RIGHT_Y]) {
+                  if (y === null || y === undefined) continue;
                   if (PRS.fire.basinGone(S.fire, y)) continue;
                   const r = A.route(S, cabin.AFT_GALLEY_X, y);
                   if (!r) continue;

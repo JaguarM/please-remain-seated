@@ -85,7 +85,9 @@ function build(PRS, S, extra) {
                   palette: PRS.pax.palette(S.character),
                   carrying: S.player.carrying.map((id) => held(PRS, PRS.state.paxById(S, id))),
                   dragging: held(PRS, PRS.state.paxById(S, S.player.dragging)) },
-        crew: S.crew.map((c) => ({
+        // The ones in the cabin. A crew member on the flight deck is behind a locked door and
+        // the browser does not draw them either; a face at x=0 on a turboprop was this.
+        crew: PRS.crew.inCabin(S).map((c) => ({
             x: c.x, y: c.y,
             sprite: S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax",
             palette: PRS.pax.palette(c),
