@@ -54,6 +54,11 @@
     const AFT_CROSS_X = 27;
     const FWD_GALLEY_X = 1;
     const AFT_GALLEY_X = 28;
+    // The two aft lavatories, named the way the seats are: left of the aisle and right of it.
+    // Either of them will take the burning case and either of them can burn through, which is
+    // what makes it a choice rather than a destination. See fire.case_in_sink.
+    const LAV_LEFT_Y = 1;
+    const LAV_RIGHT_Y = 7;
 
     function rowAt(x) {
         if (x >= FWD_ROWS.x0 && x <= FWD_ROWS.x1) return FWD_ROWS.first + (x - FWD_ROWS.x0);
@@ -111,7 +116,7 @@
         if (x === FWD_GALLEY_X) return y === AISLE_Y ? "aisle" : "galley";
         if (x === AFT_GALLEY_X) {
             if (y === AISLE_Y) return "aisle";
-            return (y === 1 || y === 7) ? "lav" : "galley";
+            return (y === LAV_LEFT_Y || y === LAV_RIGHT_Y) ? "lav" : "galley";
         }
         if (x === FWD_CROSS_X || x === OVERWING_X || x === AFT_CROSS_X) {
             return y === AISLE_Y ? "aisle" : "cross";
@@ -147,7 +152,10 @@
             return { what: "door", door: side + n };
         }
         if (x === FWD_GALLEY_X) return { what: "fwdGalley" };
-        if (x === AFT_GALLEY_X) return { what: kind === "lav" ? "aftLav" : "aftGalley" };
+        if (x === AFT_GALLEY_X) {
+            if (kind !== "lav") return { what: "aftGalley" };
+            return { what: y === LAV_LEFT_Y ? "aftLavLeft" : "aftLav" };
+        }
         if (kind === "aisle") {
             const row = rowAt(x);
             if (row) return { what: "row", row: row };
@@ -172,7 +180,8 @@
             case "cockpit": return T("the flight deck door");
             case "door": return T("door {door}", { door: p.door });
             case "fwdGalley": return T("the forward galley");
-            case "aftLav": return T("the aft lavatory");
+            case "aftLav": return T("the right aft lavatory");
+            case "aftLavLeft": return T("the left aft lavatory");
             case "aftGalley": return T("the aft galley");
             case "row": return T("the aisle at row {row}", { row: p.row });
             case "fwdCross": return T("the forward cross-aisle");
@@ -197,7 +206,8 @@
             case "cockpit": return X("the flight deck door", "as a destination");
             case "door": return X("door {door}", "as a destination", { door: p.door });
             case "fwdGalley": return X("the forward galley", "as a destination");
-            case "aftLav": return X("the aft lavatory", "as a destination");
+            case "aftLav": return X("the right aft lavatory", "as a destination");
+            case "aftLavLeft": return X("the left aft lavatory", "as a destination");
             case "aftGalley": return X("the aft galley", "as a destination");
             case "row": return X("the aisle at row {row}", "as a destination", { row: p.row });
             case "fwdCross": return X("the forward cross-aisle", "as a destination");
@@ -291,7 +301,7 @@
 
     PRS.cabin = {
         W, H, AISLE_Y, WALL_TOP, WALL_BOTTOM, KIND, SEAT_LETTERS,
-        FWD_ROWS, AFT_ROWS, OVERWING_X, FWD_CROSS_X, AFT_CROSS_X, FWD_GALLEY_X, AFT_GALLEY_X,
+        FWD_ROWS, AFT_ROWS, OVERWING_X, FWD_CROSS_X, AFT_CROSS_X, FWD_GALLEY_X, AFT_GALLEY_X, LAV_LEFT_Y, LAV_RIGHT_Y,
         ORIGIN, originTile,
         rowAt, xOfRow, seatLetter, yOfLetter, seatPos, seatName, kindAt, placeName, placeTo,
         DOOR_ENDS, byTheDoors, doorDistance, solid, inBounds, baseFuel, baseWalk, eachSeat, neighbours,

@@ -38,9 +38,15 @@
         {
             id: "sink",
             title: K("THE ONE THING THAT WORKED"),
-            when: (S, R) => S.fire.core.inSink,
+            when: (S, R) => S.fire.core.sank,
             text(S, R) {
                 return T("You got the case into a lavatory sink and you filled the sink.") +
+                    (S.fire.core.basinsGone.length
+                        ? "\n\n" + T("The basin did not last the flight. Nothing in that " +
+                            "lavatory was built for a jet, and somewhere in the last few " +
+                            "minutes it came through the bowl and you were holding a line you " +
+                            "could not hold. That is not the same as not having held it.")
+                        : "") +
                     "\n\n" +
                     T("It did not put the fire out. Nothing puts that fire out; there were {n} " +
                       "cells left in the pack when the wheels touched and every one of them was " +

@@ -153,7 +153,7 @@
           } },
 
         { id: "fire.open_bin", deck: "fire", tags: ["reveal", "fire", "hands"], danger: "bad",
-          label: K("Open the bin and look at it"), cost: 10,
+          label: K("Open the bin and look at it"), cost: 16,
           detail: K("You will find out what this is. It will also get a great deal of air."),
           when: (S) => atCore(S) && inLocker(S) && !S.fire.core.exposed,
           run(S) {
@@ -174,7 +174,7 @@
           } },
 
         { id: "fire.pull_case", deck: "fire", tags: ["fire", "hands"], danger: "bad",
-          label: K("Pull the burning case out of the bin"), cost: 16,
+          label: K("Pull the burning case out of the bin"), cost: 24,
           detail: K("You will be holding it. Have a plan for the next fifteen seconds."),
           when: (S) => atCore(S) && inLocker(S) && S.fire.core.exposed,
           run(S) {
@@ -211,9 +211,9 @@
                        S.player.x === S.fire.core.x && S.player.y === S.fire.core.y,
           run(S) {
               st.setFlag(S, "holdingCase");
-              st.setFlag(S, "caseInLav", false);
               const wasSink = S.fire.core.inSink;
               S.fire.core.inSink = false;
+              S.fire.core.sankAt = 0;
               S.fire.core.contained = 0;
               S.player.burns += st.wearing(S, "gloves") ? 11 : 34;
               PRS.audio.play("flare");
@@ -228,32 +228,45 @@
                        kind: "bad" };
           } },
 
-        { id: "fire.case_to_lav", deck: "fire", tags: ["fire", "carry"], danger: "good",
-          label: K("Carry the case to the lavatory"), cost: 34,
-          detail: K("There is a sink in there. A sink is a bucket you cannot knock over."),
-          when: (S) => S.flags.holdingCase && !S.flags.caseInLav,
-          run(S) {
-              const r = A.route(S, cabin.AFT_GALLEY_X, 7);
-              if (r) A.travel(S, r);
-              st.setFlag(S, "caseInLav");
-              S.player.burns += st.wearing(S, "gloves") ? 5 : 18;
-              return { text: T("You get it down the aisle at arm's length, past eleven rows " +
-                               "of people who move for the first time all flight, and into the " +
-                               "lavatory."), kind: "good" };
-          } },
-
-        { id: "fire.case_in_sink", deck: "fire", tags: ["fire", "hands"], danger: "good",
-          label: K("Put the case in the sink and run the tap"), cost: 18,
+        // The walk is part of the action, the way a click on a fire eleven rows away is a walk
+        // and then a pour. There is no separate "carry it to the lavatory" any more: you are
+        // holding a burning case, and the only thing worth deciding is which basin you are
+        // taking it to. There are two, one either side of the aft galley, and they are a real
+        // choice: the walk to each is different, the aisle you take is different, and while you
+        // are in it the case is charging you by the second and dropping what it drops. One of
+        // them can burn through and the other one is still a sink. See travel() and BASIN_FAILS.
+        { id: "fire.case_in_sink", deck: "fire", tags: ["fire", "carry", "hands"], danger: "good",
+          targets(S) {
+              const out = [];
+              for (const y of [cabin.LAV_LEFT_Y, cabin.LAV_RIGHT_Y]) {
+                  if (PRS.fire.basinGone(S.fire, y)) continue;
+                  const r = A.route(S, cabin.AFT_GALLEY_X, y);
+                  if (!r) continue;
+                  out.push({ key: String(y), x: cabin.AFT_GALLEY_X, y: y, r: r });
+              }
+              return out;
+          },
+          label: (S, c) => T("Put the case in the sink in {where} and run the tap",
+                             { where: cabin.placeTo(c.x, c.y) }),
+          cost: (S, c) => 18 + c.r.cost,
           detail: K("This is the correct answer. Nobody in the history of this has done it in time."),
-          when: (S) => S.flags.caseInLav && !S.fire.core.inSink,
-          run(S) {
+          when: (S) => S.flags.holdingCase && !S.fire.core.inSink,
+          run(S, c) {
+              const walked = c.r.path.length;
+              A.travel(S, c.r);
               S.fire.core.inSink = true;
+              S.fire.core.sank = true;
               st.setFlag(S, "holdingCase", false);
-              S.fire.core.x = cabin.AFT_GALLEY_X;
-              S.fire.core.y = 7;
+              S.fire.core.x = c.x;
+              S.fire.core.y = c.y;
               S.fire.core.contained = Math.max(S.fire.core.contained, 0.6);
               PRS.audio.play("pour");
-              return { text: T("You jam the case into the basin and hold the tap open with " +
+              return { text: (walked
+                           ? T("You carry it down the aisle at arm’s length, past rows of " +
+                               "people who move for the first time all flight, and into the " +
+                               "lavatory. ")
+                           : "") +
+                       T("You jam the case into the basin and hold the tap open with " +
                                "your elbow. It does not go out — a cell in runaway makes its " +
                                "own oxygen and there are {n} of them left — but every one of " +
                                "them is now going to vent under nine centimetres of water " +

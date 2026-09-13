@@ -79,14 +79,14 @@ function build(opts) {
     }
     Object.assign(S.flags, opts.bare ? {} : {
         havePhoto: true, bagFull: true, wilburSaid: true, chipConfessed: true, usedPA: true,
-        holdingCase: !!opts.holdingCase, caseInLav: !!opts.caseInLav,
+        holdingCase: !!opts.holdingCase,
     });
     // Out of the locker: in your hands, in the basin, or standing on the floor where somebody
     // put it down. The bin actions and the lift are on opposite sides of this one flag.
-    if (opts.holdingCase || opts.caseInLav || opts.caseDown) S.fire.core.inBin = false;
+    if (opts.holdingCase || opts.caseDown) S.fire.core.inBin = false;
     // "in the lavatory" is carried in and not yet in the basin, which is the state the sink
     // action is waiting for. The basin itself is `caseDown` in the lavatory.
-    if (opts.caseInLav) { S.fire.core.x = cabin.AFT_GALLEY_X; S.fire.core.y = 7; }
+    if (opts.caseInLav) { S.fire.core.x = cabin.AFT_GALLEY_X; S.fire.core.y = cabin.LAV_RIGHT_Y; }
     if (opts.caseDown) { S.fire.core.x = cabin.xOfRow(11); S.fire.core.y = cabin.AISLE_Y; }
     S.credibility = opts.credibility === undefined ? 85 : opts.credibility;
     S.cabinAwareness = 70;
@@ -170,7 +170,7 @@ const SCENARIOS = [
     { name: "mid-flight",   opts: { elapsed: 240, crewPhase: 2, cartOut: true } },
     { name: "bin open",     opts: { elapsed: 240, exposed: true, binOpen: true, crewPhase: 3 } },
     { name: "holding case", opts: { elapsed: 240, exposed: true, holdingCase: true } },
-    { name: "case in lav",  opts: { elapsed: 240, exposed: true, caseInLav: true } },
+    { name: "case in hand", opts: { elapsed: 240, exposed: true, holdingCase: true } },
     { name: "case on floor", opts: { elapsed: 420, exposed: true, caseDown: true } },
     { name: "carrying",     opts: { elapsed: 300, carrying: true } },
     { name: "dragging",     opts: { elapsed: 300, dragging: true } },

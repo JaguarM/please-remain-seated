@@ -186,11 +186,39 @@
         return base * d.carryMul;
     }
 
-    /** Can the player physically pick this person up at all. */
+    // What you can still get hold of with hands you have cooked on a lithium case: something
+    // that goes under one arm. A child, an infant, a dog in a box. Nobody who has to be gripped.
+    const UNDER_THE_ARM = 32;
+
+    /**
+     * The most you can still take hold of, in kilos. Hands you have burned do not close round an
+     * adult's back and they do not close round their armpits either, so this is the ceiling on
+     * carrying and on dragging both - dragging is hands too, and the strap is a handle you hold.
+     *
+     * It never falls below what goes under one arm. A burned player is not a player who has to
+     * leave the children in the seats; they are a player who can no longer move the adults, and
+     * the answer to the adults is other people, which is the answer the game has always wanted.
+     * The welding gloves stop all of this from happening at all.
+     */
+    function handsLimit(S) {
+        if (S.player.burns <= 20) return Infinity;
+        return Math.max(UNDER_THE_ARM, 110 - (S.player.burns - 20) * 1.5);
+    }
+
+    function carryCap(S) {
+        return Math.min(S.derived.carryCap, handsLimit(S));
+    }
+
     function canCarry(S, p) {
         if (p.state === "dead") return false;
         if (S.player.carrying.length >= S.derived.maxCarry) return false;
-        return p.kg <= S.derived.carryCap;
+        return p.kg <= carryCap(S);
+    }
+
+    /** The floor does the lifting, but the grip is still yours. See handsLimit. */
+    function canDrag(S, p) {
+        if (p.state === "dead") return false;
+        return p.kg <= handsLimit(S);
     }
 
     // ---------------------------------------------------------------------------- where to be ---
@@ -712,7 +740,7 @@
 
     PRS.pax = {
         DOWN_AT, GRAB_AT, isChild, isPet, canWalk, canStandUp, canHelp, looseState, needsCarrying,
-        displayState, stateWords, wakeUp, condition, carryOverhead, canCarry, advance, recruit, helperCap,
+        displayState, stateWords, wakeUp, condition, carryOverhead, canCarry, canDrag, carryCap, handsLimit, UNDER_THE_ARM, advance, recruit, helperCap,
         resistance, persuasion, convince, odds, worthAsking, face, palette, speak, hasSeen, saw,
         evacuation, doorState, exposure, refuge, moveGain, shelter, annoy, obstructor,
     };

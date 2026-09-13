@@ -63,13 +63,49 @@
         return { cost: f.dist[goal], path: path };
     }
 
+    // What a burning case does to you while you are walking with it, per second of walking. The
+    // gloves are the whole difference between a walk you recover from and a walk you do not, and
+    // they are the reason the welding gloves are in the game.
+    const CASE_BURN = 0.77;
+    const CASE_BURN_GLOVED = 0.20;
+    // And what it does to the aeroplane: every third tile, a piece of what is coming off it stays
+    // where it was. A cell in runaway throws burning electrolyte, and it does not wait for you to
+    // put the case down. This is the cost of the carry that the clock does not show - a line of
+    // small fires down the aisle you chose, in the rows you were walking past.
+    const CASE_DROP_EVERY = 3;
+    const CASE_DROP = 16;
+
     /** Walk a whole route, so the arrival log line knows where it has been. */
     function travel(S, r) {
         let overSeats = 0;
+        const carrying = !!S.flags.holdingCase;
+        let step = S.fire.core.carrySteps || 0;
+        const dropped = [];
         for (const i of r.path) {
             const x = cabin.xOf(i), y = cabin.yOf(i);
             if (cabin.kindAt(x, y) === "seat") overSeats++;
             A.moveTo(S, x, y);
+            if (!carrying) continue;
+            // The case is on your tile because it is in your hands, so the seat of the fire comes
+            // with you. Without this a carried case leaves its fire behind at the locker.
+            S.fire.core.x = x;
+            S.fire.core.y = y;
+            if (++step % CASE_DROP_EVERY === 0) {
+                const di = cabin.idx(x, y);
+                S.fire.intensity[di] = Math.min(100, S.fire.intensity[di] + CASE_DROP);
+                S.fire.suppress[di] = 0;
+                dropped.push(cabin.placeName(x, y));
+            }
+        }
+        S.fire.core.carrySteps = carrying ? step : 0;
+        if (carrying) {
+            S.player.burns += r.cost * (st.wearing(S, "gloves") ? CASE_BURN_GLOVED : CASE_BURN);
+            if (dropped.length) {
+                PRS.state.log(S, T("Something comes off the case on the way - not much, a spit " +
+                    "of it, {n} times between here and there - and every piece of it stays where " +
+                    "it landed and starts working on the carpet.", { n: dropped.length }), "bad");
+                PRS.audio.play("flare");
+            }
         }
         if (overSeats) S.counts["move.over_seats"] = (S.counts["move.over_seats"] || 0) + overSeats;
         PRS.audio.play("step");

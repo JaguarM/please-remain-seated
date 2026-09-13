@@ -57,7 +57,8 @@
         ["the flight deck door", "an der Cockpittür"],
         ["door {door}", "an Tür {door}"],
         ["the forward galley", "in der vorderen Bordküche"],
-        ["the aft lavatory", "im hinteren WC"],
+        ["the right aft lavatory", "im rechten hinteren WC"],
+        ["the left aft lavatory", "im linken hinteren WC"],
         ["the aft galley", "in der hinteren Bordküche"],
         ["the aisle at row {row}", "im Gang bei Reihe {row}"],
         ["the forward cross-aisle", "im vorderen Quergang"],
@@ -72,7 +73,8 @@
         ["the flight deck door␟as a destination", "zur Cockpittür"],
         ["door {door}␟as a destination", "zu Tür {door}"],
         ["the forward galley␟as a destination", "in die vordere Bordküche"],
-        ["the aft lavatory␟as a destination", "ins hintere WC"],
+        ["the right aft lavatory␟as a destination", "ins rechte hintere WC"],
+        ["the left aft lavatory␟as a destination", "ins linke hintere WC"],
         ["the aft galley␟as a destination", "in die hintere Bordküche"],
         ["the aisle at row {row}␟as a destination", "in den Gang bei Reihe {row}"],
         ["the forward cross-aisle␟as a destination", "in den vorderen Quergang"],
@@ -298,5 +300,34 @@
          "„Ich habe Sie höflich gebeten. Das war die höfliche Bitte.“"],
         ["“Cabin crew! CABIN CREW! This person won't sit down!”",
          "„Kabinencrew! KABINENCREW! Diese Person setzt sich nicht hin!“"],
+        ["The basin goes. The jet has been pointed at the same nine centimetres of moulded " +
+         "plastic for over a minute and it comes out through the bottom of the bowl and then " +
+         "through the floor. The water is running away under it and the case is lying in the " +
+         "well of the lavatory with the door open onto the aft cross-aisle.",
+         "Das Waschbecken gibt auf. Die Stichflamme stand über eine Minute lang auf denselben " +
+         "neun Zentimetern Kunststoff, und jetzt kommt sie unten durch das Becken und danach " +
+         "durch den Boden. Das Wasser läuft darunter weg, und der Koffer liegt in der Mulde " +
+         "des WCs, dessen Tür zum hinteren Quergang offen steht."],
+        ["The basin did not last the flight. Nothing in that lavatory was built for a jet, and " +
+         "somewhere in the last few minutes it came through the bowl and you were holding a " +
+         "line you could not hold. That is not the same as not having held it.",
+         "Das Waschbecken hat den Flug nicht überstanden. Nichts in diesem WC war für eine " +
+         "Stichflamme gebaut, irgendwann in den letzten Minuten kam sie durch das Becken, und " +
+         "Sie hielten eine Linie, die nicht zu halten war. Das ist nicht dasselbe wie sie nie " +
+         "gehalten zu haben."],
+        ["You carry it down the aisle at arm’s length, past rows of people who move for the " +
+         "first time all flight, and into the lavatory. ",
+         "Sie tragen ihn mit ausgestreckten Armen den Gang hinunter, vorbei an Reihen von " +
+         "Menschen, die sich zum ersten Mal auf diesem Flug bewegen, und ins WC. "],
+        ["Something comes off the case on the way - not much, a spit of it, {n} times between " +
+         "here and there - and every piece of it stays where it landed and starts working on " +
+         "the carpet.",
+         "Unterwegs kommt etwas von dem Koffer herunter – nicht viel, ein Spritzer, {n} Mal " +
+         "zwischen hier und dort –, und jedes Stück davon bleibt liegen, wo es gelandet ist, " +
+         "und macht sich an den Teppich."],
+        ["“Mate. Mate. It's a galley oven. It is always a galley oven.”",
+         "„Alter. Alter. Das ist ein Bordküchenofen. Das ist immer ein Bordküchenofen.“"],
+        ["“I was asleep. I was having a really good sleep.”",
+         "„Ich habe geschlafen. Ich hatte gerade so richtig gut geschlafen.“"],
     ]);
 })(window);

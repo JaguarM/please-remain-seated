@@ -172,7 +172,8 @@
         "Walk there": "Dorthin gehen",
         "Walk there, then": "Hingehen, und dann",
         "Out of reach": "Außer Reichweite",
-        "Walk to the aft lavatory": "Zum hinteren WC gehen",
+        "Walk to the right aft lavatory": "Zum rechten hinteren WC gehen",
+        "Walk to the left aft lavatory": "Zum linken hinteren WC gehen",
         "There is a tap in there.": "Da drin ist ein Wasserhahn.",
         "working with you": "arbeitet mit dir",
         "in your arms": "auf deinen Armen",
@@ -220,5 +221,42 @@
          "Klick eine Person an, das Feuer oder dich selbst, um zu sehen, was geht. Klick " +
          "irgendwo anders hin, um dorthin zu gehen — und zurück auf deine eigene Spur, um einen " +
          "Weg rückgängig zu machen."],
+        ["The basin", "Das Waschbecken"],
+        ["the basin", "das Waschbecken"],
+        ["Walk to the basin", "Zum Waschbecken gehen"],
+        ["Click the basin for the one thing it is for",
+         "Klicken Sie das Waschbecken an für das Eine, wofür es gut ist"],
+        ["{where} · {what}", "{where} · {what}"],
+        ["burned through", "durchgebrannt"],
+        ["the case is in it, under the tap", "der Koffer liegt darin, unter dem Hahn"],
+        ["a sink, and the tap runs", "ein Becken, und der Hahn läuft"],
+        ["A sink, a tap and a mirror. Nothing you are carrying wants any of them.",
+         "Ein Becken, ein Hahn und ein Spiegel. Nichts, was Sie tragen, braucht davon etwas."],
+        ["There is a hole in the bottom of it and the water goes straight through.",
+         "Unten ist ein Loch, und das Wasser läuft glatt hindurch."],
+        ["Every cell left in that pack is going to vent under nine centimetres of water instead " +
+         "of over somebody's head.",
+         "Jede Zelle, die in diesem Akku noch übrig ist, bläst jetzt unter neun Zentimetern " +
+         "Wasser ab statt über jemandes Kopf."],
+        ["A sink is a bucket you cannot knock over. It is the only one on the aeroplane and " +
+         "nothing else about it will ever matter.",
+         "Ein Waschbecken ist ein Eimer, den man nicht umstoßen kann. Es ist das einzige im " +
+         "Flugzeug, und nichts sonst daran wird je eine Rolle spielen."],
+        ["The other one of the two, and the far side of the galley from the case. The tap runs " +
+         "here whatever is happening in there.",
+         "Das andere der beiden, auf der dem Koffer abgewandten Seite der Bordküche. Der Hahn " +
+         "läuft hier, ganz gleich, was drüben passiert."],
+        ["Your hands will not close round {who}. {kg}kg, and you have burned them badly enough " +
+         "that anything heavier than {arm}kg — a child, the baby, the dog — is beyond you now, " +
+         "carried or dragged. Somebody else will have to take this one.",
+         "Ihre Hände schließen sich nicht mehr um {who}. {kg}kg, und Sie haben sie so schwer " +
+         "verbrannt, dass alles über {arm}kg — ein Kind, das Baby, der Hund — für Sie nicht " +
+         "mehr geht, weder getragen noch gezogen. Das hier muss jemand anderes übernehmen."],
+        ["Put the case in the sink in {where} and run the tap",
+         "Den Koffer ins Becken {where} legen und den Hahn aufdrehen"],
+        ["A sink is a bucket you cannot knock over. There are two of them on this aeroplane " +
+         "and nothing else about either will ever matter.",
+         "Ein Waschbecken ist ein Eimer, den man nicht umstoßen kann. Es gibt zwei davon in " +
+         "diesem Flugzeug, und nichts sonst an einem von beiden wird je eine Rolle spielen."],
     ]);
 })(window);

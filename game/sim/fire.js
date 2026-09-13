@@ -47,6 +47,10 @@
     // the cabin, which is to say a haze, which is to say you could park the fire in the aft
     // lavatory and nobody breathed anything.
     const BLUE_SMOKE = 30;
+    // Seconds of blue jet a lavatory basin survives. The clock starts at the later of the two
+    // things it takes to kill a basin - a jet, and a jet in that basin - so the second basin is
+    // worth the walk rather than burning through the moment you set the case down in it.
+    const BASIN_FAILS = 75;
     const BLUE_TORCH = 1.1;     // what it does to the tile next to it, per second, per fuel
 
     // How an agent behaves once it is on a tile: how much intensity it takes off now, how much
@@ -100,6 +104,11 @@
                 contained: 0,    // 0..1, how much of the venting the cabin does not see
                 exposed: false,  // has anyone actually looked at it
                 inSink: false,   // the one thing that genuinely helps and nobody thinks of
+                sank: false,     // did it ever go in the basin. The medal and the ending read this
+                basinsGone: [],  // which basins have burned through, by y. Not the other one
+                blueAt: 0,       // when it went blue
+                sankAt: 0,       // when it actually reached the basin it is in now
+                carrySteps: 0,   // tiles walked with it in your hands. See travel()
                 cooled: 0,       // water spent on the cell, and how little the next pour gets
                 blue: false,     // the second stage. See BLUE_AT.
                 inBin: true,     // still in the locker, which is the only thing aiming it
@@ -135,6 +144,36 @@
         let m = 0;
         for (let i = 0; i < N; i++) if (f.intensity[i] > m) m = f.intensity[i];
         return m;
+    }
+
+    /**
+     * A tap you can actually stand at and use. There are two aft lavatories and the case goes
+     * into one of them: a basin with a lithium pack venting in it is not a basin you fill a
+     * bottle from, and a compartment with a jet in it is not one you stand in to soak a blanket.
+     * So the water moves to the other lavatory, which is a walk across the aft galley and the
+     * price of having put the fire where you put it.
+     */
+    function tapUsable(S, x, y) {
+        const f = S.fire;
+        if (cabin.kindAt(x, y) !== "lav") return false;
+        // A case smouldering in the basin still leaves you a tap: you fill the bottle round
+        // it, which is unpleasant and which works. A jet in the basin does not - that is when
+        // the water stops being water you can get at and the taps move to the other lavatory.
+        if (f.core.inSink && f.core.blue && f.core.x === x && f.core.y === y) return false;
+        return f.intensity[cabin.idx(x, y)] < 12;
+    }
+
+    /** Has this basin burned through. There are two and they fail one at a time. */
+    function basinGone(f, y) {
+        return f.core.basinsGone.indexOf(y) >= 0;
+    }
+
+    /** The lavatory the taps are in, for anything that wants to send the player to one. */
+    function tapLav(S) {
+        for (const y of [cabin.LAV_RIGHT_Y, cabin.LAV_LEFT_Y]) {
+            if (tapUsable(S, cabin.AFT_GALLEY_X, y)) return { x: cabin.AFT_GALLEY_X, y: y };
+        }
+        return null;
     }
 
     function burningTiles(f) {
@@ -264,6 +303,7 @@
         // is not a consequence of how the fire is going, it is how long a pack takes.
         if (!f.core.blue && S.clock.elapsed >= BLUE_AT) {
             f.core.blue = true;
+            f.core.blueAt = S.clock.elapsed;
             const ci = cabin.idx(f.core.x, f.core.y);
             f.intensity[ci] = Math.max(f.intensity[ci], BLUE_FLOOR);
             f.suppress[ci] = 0;
@@ -275,6 +315,32 @@
                 : T("The fire changes colour. What was orange is now a blue jet coming out of " +
                     "the seam under pressure, with a sound like a blowtorch, and the seat backs " +
                     "either side of it have started to go without being touched."), "bad");
+            PRS.audio.play("flare");
+        }
+        // The basin is a plastic moulding with a lithium jet standing in it. It buys the first
+        // six minutes and then it stops being a basin: the jet goes through the bowl, through the
+        // waste line and into the floor of the compartment, and the case is sitting in a small
+        // plastic room rather than in water. Putting it there was still the right move. It was
+        // the right move for six minutes rather than for the rest of the flight, which is what
+        // the sink was ever worth.
+        // Stamped here rather than in the action, because an action runs before its own cost
+        // is charged and the walk down the aisle is most of that cost. This is the first tick on
+        // which the case is actually in the water, which is when the basin starts dying.
+        if (f.core.inSink && !f.core.sankAt) f.core.sankAt = S.clock.elapsed;
+
+        if (f.core.inSink && f.core.blue && !basinGone(f, f.core.y) &&
+            S.clock.elapsed >= Math.max(f.core.blueAt, f.core.sankAt) + BASIN_FAILS) {
+            f.core.inSink = false;
+            f.core.sankAt = 0;
+            f.core.basinsGone.push(f.core.y);
+            const ci = cabin.idx(f.core.x, f.core.y);
+            f.intensity[ci] = Math.max(f.intensity[ci], BLUE_FLOOR);
+            f.suppress[ci] = 0;
+            PRS.state.log(S, T("The basin goes. The jet has been pointed at the same nine " +
+                "centimetres of moulded plastic for over a minute and it comes out through the " +
+                "bottom of the bowl and then through the floor. The water is running away under " +
+                "it and the case is lying in the well of the lavatory with the door open onto " +
+                "the aft cross-aisle."), "bad");
             PRS.audio.play("flare");
         }
 
@@ -573,6 +639,7 @@
 
     PRS.fire = {
         AGENTS, create, at, smokeAt, heatAt, worst, burningTiles, totalSmoke, smokeLayer,
+        tapUsable, tapLav, basinGone,
         apply, coolCore, starve, advance, describe, describeSmoke, fireSprite, smokeSprite, ventEta,
     };
 })(window);

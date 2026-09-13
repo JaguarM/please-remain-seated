@@ -47,7 +47,7 @@
      "extra.child_carry_pair", "people.follow", "people.recruit", "people.show_photo",
      "people.direct_helper", "loot.ask_carrying", "loot.ask_for", "loot.take_down",
      "fire.douse", "fire.smother", "fire.close_bin", "fire.tape_bin", "fire.photograph",
-     "fire.halon", "fire.water_ext", "fire.case_to_lav", "fire.case_in_sink",
+     "fire.halon", "fire.water_ext", "fire.case_in_sink",
      "crew.show_photo", "crew.show_burn", "crew.lead", "crew.tell", "crew.move_trolley",
      "cabin.fill_bottle", "cabin.wet_blanket", "cabin.trigger_detector",
      "cabin.stow_trolley", "cabin.galley_drawer",
@@ -169,9 +169,24 @@
         return { kind: "fire", key: "fire", x: x, y: y,
                  name: T("The fire"), short: T("the fire") };
     }
+    function sinkThing(x, y) {
+        return { kind: "sink", key: "sink", x: x, y: y,
+                 name: T("The basin"), short: T("the basin") };
+    }
     function youThing(S) {
         return { kind: "you", key: "you", x: S.player.x, y: S.player.y,
                  name: S.character.name, short: T("you") };
+    }
+
+    /**
+     * The basin is always clickable, for the same reason the seat of the fire is: it is a thing
+     * you can decide about before it is on fire, and the one decision it offers - a burning case
+     * goes in here - is the one you have to make while there is still time to make it. Without
+     * this, the sink is a tile you can only find by already knowing it is there.
+     */
+    function sinkAt(S, x, y) {
+        return x === cabin.AFT_GALLEY_X &&
+               (y === cabin.LAV_LEFT_Y || y === cabin.LAV_RIGHT_Y);
     }
 
     /** Is there a fire on this tile worth clicking. Embers count; a warm carpet does not. */
@@ -205,6 +220,7 @@
             }
         }
         if (fireAt(S, x, y) && !out.some((t) => t.kind === "fire")) out.push(fireThing(x, y));
+        if (sinkAt(S, x, y)) out.push(sinkThing(x, y));
         return out;
     }
 
@@ -259,7 +275,8 @@
      */
     function resolve(S, thing, entries) {
         const groups = group(entries);
-        const R = { thing: thing, header: null, near: true, walk: null, sections: [], empty: null };
+        const R = { thing: thing, header: null, near: true, walk: null, sections: [],
+                    empty: null, note: null };
 
         if (thing.kind === "person") {
             const p = st.paxById(S, thing.id);
@@ -278,8 +295,40 @@
             const then = R.near ? [] : remote(S, R, p.x, p.y, [thing.key], now,
                 { avoidSelf: true, label: T("Walk over to {who}", { who: thing.short }) });
             split(R, now, then);
-            if (!now.length && !R.walk) {
+            // A row that has quietly stopped being offered is a bug as far as the player is
+            // concerned. If the reason this person cannot be picked up or dragged is your hands
+            // rather than their weight, the card says so, in their kilos and yours, because the
+            // answer - ask somebody else - is only obvious once you know what the question was.
+            if (p.state !== "carried" && p.state !== "dead" && !p.helper &&
+                S.player.burns > 20 && p.kg > PRS.pax.handsLimit(S)) {
+                R.note = T("Your hands will not close round {who}. {kg}kg, and you have burned " +
+                           "them badly enough that anything heavier than {arm}kg — a child, the " +
+                           "baby, the dog — is beyond you now, carried or dragged. Somebody " +
+                           "else will have to take this one.",
+                           { who: thing.short, kg: p.kg, arm: PRS.pax.UNDER_THE_ARM });
+            }
+            if (!now.length && !R.walk && !R.note) {
                 R.empty = T("Nothing you can do for {who} from here.", { who: p.name });
+            }
+            return R;
+        }
+
+        if (thing.kind === "sink") {
+            const here = S.player.x === thing.x && S.player.y === thing.y;
+            R.header = sinkHeader(S, thing.x, thing.y);
+            // Putting the case in carries its own walk - see fire.case_in_sink - so it belongs on
+            // this card from anywhere in the aeroplane, and it is the only reason this card is
+            // worth opening from the far end of it.
+            const now = (groups.fire || [])
+                            .filter((e) => e.id === "fire.case_in_sink" &&
+                                           e.ctx && e.ctx.y === thing.y)
+                            .concat(here ? pick(groups, ["here"]) : []);
+            R.near = here;
+            const then = here ? [] : remote(S, R, thing.x, thing.y, ["here"], now,
+                { exact: true, label: T("Walk to the basin") });
+            split(R, now, then);
+            if (!now.length && !R.walk) {
+                R.empty = T("A sink, a tap and a mirror. Nothing you are carrying wants any of them.");
             }
             return R;
         }
@@ -414,8 +463,16 @@
         if (h && wantsFire) {
             stops.push({ x: h.x, y: h.y, label: T("Walk to the fire"), avoidSelf: true });
         }
-        if (wantsTap) {
-            stops.push({ x: cabin.AFT_GALLEY_X, y: 7, label: T("Walk to the aft lavatory"),
+        // There are two aft lavatories and the case may be in one of them, so this asks which one
+        // still has water rather than naming the usual one. If the answer is neither, the walk is
+        // not offered at all: saying so by leaving the row out is kinder than a walk that ends at
+        // a basin with a jet in it.
+        const tap = wantsTap ? PRS.fire.tapLav(S) : null;
+        if (tap) {
+            stops.push({ x: tap.x, y: tap.y,
+                         label: tap.y === cabin.LAV_LEFT_Y
+                             ? T("Walk to the left aft lavatory")
+                             : T("Walk to the right aft lavatory"),
                          exact: true, detail: T("There is a tap in there.") });
         }
         for (const stop of stops) {
@@ -475,6 +532,29 @@
         };
     }
 
+    function sinkHeader(S, x, y) {
+        const c = S.fire.core;
+        const gone = PRS.fire.basinGone(S.fire, y);
+        const holds = c.inSink && c.x === x && c.y === y;
+        return {
+            // There is no sink sprite; the lavatory door is what the player looks for.
+            icon: "lav_door", iconScale: 2,
+            title: T("The basin"),
+            sub: T("{where} · {what}",
+                   { where: cabin.placeName(x, y),
+                     what: gone ? T("burned through")
+                         : holds ? T("the case is in it, under the tap")
+                         : T("a sink, and the tap runs") }),
+            traits: gone
+                ? T("There is a hole in the bottom of it and the water goes straight through.")
+                : holds
+                    ? T("Every cell left in that pack is going to vent under nine centimetres " +
+                        "of water instead of over somebody's head.")
+                    : T("A sink is a bucket you cannot knock over. There are two of them on " +
+                        "this aeroplane and nothing else about either will ever matter."),
+        };
+    }
+
     function youHeader(S) {
         const Pl = S.player;
         const face = !Pl.alive ? "pax_down" : Pl.smokeDose > 40 ? "pax_afraid"
@@ -513,6 +593,7 @@
 
     PRS.hotspots = {
         keysOf, rank, group, pick, previewAt, approach, hottest, thingsAt, targetAt, fireAt,
+        sinkAt, sinkThing,
         personThing, crewThing, fireThing, youThing, itemSprite, resolve,
     };
 })(window);

@@ -849,6 +849,7 @@
             return T("Click for what you can do with {who}", { who: tg.thing.short });
         }
         if (tg.kind === "fire") return T("Click the fire for what you can do about it");
+        if (tg.kind === "sink") return T("Click the basin for the one thing it is for");
         if (tg.kind === "you") return T("Click yourself for what you can do here");
         if (tg.kind === "walk") {
             if (tile.x === S.player.x && tile.y === S.player.y) return null;
@@ -923,6 +924,8 @@
                     text: T("…and {n} more once you are there.", { n: sec.hidden }) }));
             }
         }
+        // Why a row you were expecting is not there. See hotspots.resolve.
+        if (R.note) body.appendChild(el("div", { class: "card-empty", text: R.note }));
         if (!R.near && !R.walk && !R.empty) {
             body.appendChild(el("div", { class: "card-empty", text: T("Out of reach.") }));
         }
@@ -970,6 +973,7 @@
             return c ? PRS.atlas.icon(c.sprite || "crew", 1, PRS.render.paletteOf(c)) : null;
         }
         if (t.kind === "fire") return PRS.atlas.icon("fire_2", 1);
+        if (t.kind === "sink") return PRS.atlas.icon("lav_door", 1);
         if (t.kind === "you") return PRS.atlas.icon("pax", 1, PRS.render.paletteOf(S.character));
         return null;
     }

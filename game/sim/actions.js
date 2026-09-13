@@ -94,7 +94,15 @@
         // are too afraid to work.
         const smoke = S.fire.smoke[cabin.idx(S.player.x, S.player.y)];
         if (!st.wearing(S, "hood")) c *= 1 + clamp01(smoke / 100) * 0.42;
-        if (S.player.burns > 30 && tags.indexOf("hands") >= 0) c *= 1.35;
+        // Burned hands cost you arms, not words. A visible burn is an argument and it stays one -
+        // see the credibility it buys in the crew and passenger decks - but you cannot lift a
+        // seventy-kilo adult out of a row with hands you have just cooked on a lithium case, and
+        // the carry deck is where the flight is actually won. So this is the price of having
+        // handled it: everything you do with your arms, at a rate that gets worse as it gets
+        // worse, and nothing at all off the things you say.
+        if (S.player.burns > 20 && tags.indexOf("carry") >= 0) {
+            c *= 1 + Math.min(0.9, (S.player.burns - 20) / 60);
+        }
         if (S.player.carrying.length) c *= 1 + 0.28 * S.player.carrying.length;
         // Somebody you have soaked has hold of your arm. Everything you do to the fire with them
         // there is done around them, until somebody calms them down.

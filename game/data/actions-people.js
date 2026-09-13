@@ -134,10 +134,14 @@
         {
             id: "people.drag", deck: "people", tags: ["carry"], danger: "neutral",
             // Dragging is the answer to somebody you cannot lift, so it offers itself for the
-            // unconscious, for the wheelchair users, and for anybody heavier than your arms.
-            targets: (S) => reach(S).filter((c) => c.p.state === "down" ||
-                                                   c.p.traits.indexOf("immobile") >= 0 ||
-                                                   !P.canCarry(S, c.p)),
+            // unconscious, for the wheelchair users, and for anybody heavier than your arms -
+            // but not for anybody your hands can no longer take hold of. See pax.canDrag: a
+            // burned player drags nobody they could not also have carried, and the answer to
+            // the people they can no longer reach is other people.
+            targets: (S) => reach(S).filter((c) => P.canDrag(S, c.p) &&
+                                                   (c.p.state === "down" ||
+                                                    c.p.traits.indexOf("immobile") >= 0 ||
+                                                    !P.canCarry(S, c.p))),
             when: (S, c) => !S.player.dragging && S.player.carrying.length === 0 &&
                             c.p.state !== "carried" && c.p.state !== "dead" && !c.p.helper,
             label: (S, c) => st.slotOf(S, "strap")

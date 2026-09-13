@@ -36,7 +36,7 @@
           when: (S) => S.fire.core.contained > 0.5 },
         { id: "sink", name: K("The correct answer"),
           text: K("Got the case into a sink full of water. Nobody has ever thought of this in time."),
-          when: (S) => S.fire.core.inSink },
+          when: (S) => S.fire.core.sank },
         { id: "seen_it", name: K("Looked at it"),
           text: K("Actually opened the bin and looked at the thing that is doing all this."),
           when: (S) => S.fire.core.exposed,

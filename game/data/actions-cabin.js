@@ -13,6 +13,9 @@
     const A = PRS.actions;
 
     function atLav(S) { return cabin.kindAt(S.player.x, S.player.y) === "lav"; }
+    // Water needs a lavatory you can use, which is not the one with the case in the basin. See
+    // PRS.fire.tapUsable: the taps move to the other one rather than going away.
+    function atTap(S) { return PRS.fire.tapUsable(S, S.player.x, S.player.y); }
     function atGalley(S) {
         const kind = cabin.kindAt(S.player.x, S.player.y);
         return (S.player.x === cabin.FWD_GALLEY_X || S.player.x === cabin.AFT_GALLEY_X) &&
@@ -26,7 +29,7 @@
         { id: "cabin.fill_bottle", item: "water_big", deck: "cabin", tags: ["hands"], danger: "good",
           label: K("Fill the bottle at the tap"), cost: 9,
           detail: K("The tap runs for four seconds a press. You will press it three times."),
-          when: (S) => atLav(S) && !!slot(S, "water_big") && slot(S, "water_big").uses < 3,
+          when: (S) => atTap(S) && !!slot(S, "water_big") && slot(S, "water_big").uses < 3,
           run(S) {
               const s = slot(S, "water_big");
               s.uses = 3; s.spent = false;
@@ -38,7 +41,7 @@
         { id: "cabin.wet_blanket", item: "blanket", deck: "cabin", tags: ["hands"], danger: "good",
           label: K("Soak the blanket in the sink"), cost: 14,
           detail: K("A wet blanket is a completely different object to a dry one."),
-          when: (S) => atLav(S) && !!slot(S, "blanket") && !slot(S, "blanket").wet,
+          when: (S) => atTap(S) && !!slot(S, "blanket") && !slot(S, "blanket").wet,
           run(S) {
               slot(S, "blanket").wet = true;
               return { text: T("You fill the basin and push the whole blanket under it. It " +
@@ -48,7 +51,7 @@
 
         { id: "cabin.wet_towel", item: "wet_towel", deck: "cabin", tags: ["hands"],
           label: K("Wet the towel again"), cost: 8,
-          when: (S) => atLav(S) && !!slot(S, "wet_towel") && slot(S, "wet_towel").uses < 4,
+          when: (S) => atTap(S) && !!slot(S, "wet_towel") && slot(S, "wet_towel").uses < 4,
           run(S) {
               const s = slot(S, "wet_towel"); s.uses = 4; s.spent = false;
               return T("The towel goes back to being a wet towel, which is its whole job.");
@@ -57,7 +60,7 @@
         { id: "cabin.fill_bag", item: "binbag", deck: "cabin", tags: ["hands"], danger: "good",
           label: K("Fill a bin liner with water"), cost: 20,
           detail: K("Nine litres. Four times the bottle. It is awkward and it is worth it."),
-          when: (S) => atLav(S) && !!slot(S, "binbag") && !S.flags.bagFull,
+          when: (S) => atTap(S) && !!slot(S, "binbag") && !S.flags.bagFull,
           run(S) {
               st.useCharge(S, slot(S, "binbag"));
               st.setFlag(S, "bagFull");
