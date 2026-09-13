@@ -59,13 +59,24 @@
     const view = { down: false, e: 0, f: 0 };
 
     /**
-     * The width at which a tile stops being worth putting a thumb on. It is a width and not a
-     * phone: a narrow window on a desktop gets the same aeroplane, and a phone turned sideways
-     * gets the letterbox back.
+     * When the aeroplane is worth turning.
+     *
+     * `TURN_BELOW` is the width at which thirty tiles across stop being worth putting a thumb
+     * on. It is a width and not a phone: a narrow window on a desktop gets the same aeroplane.
+     *
+     * `TURN_NEEDS` is the height it takes to make anything of the turn. A phone held sideways is
+     * narrow by the first number and has no height at all, and turning that one would trade a
+     * cabin that is a little small for a cabin seen through a letterbox on its end. It is also
+     * the shape the aeroplane was drawn for, so sideways gets the aeroplane the way round it
+     * has always been.
      */
     const TURN_BELOW = 900;
+    const TURN_NEEDS = 560;
 
-    function wantsTurn() { return (global.innerWidth || 0) > 0 && global.innerWidth < TURN_BELOW; }
+    function wantsTurn() {
+        const w = global.innerWidth || 0, h = global.innerHeight || 0;
+        return w > 0 && w < TURN_BELOW && h >= TURN_NEEDS;
+    }
 
     /**
      * Turn the aeroplane down the page, or back across it; with nothing to say, ask the window.

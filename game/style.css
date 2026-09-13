@@ -186,7 +186,10 @@ button.big:hover { background: #4b6191; }
 
 .col-left { display: flex; flex-direction: column; min-height: 0; min-width: 0; padding: 10px; gap: 8px; }
 .canvas-wrap { background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 6px; }
-.cabin { display: block; width: 100%; height: auto; }
+/* `manipulation` drops the wait a browser spends finding out whether a tap was the first half
+   of a double tap to zoom. On a clock that only moves when you act, a third of a second of
+   nothing after every tap reads as the game not having heard you. */
+.cabin { display: block; width: 100%; height: auto; touch-action: manipulation; }
 
 /* ---------------------------------------------------------------- the aeroplane turned ---
 
@@ -206,6 +209,11 @@ button.big:hover { background: #4b6191; }
    already drawn on itself. */
 .readout[hidden], .toward[hidden] { display: none; }
 .turned .readout + .canvas-wrap { border-radius: 0 0 4px 4px; }
+
+/* Nine tiles across a tablet held upright is a seat the size of a coaster and an aeroplane
+   two and a half thousand pixels long, so the picture stops growing at a tile you can hit
+   comfortably and sits in the middle of whatever is left. */
+.turned .readout, .turned .viewport { max-width: 460px; margin-inline: auto; width: 100%; }
 
 .turned .canvas-wrap {
   overflow-y: auto; overscroll-behavior-y: contain; padding: 0;
@@ -242,6 +250,10 @@ button.big:hover { background: #4b6191; }
 /* One meter a line. Two across fits until a word like CREDIBILITY has a number after it, and
    then it does not, and the layout it breaks is the one holding your bag. */
 .turned .hud-you .meter, .turned .hud-you .bagbar { flex: 1 0 100%; }
+/* A meter is a word, a number and the bar between them, and stretching that across a tablet
+   puts the two words a hand apart with nothing in between. Three things in a bag are three
+   things, not a third of the screen each. */
+.turned .hud-you .meter, .turned .bag-items { max-width: 420px; }
 .turned .bag-items { flex-wrap: nowrap; margin-top: 3px; }
 .turned .bag-item { width: auto; flex: 1 1 0; min-width: 0; padding: 3px 2px; }
 .turned .bag-item b { font-size: 9px; }
@@ -939,6 +951,17 @@ button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
 :lang(de) .tbox i { font-size: 10px; }
 :lang(de) .slot b { font-size: 9px; }
 :lang(de) .hrow { grid-template-columns: 16px 1fr 110px 90px 34px 1fr; }
+
+/* Six columns of a flight do not fit across a phone, and the one that gets pushed off the edge
+   is the ending - which is the only part of the line that says what the flight was like. So on
+   a narrow screen the row stops being a table and becomes a sentence that wraps: who, what they
+   saved, what it cost and the grade on one line, and how it ended on the next. */
+@media (max-width: 620px) {
+  .hrow { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 10px; }
+  .hrow img { align-self: center; }
+  .hrow b { flex: 1 1 auto; min-width: 0; }
+  .hrow i { flex: 1 0 100%; }
+}
 
 /* ------------------------------------------------------------------------------ settings ---
 

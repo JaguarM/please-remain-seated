@@ -246,7 +246,9 @@
         // Turned back, the whole aeroplane is on the screen at once and there is nothing off it
         // to point at. `aim` is not reached to say so, so it is said here.
         if (toward && !down) toward.hidden = true;
-        if (ghostCanvas) ghostScale = PRS.render.fit(ghostCanvas, 2);
+        if (ghostCanvas) ghostScale = asGhost(function () {
+            return PRS.render.fit(ghostCanvas, 2);
+        });
         followed = -1;
     }
 
@@ -366,12 +368,29 @@
         ]);
     }
 
+    /**
+     * Their aeroplane, the way round it was drawn.
+     *
+     * Yours is turned on a narrow screen because you have to be able to put a thumb on a seat in
+     * it. Nothing on theirs is ever touched - no reach, no trail, nothing under the pointer -
+     * so it needs none of that, and what it does need is to be taken in at a glance, which a
+     * letterbox a hundred pixels deep does and a second aeroplane the length of the screen does
+     * not. So it keeps the shape it was drawn for, either way up yours is.
+     */
+    function asGhost(fn) {
+        const back = PRS.render.turned();
+        PRS.render.turn(false);
+        try { return fn(); } finally { PRS.render.turn(back); }
+    }
+
     function drawGhost(now) {
         if (!ghostCtx || !ghostCanvas.isConnected) return;
         ghost.at(Math.max(0, S.clock.total - clockShown));
-        PRS.render.draw(ghostCtx, ghost.S, {
-            scale: ghostScale, time: now, ns: "ghost:", ghost: true,
-            showReach: false, rowNumbers: false,
+        asGhost(function () {
+            PRS.render.draw(ghostCtx, ghost.S, {
+                scale: ghostScale, time: now, ns: "ghost:", ghost: true,
+                showReach: false, rowNumbers: false,
+            });
         });
         // Four times a second is often enough for two numbers and rare enough that the line is
         // readable while it changes.
