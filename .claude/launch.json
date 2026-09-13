@@ -3,7 +3,7 @@
   "configurations": [
     {
       "name": "please-remain-seated",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "python3",
       "runtimeArgs": [
         "tools/serve.py",
         "8742"
@@ -12,7 +12,7 @@
     },
     {
       "name": "please-remain-seated (any port)",
-      "runtimeExecutable": "python",
+      "runtimeExecutable": "python3",
       "runtimeArgs": [
         "tools/serve.py"
       ],
