@@ -99,6 +99,23 @@ cabin, and opens the settings when there is nothing left to close. The settings 
 the language, the help card and the way out of a flight, which asks first, because a flight is
 saved nowhere and leaving one is leaving it.
 
+**On a narrow screen the aeroplane is turned.** A cabin is thirty tiles by nine, which is a
+letterbox, and a phone held upright is not: nine tiles across a phone is a seat you can put a
+thumb on, and thirty across one is sixty smudges. So under nine hundred pixels wide - and only
+with the height to make anything of it, so a phone held sideways keeps the letterbox it was
+drawn for - the aeroplane is flown down the page instead: the nose at the top, the rows running
+away from you, A by the right-hand window.
+
+Thirty rows do not fit on a phone, and three things follow. The window scrolls and follows you,
+on the rows you change and not while a thumb is dragging it. The readout comes off the picture
+onto a strip of its own above it, because four numbers that scroll away are four numbers nobody
+reads. And the fire gets an arrow on the edge it went off, in the colour the case is actually
+burning and with the row it is in - it is a button, because the one thing anybody wants to do
+with it is go there.
+
+Nothing in the simulation is told. A seat is still 14C, the seed is the same seed, and a flight
+flown on a phone writes the same code as a flight flown on a desk.
+
 Who you are
 -----------
 
@@ -254,6 +271,9 @@ What is in it
   one that stands, and a book of days behind it that counts the run.
 - **A whole flight as a line of text**, about a hundred characters of it, which somebody else
   pastes back in to fly your fifteen minutes with your cabin running under theirs.
+- **An aeroplane that turns.** The same renderer, a quarter turn of the canvas, and the cabin
+  runs down a phone instead of across it - which is what makes a code pasted into a message
+  something the person who gets it can actually fly.
 - A **title screen that is flying**. The cabin behind the boarding pass is not artwork: it is the
   simulation, on a random seed, with one of the bots from `game/sim/bots.js` at the controls,
   slowed down to a speed a person can watch and muted so that a menu never makes a noise at
@@ -307,6 +327,21 @@ your bag it uses, which is how clicking the bottle finds everything the bottle c
 a deck file and it is on the right card the next time the page loads. The rule for whether it
 belongs: it has to change a number the score depends on, through a path the player can see, and
 not be a dearer copy of something already on the card.
+
+**The turn is one rotation and no second renderer.** `game/engine/render.js` sets a transform
+once, in `draw`, and every line in the file that draws a tile at `x * T` lands where it should
+without knowing why. A quarter turn is exact, so nothing lands on half a pixel, which is the
+only reason a pixel-art canvas is allowed to be rotated at all. What does not turn with it is a
+face and a word - a passenger rotated ninety degrees is a passenger lying down - so those go
+through `upright`, which squares the canvas back over one tile and then puts it back. `tileAt`
+undoes the turn, so a tap is a cabin coordinate by the time it leaves the renderer and nothing
+downstream of it has an opinion about which way up the aeroplane was.
+
+Which way up belongs to whoever is drawing rather than to the renderer, because the three
+places that draw a cabin want different answers. The play screen asks the window. The aeroplane
+behind the title never turns: it is a background with a mask cut for a letterbox, and a mask is
+not a thing that rotates. Nor does somebody else's flight running under yours - nothing on it is
+ever touched, and what it has to do is be taken in at a glance.
 
 Testing it
 ----------
@@ -401,8 +436,8 @@ butler sends only changed blocks, so a typo fix is a twenty-kilobyte upload.
 
 The page settings live on itch and are set by hand once: kind "HTML", the html5 upload ticked as
 played in the browser, and a viewport of about 1280x900 with the fullscreen button on. The
-layout is `100vh` with a breakpoint at 1000px, so anything narrower than that gets the stacked
-version in a small box, which is not the game.
+layout is `100vh` down to a breakpoint at 1000px, where it starts to stack; under nine hundred
+it turns the aeroplane down the page instead, which is the phone version and is the game.
 
 Text
 ----
