@@ -214,6 +214,21 @@ draws the still at the top of this file. No browser is involved in either.*
     node tools/dump_flight.js --flight=flights.json --only=0
     python tools/render_gif.py --from=300 --to=600  # just the bad four minutes
 
+A cabin is thirty tiles by nine, which is a letterbox, and a shop page wants a rectangle. So it
+crops in tiles and pads what is left onto a canvas of a given size:
+
+    node tools/dump_flight.js --bot=blend --seed=1 --every=14
+    python tools/render_gif.py --out=docs/itch/cover.gif --crop=11,0,13,9 --scale=3 \
+        --pad=630x500 --fields=1 --what="PLEASE REMAIN SEATED" --to=620
+
+Thirteen rows either side of the locker above 14C, on the 630x500 an itch.io cover wants, stopping
+at three minutes out - because the crop cannot see the doors, and everybody who was carried
+forward is outside it by the end, so the last seconds would read as a cabin nobody got off.
+`--fields` trims the caption, which has room for the word TOUCHDOWN on a whole aeroplane and not
+on a third of one, and `--what` replaces the dev label, because "blend, seed 1" is for this file
+and not for a shop. `docs/itch/` is not committed: those are a megabyte each, one command
+remakes them, and the copy that matters is the one itch.io is serving.
+
 What is in it
 -------------
 

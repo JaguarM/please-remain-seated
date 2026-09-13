@@ -11,7 +11,8 @@ butler only sends the blocks that changed, so a typo fix is a twenty-kilobyte up
 hundred. The version it stamps on the build is the git commit the build came from, which is the
 only way to tell later which of these is playing on the page.
 
-butler lives at C:\\butler\\butler.exe here; set BUTLER to override.
+butler is looked for on the PATH and then in the two places it has actually been kept; set
+BUTLER to its path to override that.
 """
 
 import os
@@ -24,11 +25,25 @@ ROOT = Path(__file__).resolve().parent.parent
 TARGET = "jaguarm/please-remain-seated:html5"
 
 
+# Where butler has been kept, in the order to look. It is not a thing with an installer and it
+# does not put itself on the PATH, so this is a list of real places rather than a guess.
+BUTLER_PATHS = [Path.home() / "Public" / "butler", Path(r"C:\butler\butler.exe")]
+
+
 def butler() -> str:
-    found = os.environ.get("BUTLER") or shutil.which("butler") or r"C:\butler\butler.exe"
-    if not Path(found).is_file() and not shutil.which(found):
-        sys.exit("butler is not where I looked (%s). Set BUTLER to its path." % found)
-    return found
+    named = os.environ.get("BUTLER")
+    if named:
+        if Path(named).is_file() or shutil.which(named):
+            return named
+        sys.exit("BUTLER is set to %s, and there is nothing there." % named)
+    found = shutil.which("butler")
+    if found:
+        return found
+    for path in BUTLER_PATHS:
+        if path.is_file():
+            return str(path)
+    sys.exit("butler is not on the PATH or in %s. Set BUTLER to its path."
+             % " or ".join(str(p) for p in BUTLER_PATHS))
 
 
 def main() -> int:
