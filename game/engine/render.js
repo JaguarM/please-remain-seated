@@ -37,12 +37,13 @@
     // is under it, so every coordinate in this file is still a cabin coordinate.
     const BAND = 1.5;
 
-    function fit(canvas) {
-        canvas.width = cabin.W * TILE * DRAW_SCALE;
-        canvas.height = Math.round((cabin.H + BAND) * TILE * DRAW_SCALE);
+    function fit(canvas, scale) {
+        const s = scale || DRAW_SCALE;
+        canvas.width = cabin.W * TILE * s;
+        canvas.height = Math.round((cabin.H + BAND) * TILE * s);
         canvas.style.width = "100%";
         canvas.style.height = "auto";
-        return DRAW_SCALE;
+        return s;
     }
 
     /**
@@ -262,18 +263,26 @@
 
     const CHASE = { speed: 10, within: 0.34 };   // tiles a second at least, and seconds at most
     const moving = new Map();
-    let movedAt = 0;
+    // When each cabin on the page was last moved on. There is more than one when somebody else's
+    // flight is running beside yours, and they are drawn one after the other in the same frame:
+    // a single clock here would hand the first draw the whole of the elapsed time and the second
+    // one none of it, and everybody in the second cabin would stand perfectly still.
+    const movedAt = new Map();
 
     /** A new flight: nobody is anywhere yet. */
-    function resetMotion() {
-        moving.clear();
-        movedAt = 0;
+    function resetMotion(ns) {
+        if (ns === undefined) { moving.clear(); movedAt.clear(); return; }
+        for (const key of Array.from(moving.keys())) {
+            if (key.slice(0, ns.length) === ns) moving.delete(key);
+        }
+        movedAt.delete(ns);
     }
 
-    /** Seconds since the last frame. Asked once, at the top of a draw. */
-    function frameStep(t) {
-        const dt = movedAt ? Math.min(0.1, Math.max(0, t - movedAt) / 1000) : 0;
-        movedAt = t;
+    /** Seconds since this cabin's last frame. Asked once, at the top of a draw. */
+    function frameStep(t, ns) {
+        const was = movedAt.get(ns || "");
+        const dt = was ? Math.min(0.1, Math.max(0, t - was) / 1000) : 0;
+        movedAt.set(ns || "", t);
         return dt;
     }
 
@@ -451,8 +460,11 @@
         const P = S.player;
         // How far everybody gets to move this frame, and where you are drawn now. Asked once,
         // here, because asking is what moves them.
-        const dt = frameStep(t);
-        const youAt = drawnAt("you", P.x, P.y, dt);
+        // Which cabin this is. Yours has no prefix; somebody else's flight running beside it
+        // has one, so the two sets of figures chase their own positions and not each other's.
+        const ns = opts.ns || "";
+        const dt = frameStep(t, ns);
+        const youAt = drawnAt(ns + "you", P.x, P.y, dt);
 
         // Everything the aeroplane is drawn with sits below the readout, so the whole picture
         // is moved down by it once, here, and every draw after this is in cabin coordinates.
@@ -464,7 +476,7 @@
         ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
         // A shove, applied to the whole aeroplane, because that is where it happened.
-        if (t < fx.shakeUntil) {
+        if (t < fx.shakeUntil && !opts.ghost) {
             const left = (fx.shakeUntil - t) / 260;
             const a = fx.shakeAmp * scale * Math.min(1, left);
             ctx.setTransform(1, 0, 0, 1,
@@ -532,7 +544,7 @@
         // has to look like: it is the biggest thing in the aisle and the player is planning round
         // where it will be.
         if (S.cabinFlags.cartOut) {
-            const cart = drawnAt("cart", S.cabinFlags.cartX, cabin.AISLE_Y, dt);
+            const cart = drawnAt(ns + "cart", S.cabinFlags.cartX, cabin.AISLE_Y, dt);
             atlas.blit(ctx, "drink_cart", pixels(cart.x, scale), pixels(cart.y, scale), scale);
         }
 
@@ -582,13 +594,13 @@
             if (p.state === "carried") {
                 // In your arms: they go where you go, so that when they are put down they come
                 // out of your arms and not out of the seat you took them from.
-                rideWith("p:" + p.id, youAt);
+                rideWith(ns + "p:" + p.id, youAt);
                 continue;
             }
             const key = p.x + "," + p.y;
             const n = stacks[key] = (stacks[key] || 0) + 1;
             const [dx, dy] = FAN[Math.min(FAN.length - 1, n - 1)];
-            const spot = drawnAt("p:" + p.id, p.x + dx / TILE, p.y + dy / TILE, dt);
+            const spot = drawnAt(ns + "p:" + p.id, p.x + dx / TILE, p.y + dy / TILE, dt);
             const px = pixels(spot.x, scale), py = pixels(spot.y, scale);
             const dead = p.state === "dead";
             // Somebody in the aisle, or somebody frightened, does not hold still.
@@ -629,7 +641,7 @@
         // being right.
         const crewFace = S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax";
         for (const c of S.crew) {
-            const spot = drawnAt("c:" + c.id, c.x, c.y, dt);
+            const spot = drawnAt(ns + "c:" + c.id, c.x, c.y, dt);
             atlas.blit(ctx, crewFace, pixels(spot.x, scale), pixels(spot.y, scale), scale,
                        paletteOf(c));
         }
@@ -700,10 +712,13 @@
         }
         drawHover(ctx, S, opts, T, scale, t);
         drawLabels(ctx, S, T, scale, opts);
-        drawFx(ctx, T, scale, t);
+        // What just happened is something that just happened to you. Somebody else's cabin gets
+        // none of it: their flight is already over and the numbers flying off it would be a
+        // second conversation over the top of the one you are having.
+        if (!opts.ghost) drawFx(ctx, T, scale, t);
 
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        drawVeil(ctx, S, t);
+        drawVeil(ctx, S, t, opts.ghost);
         // Last of all, above the smoke and above whatever just happened to you, because it is
         // the one part of the picture that has to be legible in a cabin nobody can see through.
         drawStatus(ctx, S, T, scale, t);
@@ -1151,7 +1166,7 @@
      * you are personally in. The second one is the honest half - the smoke does the same thing to
      * you it does to everybody, and this is the only place the interface admits it.
      */
-    function drawVeil(ctx, S, t) {
+    function drawVeil(ctx, S, t, ghost) {
         const w = ctx.canvas.width, h = ctx.canvas.height;
         const P = S.player;
         const dose = clamp01(P.smokeDose / 100);
@@ -1162,7 +1177,7 @@
             ctx.fillStyle = g;
             ctx.fillRect(0, 0, w, h);
         }
-        if (fx.flash) {
+        if (fx.flash && !ghost) {
             const k = (t - fx.flash.born) / fx.flash.ms;
             if (k >= 1) { fx.flash = null; }
             else {

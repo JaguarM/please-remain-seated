@@ -119,6 +119,10 @@
 
     /** Called by actions.perform before anything happens. */
     function push(S, entry) {
+        // A flight flown to see what would have happened - the counterfactual, somebody else's
+        // cabin beside yours - has nobody at the controls to change their mind, and a snapshot
+        // of the whole world per action is not a cheap thing to keep for no reason.
+        if (S.quiet) return;
         if (!S.undoStack) S.undoStack = [];
         const def = entry.def;
         S.undoStack.push({

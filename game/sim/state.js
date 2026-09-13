@@ -23,6 +23,10 @@
 
         const S = {
             seed: seed,
+            // The date this seed is the flight for, when it is one, and null when the seed came
+            // off the dice or out of a box. Nothing in the simulation reads it; the report, the
+            // log book of days and the share string all do.
+            daily: opts.daily || null,
             character: ch,
             outfit: outfit,
             derived: derived,

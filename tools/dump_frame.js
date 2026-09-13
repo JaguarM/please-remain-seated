@@ -6,20 +6,17 @@
 // Pairs with tools/render_frame.py, which turns the JSON into a PNG using the same sprite maps
 // the browser uses. Between them they make a real screenshot of a real simulated moment without
 // a browser being involved, which is how the picture in the README is made.
+//
+// What goes into the file is decided by tools/frame.js, which dump_flight.js uses too, so the
+// still and the animation cannot disagree about what a moment of this game looks like.
 const fs = require("fs");
 const path = require("path");
+const F = require("./frame.js");
 
-const src = fs.readFileSync(path.join(__dirname, "simulate.js"), "utf8")
-    .replace(/\nmain\(\);\s*$/, "\nmodule.exports = { load };\n");
-const mod = { exports: {} };
-new Function("module", "exports", "require", "__dirname", "__filename", src)(
-    mod, mod.exports, require, __dirname, path.join(__dirname, "simulate.js"));
-
-const PRS = mod.exports.load();
+const PRS = F.loadGame().load();
 // The bots live in the game (game/sim/bots.js), which simulate.js loads with the rest of it.
 const BOTS = PRS.bots.BOTS;
 const setCoin = PRS.bots.setCoin;
-const cabin = PRS.cabin;
 
 const args = process.argv.slice(2);
 const opt = (name, dflt) => {
@@ -47,87 +44,7 @@ while (!S.clock.landed && S.clock.elapsed < at && turns < 400) {
     turns++;
 }
 
-// Only what a renderer needs. The tile kinds are resolved here so the Python side does not have
-// to reimplement cabin.js.
-const tiles = [];
-for (let y = 0; y < cabin.H; y++) {
-    const row = [];
-    for (let x = 0; x < cabin.W; x++) {
-        const i = cabin.idx(x, y);
-        row.push({
-            kind: cabin.kindAt(x, y),
-            seat: cabin.kindAt(x, y) === "seat" ? cabin.seatPos(y) : null,
-            burnt: Math.round(S.fire.burnt[i] * 100) / 100,
-            fire: Math.round(S.fire.intensity[i] * 10) / 10,
-            // The jet is its own heat and not a point on the orange scale, so the tile says so
-            // rather than making the Python side work it out from a number it cannot see.
-            jet: S.fire.core.blue && S.fire.core.x === x && S.fire.core.y === y,
-            smoke: Math.round(S.fire.smoke[i] * 10) / 10,
-            bin: cabin.rowAt(x) !== null,
-            binOpenL: !!S.cabinFlags.binsOpen[cabin.binKey(x, "left")],
-            binOpenR: !!S.cabinFlags.binsOpen[cabin.binKey(x, "right")],
-            door: cabin.byTheDoors(x),
-        });
-    }
-    tiles.push(row);
-}
-
-/** Somebody in your arms or at your feet: what to draw them as, and in what colours. */
-function held(q) {
-    if (!q) return null;
-    return { sprite: PRS.pax.isPet(q) ? "carried_pet" : null, palette: PRS.pax.palette(q) };
-}
-
-const frame = {
-    meta: {
-        seed: S.seed, character: S.character.name, bot: opt("bot", "good"),
-        elapsed: Math.round(S.clock.elapsed), remaining: Math.round(S.clock.remaining),
-        clock: PRS.util.mmss(S.clock.remaining),
-        moved: PRS.state.movedCount(S), helping: PRS.state.helperCount(S),
-        down: PRS.state.downCount(S),
-        credibility: Math.round(S.credibility),
-        crewPhase: PRS.crew.PHASES[S.crewPhase].name,
-        worstFire: Math.round(PRS.fire.worst(S.fire)),
-        smoke: PRS.fire.describeSmoke(PRS.fire.totalSmoke(S.fire)),
-        turns: turns,
-        log: S.log.slice(-8).map((l) => l.clock + "  " + l.text),
-    },
-    W: cabin.W, H: cabin.H, aisle: cabin.AISLE_Y,
-    tiles: tiles,
-    cart: S.cabinFlags.cartOut ? { x: S.cabinFlags.cartX, y: cabin.AISLE_Y } : null,
-    // Everybody comes out with the sprite and the eight-colour palette already resolved, by the
-    // same two functions the browser uses. The Python side has no opinions about who looks
-    // frightened, so it cannot come to a different one.
-    // You, with whoever is in your arms and whoever is being dragged. Each of them is a sprite
-    // and a palette, the same pair as everybody else, because the dog in your arms is his bag
-    // and not a body, and a null palette means "the colours the art was drawn in".
-    player: { x: S.player.x, y: S.player.y, sprite: "pax", palette: PRS.pax.palette(S.character),
-              carrying: S.player.carrying.map((id) => held(PRS.state.paxById(S, id))),
-              dragging: held(PRS.state.paxById(S, S.player.dragging)) },
-    crew: S.crew.map((c) => ({
-        x: c.x, y: c.y,
-        sprite: S.crewPhase >= 4 ? "pax_afraid" : S.crewPhase >= 2 ? "pax_worried" : "pax",
-        palette: PRS.pax.palette(c),
-    })),
-    pax: S.pax.filter((p) => p.state !== "carried" && p.state !== "gone").map((p) => ({
-        x: p.x, y: p.y,
-        sprite: PRS.pax.face(p),
-        palette: PRS.pax.palette(p, p.state === "dead"),
-        dead: p.state === "dead", moved: !!p.moved, helper: !!p.helper,
-        masked: !!p.masked,
-    })),
-    // The floor by the doors at each end, tinted by the air on it.
-    zones: cabin.DOOR_ENDS.map((zx) => {
-        let smoke = 0, fire = 0;
-        for (let y = 1; y < cabin.H - 1; y++) {
-            const i = cabin.idx(zx, y);
-            smoke = Math.max(smoke, S.fire.smoke[i]);
-            fire = Math.max(fire, S.fire.intensity[i]);
-        }
-        const bad = Math.min(1, smoke / 70 + fire / 30);
-        return { x: zx, tier: bad > 0.62 ? 2 : bad > 0.24 ? 1 : 0 };
-    }),
-};
+const frame = F.build(PRS, S, { bot: opt("bot", "good"), turns: turns });
 
 fs.mkdirSync(path.dirname(out), { recursive: true });
 fs.writeFileSync(out, JSON.stringify(frame, null, 1));

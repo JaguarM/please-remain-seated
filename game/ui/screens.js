@@ -25,8 +25,14 @@
     let host = null;
 
     // Who the next flight is flown by, in what, and with what. Boarding saves it.
+    //
+    // `daily` is the date whose aeroplane this is, when it is one, and it is deliberately not
+    // saved: a daily is a thing you press a button for, and a Board button that quietly kept
+    // giving somebody yesterday's aeroplane a week later would be a lie told by a default.
+    // `ghost` is a flight somebody sent, for the same reason and one more: it is a thing that
+    // arrived, and a thing that arrived should not still be there next month.
     const choice = { characterId: "ansel", outfitId: null, items: null,
-                     seed: null, seedText: "" };
+                     seed: null, seedText: "", daily: null, ghost: null };
     let choiceLoaded = false;
 
     /**
@@ -44,10 +50,13 @@
                 if (typeof saved.seedText === "string") setSeed(saved.seedText);
             }
             // ?seed=606 or ?seed=PARIS on the address bar is a flight somebody sent you, and it
-            // wins over whatever was saved.
+            // wins over whatever was saved. ?flight=TN447-... is the whole flight rather than
+            // the aeroplane: it sets the seed and puts them in the cabin beside you.
             try {
                 const q = new URLSearchParams(global.location.search);
                 if (q.has("seed")) setSeed(q.get("seed"));
+                if (q.has("daily")) setDaily(q.get("daily"));
+                if (q.has("flight")) takeFlight(q.get("flight"));
             } catch (e) { /* no address bar to read */ }
         }
         const C = PRS.data.characters, O = PRS.data.outfits, D = PRS.data.items, L = PRS.logbook;
@@ -65,16 +74,53 @@
 
     function saveChoice() {
         store.set("choice", { characterId: choice.characterId, outfitId: choice.outfitId,
-                              items: choice.items.slice(), seedText: choice.seedText });
+                              items: choice.items.slice(),
+                              // A day is a seed, but it is not a seed anybody typed, and saving
+                              // the date in the box that hashes what is in it would hand the
+                              // next session a different aeroplane under the same name.
+                              seedText: choice.daily ? "" : choice.seedText });
     }
 
     /** A seed typed or pasted: digits are the seed itself, and a word is hashed into one. */
     function setSeed(text) {
         const t = String(text === null || text === undefined ? "" : text).trim();
+        choice.daily = null;
         if (!t) { choice.seed = null; choice.seedText = ""; return; }
         choice.seedText = t.slice(0, 40);
         choice.seed = /^\d+$/.test(choice.seedText) ? (Number(choice.seedText) % 4294967296) >>> 0
                                                     : PRS.util.seedFromString(choice.seedText);
+    }
+
+    /** A date's aeroplane: the one everybody else is on today. */
+    function setDaily(day) {
+        const key = PRS.daily.isKey(day) ? day : PRS.daily.today();
+        choice.daily = key;
+        choice.seedText = key;
+        choice.seed = PRS.daily.seedFor(key);
+    }
+
+    /**
+     * A flight somebody sent, from a code or from the whole message they pasted with it in.
+     * It is two things at once and they cannot be separated: which aeroplane, and who is flying
+     * beside you on it. Returns what to say about it, because every way in here has to be able
+     * to say why not.
+     */
+    function takeFlight(text) {
+        const got = PRS.share.decode(text);
+        if (!got.ok) {
+            // A code from another version is still a seed. The flight cannot be replayed, but
+            // the aeroplane is the same aeroplane and that is most of what was being offered.
+            if (got.stale && got.plan) {
+                choice.ghost = null;
+                if (got.plan.day) setDaily(got.plan.day); else setSeed(String(got.plan.seed));
+                return { ok: false, why: got.why, seeded: true };
+            }
+            return { ok: false, why: got.why };
+        }
+        const plan = got.plan;
+        if (plan.day) setDaily(plan.day); else setSeed(String(plan.seed));
+        choice.ghost = plan;
+        return { ok: true, plan: plan };
     }
 
     function mount(node) { host = node; }
@@ -121,6 +167,10 @@
                     fact("0", T("ways to put it out"), "fire"),
                 ]),
                 pass(),
+                // From the second flight, with the roster and the previous flights. A first
+                // flight is one click, and "the same aeroplane as everybody else today" is not
+                // an offer that means anything to somebody who has not been on this one yet.
+                book.flights ? dailyStrip() : null,
                 // A first flight is one click. The roster and the previous flights appear once
                 // there is a log book to put them in.
                 el("div", { class: "title-buttons" }, [
@@ -140,6 +190,55 @@
     function fact(n, label, tone) {
         return el("div", { class: "fact" + (tone ? " fact-" + tone : "") },
                   [el("b", { text: n }), el("i", { text: label })]);
+    }
+
+    /**
+     * Today's aeroplane, under the pass.
+     *
+     * The whole of this was already in the game and was not pointed at a date: every die in a
+     * flight comes off the seed, so a seed is an aeroplane and everybody who types the same one
+     * gets the same sixty moods and the same fire. Hashing the date instead of asking the player
+     * for a number is all a daily is - and it is the only condition under which "I got 44" is a
+     * sentence worth saying to anybody.
+     *
+     * What stands for a day is the first flight landed on it, which is why this says what it
+     * says after one: the day is flown, here is what it came to, and flying it again is a
+     * practice run and not a better score. A leaderboard of best-of-nine attempts is a
+     * leaderboard about who had the afternoon free.
+     *
+     * It is not on the title until there is a log book, for the same reason the roster is not.
+     */
+    function dailyStrip() {
+        const key = PRS.daily.today();
+        const book = PRS.daily.all();
+        const stood = PRS.daily.standing(key, book);
+        const run = PRS.daily.streak(book);
+        const go = () => { setDaily(key); choice.ghost = null; begin(); };
+        return el("div", { class: "daily-strip" + (stood ? " flown" : "") }, [
+            el("div", { class: "daily-what" }, [
+                el("b", { text: T("TODAY'S FLIGHT") }),
+                el("i", { text: key }),
+            ]),
+            el("div", { class: "daily-said" }, [
+                stood
+                    ? el("span", { class: "daily-score" }, [
+                        el("b", { text: T("{n} of 60", { n: stood.survived }) }),
+                        el("u", { class: "grade-" + stood.grade, text: stood.grade }),
+                      ])
+                    : el("span", { class: "daily-score" },
+                         [el("i", { text: T("not yet flown") })]),
+                el("i", { text: run > 1 ? T("{n} days in a row", { n: run })
+                                        : T("The same aeroplane for everybody, once a day.") }),
+            ]),
+            el("div", { class: "daily-buttons" }, [
+                el("button", { class: stood ? "" : "big", onclick: go,
+                               text: stood ? T("Fly it again") : T("Fly today's flight") }),
+                stood && stood.code
+                    ? el("button", { text: T("Share it"),
+                                     onclick: () => shareScreen(key, stood) })
+                    : null,
+            ]),
+        ]);
     }
 
     /** One sentence about the book: how far it has got, and what the souls turn over next. */
@@ -404,6 +503,22 @@
             };
 
             const seeds = el("div", { class: "option-grid" });
+            const day = PRS.daily.today();
+            seeds.appendChild(el("button", {
+                class: "option" + (choice.daily ? " on" : ""),
+                onclick: () => { setDaily(day); choice.ghost = null; done(); },
+            }, [
+                el("span", { class: "slot-empty", text: "✈" }),
+                el("div", { class: "option-text" }, [
+                    el("b", { text: T("Today's flight") }),
+                    el("span", { class: "option-mod", text: day }),
+                    el("i", { text: T("The date, hashed into a seed. Everybody who boards it " +
+                                    "today gets the same sixty people in the same moods and " +
+                                    "the same fire, which is the only condition under which " +
+                                    "comparing two afternoons means anything. The first one " +
+                                    "you land is the one the day keeps.") }),
+                ]),
+            ]));
             seeds.appendChild(el("button", {
                 class: "option" + (choice.seed === null ? " on" : ""),
                 onclick: () => { setSeed(""); done(); },
@@ -445,10 +560,86 @@
                 T("It is the same aeroplane every time and the fire is in the same locker. What " +
                 "the seed decides is everything that could have gone either way.") }));
             root.appendChild(seeds);
+            root.appendChild(pasteBox(() => flight(back)));
             root.appendChild(el("div", { class: "title-buttons" }, [
                 el("button", { text: T("Back"), onclick: back }),
             ]));
         });
+    }
+
+    /**
+     * A flight somebody sent you, pasted.
+     *
+     * A code is two things at once and they cannot be pulled apart: which aeroplane, and who was
+     * on it. Taking one sets the seed - so you are flying the fifteen minutes they flew - and
+     * puts their cabin under yours while you fly it, running on the same clock. That is not a
+     * video: their flight is the same simulation as yours, cast from the same seed, so the
+     * smoke on their side is smoke and the moment they got the case into the basin is the moment
+     * it happens down there.
+     *
+     * A code from a different build of the game is refused rather than flown, because the list
+     * of things you can do at any moment is what a code indexes into, and a deck with one more
+     * action in it would land somebody else's afternoon in the wrong cabin. The seed survives
+     * that, and is offered, because the aeroplane is still the aeroplane.
+     */
+    // What the box last said, kept out here because taking a flight rebuilds the screen it is
+    // on - the seed slot above it has just changed - and the sentence explaining what happened
+    // has to survive that.
+    let pasteSaid = null;
+
+    function pasteBox(repaint) {
+        const g = choice.ghost;
+        if (g && !pasteSaid) {
+            const ch = PRS.data.characters.byId(g.characterId);
+            pasteSaid = { kind: "good",
+                          text: T("Flying beside you: {who}, who got {n} of 60 off this " +
+                                  "aeroplane.", { who: ch ? ch.name : "", n: g.claim.survived }) };
+        }
+        const said = el("p", { class: "paste-said" + (pasteSaid ? " " + pasteSaid.kind : ""),
+                               text: pasteSaid ? pasteSaid.text : "" });
+        const input = el("textarea", { class: "paste-input", rows: "3", spellcheck: "false",
+                                       placeholder: PRS.share.TAG + "…" });
+        input.addEventListener("keydown", (ev) => ev.stopPropagation());
+
+        const take = function () {
+            const got = takeFlight(input.value);
+            PRS.audio.unlock();
+            if (got.ok) {
+                pasteSaid = null;            // rebuilt from the ghost that is now armed
+                PRS.audio.play("select");
+                repaint();
+                return;
+            }
+            pasteSaid = { kind: got.seeded ? "good" : "bad",
+                          text: got.why + (got.seeded
+                              ? " " + T("The seed is set to theirs all the same.") : "") };
+            if (got.seeded) { PRS.audio.play("select"); repaint(); return; }
+            said.className = "paste-said bad";
+            said.textContent = pasteSaid.text;
+        };
+
+        return el("div", { class: "paste" }, [
+            el("h3", { text: T("A flight somebody sent you") }),
+            el("p", { class: "footnote", text:
+                T("Paste the whole message or just the code. It sets the aeroplane to theirs " +
+                  "and puts their cabin under yours, on the same clock, for the whole fifteen " +
+                  "minutes.") }),
+            input,
+            el("div", { class: "title-buttons" }, [
+                el("button", { text: T("Take this flight"), onclick: take }),
+                choice.ghost ? el("button", { class: "big", text: T("Board"), onclick: begin })
+                             : null,
+                choice.ghost
+                    ? el("button", { text: T("Fly it alone"), onclick: function () {
+                        choice.ghost = null;
+                        pasteSaid = { kind: "", text: T("Nobody in the cabin beside you.") };
+                        PRS.audio.play("blip");
+                        repaint();
+                    } })
+                    : null,
+            ]),
+            said,
+        ]);
     }
 
     // ---------------------------------------------------------------------------------- setup ---
@@ -583,7 +774,13 @@
             outfitId: choice.outfitId,
             items: choice.items.slice(),
             seed: choice.seed === null ? (Math.random() * 0xffffffff) >>> 0 : choice.seed,
+            daily: choice.daily,
         });
+        // Somebody else's fifteen minutes, if one was pasted, and only on the aeroplane it was
+        // flown on: two flights on different seeds side by side would be two different fires
+        // and nothing to compare.
+        S.ghostFlight = choice.ghost && choice.ghost.seed === S.seed
+            ? PRS.share.ghost(choice.ghost) : null;
         PRS.current = S;
         PRS.audio.unlock();
         PRS.audio.startRoar();
@@ -659,6 +856,7 @@
             root.appendChild(el("div", { class: "prose-inner" }, [
                 el("h2", { text: T("The log book") }),
                 el("p", { text: logLine(book) }),
+                daysBlock(),
                 el("div", { class: "history" }, book.history.map(function (h) {
                     const ch = C.byId(h.character);
                     const o = O.byId(h.outfit);
@@ -696,6 +894,9 @@
                             yes: T("Forget every flight"),
                             onYes: function () {
                                 PRS.logbook.forget();
+                                // The days are flights too, and a book started again with a
+                                // hundred-day run still in it is not a book started again.
+                                PRS.daily.forget();
                                 PRS.audio.play("select");
                                 title();
                             },
@@ -704,6 +905,35 @@
                 ]),
             ]));
         });
+    }
+
+    /**
+     * The days, above the flights, when there are any.
+     *
+     * The log book below it is the last sixty flights in the order they were flown, which is the
+     * right list for "how am I doing" and the wrong one for "what did I get on Tuesday". A day
+     * has one line by definition, so this is one line each, with the letter and the button that
+     * writes it out - because an old day is the one thing in this game somebody might still be
+     * arguing about a week later.
+     */
+    function daysBlock() {
+        const days = PRS.daily.history();
+        if (!days.length) return null;
+        const run = PRS.daily.streak();
+        return el("div", { class: "days" }, [
+            el("h3", { text: T("The days") }),
+            el("p", { class: "footnote", text: run > 1
+                ? T("{n} days in a row. The first flight you land on a day is the one that " +
+                    "stands.", { n: run })
+                : T("The first flight you land on a day is the one that stands.") }),
+        ].concat(days.map((d) => el("div", { class: "dayrow" }, [
+            el("b", { text: d.day }),
+            el("span", { text: T("{n} of 60", { n: d.survived }) }),
+            el("span", { class: "grade-" + d.grade, text: d.grade }),
+            el("i", { text: d.flights > 1 ? T("{n} flights", { n: d.flights }) : "" }),
+            d.code ? el("button", { text: T("Share it"),
+                                    onclick: () => shareScreen(d.day, d) }) : null,
+        ]))));
     }
 
     // --------------------------------------------------------------------------------- report ---
@@ -773,9 +1003,13 @@
                         el("b", { text: T(m.name) }), el("i", { text: T(m.text) })]))));
             }
 
-            // Everything you did, in order, and the recorder. Both are for the flight you have
-            // already read about, both are long, and neither is what anybody wants in the first
-            // ten seconds after the wheels come down - so both are a closed drawer.
+            // Three drawers. Everything in them is about the flight you have just read about,
+            // all three are long, and none of them is what anybody wants in the first ten
+            // seconds after the wheels come down - so all three are shut. Telling somebody is
+            // first because it is the one worth finding, and because writing the code out is a
+            // whole fifteen minutes of physics that nobody who is not going to paste it should
+            // have to wait for.
+            inner.appendChild(fold(T("Tell somebody"), () => sharePanel(() => PRS.share.text(S, R))));
             inner.appendChild(fold(T("Everything you did ({n})", { n: S.actions.length }), () =>
                 el("div", { class: "timeline" },
                     S.actions.map((a) => el("div", { class: "tl" }, [
@@ -796,6 +1030,7 @@
                 (S.outfit ? T("{name} in {outfit}", { name: S.character.name,
                                                       outfit: T(S.outfit.name).toLowerCase() })
                           : S.character.name) +
+                (S.daily ? T(" · daily {day}", { day: S.daily }) : "") +
                 T(" · seed {seed}", { seed: R.seed }) +
                 T(" · {n} actions taken · {found} things found aboard · ",
                   { n: R.actions, found: S.stats.itemsFound || 0 }) +
@@ -803,6 +1038,63 @@
                                : T("never changed your mind")) }));
 
             root.appendChild(inner);
+        });
+    }
+
+    /**
+     * The flight, as four lines somebody can paste.
+     *
+     * The first three are what happened - which aeroplane, how it went, and one block a minute
+     * coloured by what that minute went on, so four orange then eleven green is a plan and a
+     * wall of white is an afternoon. The fourth is the flight itself, which is what turns a
+     * boast into an invitation: paste it back into the game and you are on the same aeroplane
+     * with the sender's cabin under yours.
+     *
+     * Writing the fourth line is a whole fifteen minutes of physics - the flight is flown again
+     * to find out which row of the list each of your clicks was - so it is asked for and not
+     * assumed. Everything above it is free and is on the screen already.
+     */
+    function sharePanel(build) {
+        const done = el("span", { class: "done" });
+        const box = el("pre", { class: "share-text" });
+        let text = null;
+        const make = function () {
+            if (text === null) text = build();
+            box.textContent = text;
+            return text;
+        };
+        // Written on the next tick rather than in the middle of building this screen, so the
+        // report is on the glass before the fifteen minutes are flown again underneath it.
+        box.textContent = T("Writing it out…");
+        setTimeout(function () { if (box.isConnected && text === null) make(); }, 0);
+        return el("div", { class: "share" }, [
+            box,
+            el("div", { class: "title-buttons" }, [
+                el("button", { class: "big", text: T("Copy it"),
+                               onclick: () => copyText(make(), done) }),
+                done,
+            ]),
+            el("p", { class: "footnote", text:
+                T("The last line is the whole flight: the seed, who you were, and every click " +
+                  "in order, small enough to paste into a message. Anybody who puts it back " +
+                  "into “A flight somebody sent you” is on your aeroplane with your cabin " +
+                  "running under theirs.") }),
+        ]);
+    }
+
+    /** A screen that is nothing but one flight's four lines, for a day already flown. */
+    function shareScreen(day, entry) {
+        show(function (root) {
+            root.className = "screen prose";
+            root.appendChild(el("div", { class: "prose-inner" }, [
+                el("h2", { text: T("Daily {day}", { day: day }) }),
+                sharePanel(() => PRS.share.textForCode(entry.code) ||
+                                 T("That flight was flown on a different version of the " +
+                                   "aeroplane and cannot be written out here.")),
+                el("div", { class: "title-buttons" }, [
+                    el("button", { text: T("Back"), onclick: title }),
+                ]),
+            ]));
         });
     }
 
@@ -904,15 +1196,20 @@
                 if (L.unlocked.length) inner.appendChild(unlockedRow(L.unlocked, S.character));
             }
 
+            // What the day made of it, when the day was what you flew.
+            if (R.daily) inner.appendChild(dayCard(R.daily, S, R));
+
             // One locked card: the one this flight came nearest to. A person you nearly have is
             // a reason to fly again, and a wall of eight you do not have is not.
             if (near) inner.appendChild(nearCard(near));
 
             inner.appendChild(el("div", { class: "title-buttons" }, [
                 el("button", { class: "big", onclick: begin,
-                               text: choice.seed === null
-                                   ? T("Fly it again")
-                                   : T("Fly seed {seed} again", { seed: choice.seedText }) }),
+                               text: choice.daily
+                                   ? T("Fly today's flight again")
+                                   : choice.seed === null
+                                       ? T("Fly it again")
+                                       : T("Fly seed {seed} again", { seed: choice.seedText }) }),
                 // The same aeroplane once more, when this one came off the dice.
                 choice.seed === null
                     ? el("button", { text: T("Fly seed {seed} again", { seed: R.seed }),
@@ -924,6 +1221,39 @@
             ]));
             root.appendChild(inner);
         });
+    }
+
+    /**
+     * The day's line, on the screen after the report.
+     *
+     * The first flight landed on a day is the one that stands. Anything after it is a practice
+     * run and says so, because the point of a daily is that everybody flew the same aeroplane
+     * once: a board of best-of-nine attempts is a board about who had the afternoon free, and a
+     * screen that quietly kept the better number would be building one.
+     */
+    function dayCard(day, S, R) {
+        const stood = day.entry;
+        const run = PRS.daily.streak();
+        return el("div", { class: "day-card" + (day.stands ? " stands" : "") }, [
+            el("div", { class: "day-head" }, [
+                el("b", { text: T("Daily {day}", { day: day.day }) }),
+                el("i", { text: day.stands
+                    ? (run > 1 ? T("{n} days in a row", { n: run }) : T("the first of a run"))
+                    : T("flight {n} on this aeroplane · the day still stands at {was} of 60",
+                        { n: day.flights, was: stood.survived }) }),
+            ]),
+            el("p", { class: "day-said", text: day.stands
+                ? T("This is the day's flight: {n} of 60, grade {grade}.",
+                    { n: stood.survived, grade: stood.grade })
+                : T("Today's line was written by your first landing and stays where it is.") }),
+            el("div", { class: "title-buttons" }, [
+                el("button", { text: T("Copy the day's flight"), onclick: function () {
+                    const text = stood.code ? PRS.share.textForCode(stood.code) : null;
+                    copyText(text || PRS.share.text(S, R));
+                    PRS.audio.play("select");
+                } }),
+            ]),
+        ]);
     }
 
     /**

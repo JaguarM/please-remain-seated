@@ -80,6 +80,8 @@ const FILES = [
     "game/sim/scoring.js",
     "game/sim/logbook.js",
     "game/sim/recorder.js",
+    "game/sim/daily.js",
+    "game/sim/share.js",
     "game/sim/bots.js",
     "game/data/passengers.js",
     "game/data/characters.js",

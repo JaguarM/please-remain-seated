@@ -139,6 +139,81 @@ number the screen after the report is about and the only number that fills the b
 passengers have in their laps, is found in flight, and asking somebody what they have is the same
 conversation that recruits them.
 
+Today's flight
+--------------
+
+Everything a daily needs was already in the game and was not pointed at a date. Every die in a
+flight is cast at boarding from one seed, so two people who type the same number get the same
+sixty people in the same moods and the same fire; all this does is hash the date instead of
+asking. **Today's flight** is under the boarding pass on the title screen, and the day is the
+same aeroplane for everybody who boards it, which is the only condition under which "I got 44" is
+a sentence worth saying to anybody.
+
+What stands for a day is the first flight you land on it. Flying it again is allowed and the log
+book credits it like any other flight, because the aeroplane does not care - but the day's line
+stays the one you got the first time, and the screen says so rather than quietly keeping the
+better number. A leaderboard of best-of-nine attempts is a leaderboard about who had the
+afternoon free.
+
+Telling somebody
+----------------
+
+The report ends in four lines to paste into a message:
+
+    PLEASE REMAIN SEATED · TN 447 · daily 2026-09-13
+    36 of 60 off alive · 18 who would not have been · D · Deidre Volk
+    🟧🟩🟦🟦🟦🟦🟦🟧🟧🟧⬜⬜⬜⬜⬛
+    TN447-GoprAJ--YmGDg2jZISYCp8DBQKAo-9sJW8o7SZA8Oo1TYCAgIJvd
+
+One block a minute, coloured by what most of that minute actually went on - the fire, carrying,
+talking, everything else - and a black one for a minute that never happened, because the flight
+deck declared and took ninety seconds off the descent. Three orange then a run of blue is a plan.
+A wall of white is an afternoon.
+
+The fourth line is the flight. Not a summary of it: the seed, who you were, what was in your bag
+and every click in order, in about a hundred characters and never more than two hundred and
+fifty. Paste it into **A flight somebody sent you** on the seed screen, or open
+`index.html?flight=TN447-...`, and you are on their aeroplane with their cabin running underneath
+yours, on the same clock, for the whole fifteen minutes. It is not a recording being scrubbed: it
+is the same simulation running beside yours, cast from the same seed, so their smoke is smoke and
+the moment they got the case into the basin is the moment it happens down there.
+
+**How a hundred characters is a whole flight.** At any moment there is a list of everything you
+could do - two hundred and some, most of them walks - and the simulation is deterministic, so a
+replay can build that same list at that same moment. So the code does not carry the actions. It
+carries which row of the list you picked, and a number under three hundred is nine bits. The list
+is ordered by the action's id rather than by its label, because a label is a translated sentence
+and a flight flown in German has to replay in English.
+
+The cost of that is honesty about versions: add an action to a deck and every list in every
+flight shifts underneath, and a code from yesterday would land somebody else's afternoon in the
+wrong cabin without ever looking wrong. So the code carries a sixteen-bit stamp of every id the
+lists are built from, and a code with the wrong stamp is refused rather than flown - with the
+seed offered instead, because the aeroplane is still the aeroplane.
+
+`node tools/test_share.js` is the only test that matters for that: it flies a hundred and twenty
+bot flights, writes each one out, reads it back, flies it again from the code alone and insists
+that the same sixty people come off in the same condition. Then it registers one more action and
+watches every code it just wrote be refused.
+
+A flight as a picture
+---------------------
+
+![Fifteen minutes, seed 606](docs/flight.gif)
+
+*The whole of one flight, every fourteen seconds of it. `tools/dump_flight.js` flies it - a bot,
+a shared code, or a flight out of the recorder - and takes a picture whenever the clock has moved
+on far enough, one sub-step at a time, which is why the caption under the cabin says the played
+time and not the paid one. `tools/render_gif.py` draws every frame with the same function that
+draws the still at the top of this file. No browser is involved in either.*
+
+    node tools/dump_flight.js --bot=sinkthen --seed=606 --every=14
+    python tools/render_gif.py --ms=110
+
+    node tools/dump_flight.js --code=TN447-...      # the flight somebody sent you
+    node tools/dump_flight.js --flight=flights.json --only=0
+    python tools/render_gif.py --from=300 --to=600  # just the bad four minutes
+
 What is in it
 -------------
 
@@ -158,6 +233,10 @@ What is in it
   screen: what you changed, what the book credited for it, and the locked person you came
   nearest to.
 - A **flight recorder** on the report, which keeps your last thirty flights and plays them back.
+- **One aeroplane a day**, the same one for everybody, with the first flight you land on it the
+  one that stands, and a book of days behind it that counts the run.
+- **A whole flight as a line of text**, about a hundred characters of it, which somebody else
+  pastes back in to fly your fifteen minutes with your cabin running under theirs.
 - A **title screen that is flying**. The cabin behind the boarding pass is not artwork: it is the
   simulation, on a random seed, with one of the bots from `game/sim/bots.js` at the controls,
   slowed down to a speed a person can watch and muted so that a menu never makes a noise at
@@ -177,7 +256,8 @@ How it is built
                           atlas, synthesised audio, renderer
       sim/                cabin geometry, fire, passengers, crew, the action engine, undo,
                           scoring, the log book that carries over between flights, the
-                          flight recorder, and the bots
+                          flight recorder, the day's aeroplane, the flight as a line of
+                          text, and the bots
       data/               characters, outfits, items, the roster, events, medals, endings, the
                           action decks
       i18n/               the translator, and one folder of catalogues per language
@@ -186,7 +266,8 @@ How it is built
       style.css
     pixel-workshop/       the art generator: every sprite is an ASCII map plus a palette, and
                           --preview draws the whole set on one sheet, in context and by name
-    tools/                the play-testers, replay and harm, the frame renderer, a dev server
+    tools/                the play-testers, replay and harm, the frame renderer and the
+                          animator that is the same renderer in a loop, a dev server
 
 Everything assigns to one global, `window.PRS`, because the game has to run from a double-clicked
 file and `file://` will not load an ES module. `game/sim/actions.js` has the only function that
@@ -224,8 +305,13 @@ Testing it
                                               # game nor a waste of the seconds
     node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll,
                                               # and a second played slowly is the same second
+    node tools/test_share.js                  # every bot flight written out as a code and flown
+                                              # again from it alone: the same sixty people in the
+                                              # same condition, and a code from another build
+                                              # refused rather than quietly flown
     node tools/i18n_scan.js                   # what each language has, and what it is missing
     node tools/dump_frame.js --at=540 --seed=606 && python tools/render_frame.py --out=docs/cabin.png
+    node tools/dump_flight.js --seed=606 && python tools/render_gif.py   # the whole flight, moving
     python tools/trim_actions.py --list       # every action id; pass ids to remove them cleanly
 
 The bots are deliberately stupid in different directions, and the table they print is what the
@@ -274,7 +360,7 @@ The game is on itch.io at <https://jaguarm.itch.io/please-remain-seated>, and it
     python tools/serve.py 8745 dist/web       # play the build, not the working tree
 
 `tools/build_web.py` reads index.html and copies exactly the files index.html loads into
-`dist/web`, which is fifty files and 790 kB. That is not tidiness. itch.io refuses an
+`dist/web`, which is fifty-five files and 982 kB. That is not tidiness. itch.io refuses an
 HTML5 upload with more than a thousand files in it, and this folder zipped whole is twelve
 hundred: nine hundred of them are git objects, and the rest are the sprite generator, the frame
 renderer, `__pycache__` and a README with a picture in it. None of that is the aeroplane.

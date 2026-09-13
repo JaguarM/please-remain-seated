@@ -57,7 +57,7 @@
         if (!spriteCount) bad.push("No sprites loaded. game/art/*.js did not run.");
         for (const key of ["util", "atlas", "audio", "cabin", "fire", "state", "pax", "crew",
                            "actions", "scoring", "render", "hotspots", "play", "screens", "settings", "medals",
-                           "endings", "events"]) {
+                           "endings", "events", "daily", "share"]) {
             if (!PRS[key]) bad.push("Missing module: PRS." + key);
         }
         if (PRS.actions && PRS.actions.count() < 60) {

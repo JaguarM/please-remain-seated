@@ -725,7 +725,9 @@ button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
 .fold-head b { font-size: 13px; font-weight: 500; }
 .fold-arrow { font: 700 14px/1 var(--mono); color: var(--ink-faint); width: 10px; }
 .fold.open .fold-head { border-radius: 4px 4px 0 0; border-bottom: none; }
-.fold .timeline, .fold .rec { border: 1px solid var(--line); border-top: none; border-radius: 0 0 4px 4px; }
+.fold .timeline, .fold .rec, .fold .share {
+  border: 1px solid var(--line); border-top: none; border-radius: 0 0 4px 4px;
+}
 
 .rec { margin-top: 0; padding: 12px 16px; background: var(--panel); }
 .rec i { display: block; font-style: normal; font-size: 12px; color: var(--ink-faint); margin: 3px 0 8px; }
@@ -926,3 +928,119 @@ button.pass-go:hover { background: #ff9034; border-color: var(--fire); }
 .ask .title-buttons { margin: 18px 0 0; justify-content: flex-end; }
 .ask button.big.warn { background: #6b3a35; border-color: #8a4a42; }
 .ask button.big.warn:hover { background: #7d443e; }
+
+/* ------------------------------------------------------------------- the day's aeroplane --- */
+/* Under the boarding pass, because it is the other way onto an aeroplane and not a setting.
+   It reads like the strip on a departure board: what today is, what you made of it, and the
+   one button. Flown, it goes quiet - the border comes off the gold and the button stops being
+   the big one - because a day already flown is not the thing the screen is asking for. */
+
+.daily-strip {
+  display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+  justify-content: space-between; text-align: left;
+  max-width: 620px; margin: 18px auto 0; padding: 12px 16px;
+  background: var(--panel); border: 1px solid var(--gold); border-radius: 4px;
+}
+.daily-strip.flown { border-color: var(--line); }
+.daily-what b { display: block; font: 11px var(--mono); letter-spacing: .1em; color: var(--gold); }
+.daily-strip.flown .daily-what b { color: var(--ink-faint); }
+.daily-what i { font-style: normal; font: 13px var(--mono); color: var(--ink-dim); }
+.daily-said { flex: 1; min-width: 160px; }
+.daily-said > i { display: block; font-style: normal; font-size: 11px; color: var(--ink-faint); }
+.daily-score { display: flex; gap: 8px; align-items: baseline; }
+.daily-score b { font: 700 20px/1 var(--mono); color: var(--ink); }
+.daily-score i { font-style: normal; font-size: 13px; color: var(--ink-faint); }
+.daily-score u {
+  text-decoration: none; font: 700 13px var(--mono);
+  border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+}
+.daily-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+/* The letter as a badge rather than a row. The grade rules above own the five colours and only
+   ever set a border with them; here the letter is the thing being read, so it takes the colour
+   too. */
+.daily-score u.grade-A { color: var(--great); border-color: var(--great); }
+.daily-score u.grade-B { color: var(--good);  border-color: var(--good); }
+.daily-score u.grade-C { color: var(--warn);  border-color: var(--warn); }
+.daily-score u.grade-D { color: #e08a2a;      border-color: #e08a2a; }
+.daily-score u.grade-E,
+.daily-score u.grade-F { color: var(--bad);   border-color: var(--bad); }
+
+/* --------------------------------------------------------- a flight somebody sent you --- */
+
+.paste { max-width: 620px; margin: 26px 0 0; }
+.paste h3 { margin: 0 0 4px; font-size: 18px; letter-spacing: -0.02em; }
+.paste .footnote { margin: 0 0 8px; }
+.paste-input {
+  width: 100%; resize: vertical; padding: 8px;
+  background: #12151a; color: var(--ink);
+  border: 1px solid var(--line); border-radius: 4px;
+  font: 12px/1.4 var(--mono); word-break: break-all;
+}
+.paste-input:focus { outline: none; border-color: var(--gold); }
+.paste .title-buttons { justify-content: flex-start; margin: 8px 0 0; }
+.paste-said { font-size: 12px; color: var(--ink-dim); margin: 8px 0 0; min-height: 1.2em; }
+.paste-said.good { color: var(--great); }
+.paste-said.bad { color: #d99; }
+
+/* ------------------------------------------------------------------ telling somebody --- */
+/* Four lines and a button. The block of squares is the only thing in the game set in emoji, so
+   it is given a font stack that will actually draw them and enough leading that fifteen of them
+   read as one bar rather than fifteen boxes. */
+
+/* Standalone on the day's share screen; inside a drawer on the report, where the rule above
+   takes the top border off so it joins the heading it opened from. */
+.share { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; }
+.fold .share { margin-top: 0; }
+.share-text {
+  margin: 0; white-space: pre-wrap; word-break: break-all;
+  font: 12px/1.7 var(--mono); color: var(--ink-dim);
+  font-variant-emoji: emoji;
+}
+.share .title-buttons { justify-content: flex-start; margin: 10px 0 0; }
+.share .done { font: 11px var(--mono); color: var(--great); align-self: center; }
+.share .footnote { margin-top: 10px; }
+
+/* The day's line on the screen after the report. */
+.day-card {
+  margin-top: 26px; padding: 12px 16px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 4px;
+  border-left: 2px solid var(--ink-faint);
+}
+.day-card.stands { border-left-color: var(--gold); }
+.day-head { display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+.day-head b { font: 700 13px var(--mono); letter-spacing: .04em; }
+.day-head i { font-style: normal; font-size: 11px; color: var(--ink-faint); }
+.day-said { margin: 6px 0 0; font-size: 13px; color: var(--ink-dim); }
+.day-card .title-buttons { justify-content: flex-start; margin: 10px 0 0; }
+
+/* ---------------------------------------------------------- somebody else's cabin --- */
+/* Under yours, smaller, on the same clock. It is deliberately the quieter of the two pictures:
+   dimmed a little, no reach, no trail, nothing under the pointer, because none of what is
+   happening down there is a decision anybody is making now. */
+
+.ghost { border: 1px solid var(--line); border-radius: 4px; background: #12151a; padding: 6px; }
+.ghost-head {
+  display: flex; gap: 12px; align-items: baseline; justify-content: space-between;
+  flex-wrap: wrap; padding: 0 2px 5px;
+}
+.ghost-head b { font: 11px var(--mono); letter-spacing: .08em; color: var(--ink-faint); }
+.ghost-line { font: 11px var(--mono); color: var(--ink-dim); }
+.ghost-cabin { display: block; opacity: .82; }
+
+/* The days, above the flights in the log book. A day has one line by definition. */
+.days { margin: 20px 0 26px; }
+.days h3 { font-size: 18px; letter-spacing: -0.02em; margin: 0 0 2px; }
+.days .footnote { margin: 0 0 10px; }
+.dayrow {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+  padding: 6px 0; border-top: 1px solid var(--line);
+  font: 12px var(--mono); color: var(--ink-dim);
+}
+.dayrow b { color: var(--ink); }
+.dayrow i { font-style: normal; color: var(--ink-faint); flex: 1; }
+.dayrow span.grade-A, .dayrow span.grade-B, .dayrow span.grade-C,
+.dayrow span.grade-D, .dayrow span.grade-E, .dayrow span.grade-F {
+  border: 1px solid var(--line); border-radius: 3px; padding: 1px 6px;
+}
+.dayrow button { padding: 3px 10px; font-size: 11px; }

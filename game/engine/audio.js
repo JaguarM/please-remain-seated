@@ -108,7 +108,7 @@
     }
 
     function setRoar(level) {
-        if (!roarGain || !ctx) return;
+        if (hushed || !roarGain || !ctx) return;
         roarGain.gain.setTargetAtTime(0.035 + 0.10 * Math.min(1, Math.max(0, level)), now(), 0.6);
     }
 
@@ -169,7 +169,19 @@
         touchdown() { noise(0.9, { freq: 180, freqTo: 60, gain: 0.28, filter: "lowpass" }); },
     };
 
+    // A flight that is not the one being flown - the report's "without you", somebody else's
+    // cabin running beside yours - still calls everything a flight calls, including the noises.
+    // Switching the sound off would stop the engine roar of the flight that IS being flown and
+    // leave the player in silence, so there is a hand over the speaker instead: it counts, so
+    // that two quiet flights at once still lift it exactly once.
+    let hushed = 0;
+
+    function hush(on) {
+        hushed = Math.max(0, hushed + (on ? 1 : -1));
+    }
+
     function play(name) {
+        if (hushed) return;
         const fn = sfx[name];
         if (!fn) return;
         plays++;
@@ -206,5 +218,5 @@
     function getVolume() { return volume; }
 
     PRS.audio = { unlock, play, count, sfx, setEnabled, isEnabled, setVolume, getVolume,
-                  startRoar, stopRoar, setRoar };
+                  startRoar, stopRoar, setRoar, hush };
 })(window);

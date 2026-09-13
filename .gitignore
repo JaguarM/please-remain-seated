@@ -1,6 +1,9 @@
 # Build artefacts of the frame renderer. docs/cabin.png is committed; the dump it came from is
 # not, because it is forty thousand lines of JSON that regenerates in a second.
 docs/frame.json
+# And the same again for the animation: the dump is three megabytes of it, and the GIF it makes
+# is not ignored, because a GIF is a thing you keep on purpose or not at all.
+docs/flight.json
 pixel-workshop/cabin-preview.png
 
 # Python leaves these behind when tools/ is imported as a module.

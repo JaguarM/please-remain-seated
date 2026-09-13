@@ -128,6 +128,7 @@
             },
             without: null,
             saved: null,
+            daily: null,        // which day's aeroplane this was, and whether it stands
             actions: S.actions.length,
             distinctActions: Object.keys(S.counts).length,
             medals: [],
@@ -160,6 +161,10 @@
         // What carries over. The bots have a log book too, in memory, and do not read it.
         result.logbook = PRS.logbook ? PRS.logbook.record(S, result) : null;
         result.recording = PRS.recorder ? PRS.recorder.save(S, result) : null;
+        // And, if this was the day's aeroplane, the day's line. The first flight landed on a
+        // day is the one that stands; this returns which of the two happened, so the screen
+        // after the report can say it.
+        result.daily = PRS.daily ? PRS.daily.record(S, result) : null;
 
         const accounted = survivors + (you.outcome === "lost" ? 0 : 1);
         PRS.state.log(S, T("SOULS ON BOARD 61. ACCOUNTED FOR {n}. ", { n: accounted }) +
@@ -204,10 +209,9 @@
      * Flown in silence. It is not your flight and it must not sound like one.
      */
     function withoutYou(S) {
-        const heard = PRS.audio && PRS.audio.isEnabled();
-        if (PRS.audio) PRS.audio.setEnabled(false);
+        if (PRS.audio) PRS.audio.hush(true);
         try { return idleFlight(S); }
-        finally { if (PRS.audio) PRS.audio.setEnabled(heard); }
+        finally { if (PRS.audio) PRS.audio.hush(false); }
     }
 
     function idleFlight(S) {

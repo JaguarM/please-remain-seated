@@ -309,7 +309,7 @@
             const s = now;
             now = null;
             next = null;
-            PRS.audio.setRoar(clamp01(PRS.fire.worst(S.fire) / 90));
+            if (!S.quiet) PRS.audio.setRoar(clamp01(PRS.fire.worst(S.fire) / 90));
 
             if (S.player.alive === false && !S.clock.landed && S.clock.remaining > 0.001) {
                 // You went down. Nobody on this aeroplane is going to do anything on your behalf,

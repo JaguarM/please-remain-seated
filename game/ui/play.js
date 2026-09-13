@@ -48,6 +48,9 @@
     let cardMore = false;         // whether the card's "more" is unfolded
     let cardAnchor = null;        // where the card hangs from when it was opened from a button
     let tipKey = null;
+    // Somebody else's flight, running underneath yours on the same clock. See the ghost section.
+    let ghost = null, ghostCanvas = null, ghostCtx = null, ghostScale = 2;
+    let ghostLine = null, ghostSaid = 0;
 
     /**
      * How long an action's seconds take to go by on the screen: long enough that forty seconds
@@ -88,6 +91,8 @@
         selected = null; cardMore = false; cardAnchor = null;
         hover = null; target = null;
         busy = null; trail = [];
+        ghost = S.ghostFlight || null;
+        ghostCanvas = null; ghostCtx = null; ghostLine = null; ghostSaid = 0;
         PRS.render.fx.clear();
         PRS.render.motion.reset();
 
@@ -110,6 +115,7 @@
                 canvas = el("canvas", { id: "cabin", class: "cabin" }),
                 el("div", { class: "tip", id: "tip" }),
             ]),
+            ghost ? ghostBlock() : null,
             el("div", { class: "here", id: "here" }),
         ]);
         const logwrap = el("div", { class: "logwrap" }, [
@@ -122,6 +128,10 @@
 
         ctx = canvas.getContext("2d");
         scale = PRS.render.fit(canvas);
+        if (ghost) {
+            ghostCtx = ghostCanvas.getContext("2d");
+            ghostScale = PRS.render.fit(ghostCanvas, 2);
+        }
 
         canvas.addEventListener("mousemove", onCabinMove);
         canvas.addEventListener("mouseleave", function () {
@@ -187,6 +197,7 @@
         // the world is never left half way through one.
         if (busy && busy.passage) { while (busy.passage.step()) { /* the rest of them */ } }
         busy = null;
+        ghost = null; ghostCanvas = null; ghostCtx = null; ghostLine = null;
         document.removeEventListener("keydown", onKey);
         document.removeEventListener("mousedown", onPress);
         window.removeEventListener("resize", onResize);
@@ -199,6 +210,7 @@
     function onResize() {
         if (!canvas || !canvas.isConnected) return;
         scale = PRS.render.fit(canvas);
+        if (ghostCanvas) ghostScale = PRS.render.fit(ghostCanvas, 2);
         placeCard();
     }
 
@@ -222,6 +234,64 @@
             trail: trail,
             showReach: !busy,
         });
+        if (ghost) drawGhost(now);
+    }
+
+    // ------------------------------------------------------------------------------- ghost ---
+    //
+    // Somebody else's fifteen minutes, underneath yours, on the same clock.
+    //
+    // It is not a recording being scrubbed. A flight in this game is a seed and a list of things
+    // done, and every die was cast at boarding, so their cabin is the same simulation running
+    // beside yours: their smoke is smoke, their fire spreads because it spreads, and the moment
+    // they picked the case up is the moment it happens down there. All this screen does is keep
+    // their clock level with the one on the wall - which is the clock the player is watching,
+    // not the one in the model, so the two aeroplanes move together while an action's seconds go
+    // by rather than one of them jumping at the end of it.
+    //
+    // The comparison is the whole point and it has to be legible without arithmetic: their cabin
+    // is drawn smaller, with no reach, no trail and nothing under the pointer, because none of
+    // that is a decision anybody is making. What is under it is the one line that answers "how
+    // is he doing", which is the question that made you load the flight.
+
+    function ghostBlock() {
+        ghostCanvas = el("canvas", { class: "cabin ghost-cabin" });
+        ghostLine = el("div", { class: "ghost-line" });
+        return el("div", { class: "ghost" }, [
+            el("div", { class: "ghost-head" }, [
+                el("b", { text: T("The same fifteen minutes, flown by {who}",
+                                  { who: ghost.name }) }),
+                ghostLine,
+            ]),
+            ghostCanvas,
+        ]);
+    }
+
+    function drawGhost(now) {
+        if (!ghostCtx || !ghostCanvas.isConnected) return;
+        ghost.at(Math.max(0, S.clock.total - clockShown));
+        PRS.render.draw(ghostCtx, ghost.S, {
+            scale: ghostScale, time: now, ns: "ghost:", ghost: true,
+            showReach: false, rowNumbers: false,
+        });
+        // Four times a second is often enough for two numbers and rare enough that the line is
+        // readable while it changes.
+        if (now - ghostSaid < 250) return;
+        ghostSaid = now;
+        sayGhost();
+    }
+
+    function sayGhost() {
+        if (!ghostLine) return;
+        const theirs = ghost.moved(), mine = st.movedCount(S);
+        const diff = mine - theirs;
+        ghostLine.textContent = T("{down} down · {moved} moved", {
+            down: ghost.down(), moved: theirs }) + " · " +
+            (diff > 0 ? T("you are {n} ahead", { n: diff })
+             : diff < 0 ? T("you are {n} behind", { n: -diff })
+             : T("level with you")) +
+            (ghost.landed() ? " · " + T("they finished with {n} of 60",
+                                        { n: ghost.claim.survived }) : "");
     }
 
     /** Where the brackets go for the thing the card is open on: round a body, or round a tile. */
