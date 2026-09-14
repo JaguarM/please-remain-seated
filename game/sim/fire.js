@@ -295,36 +295,6 @@
      * is why a forty-second argument with a flight attendant is expensive in a way the player
      * feels immediately.
      */
-    /**
-     * The fire that was already going before the flight started.
-     *
-     * `actions.js` owns the clock and nothing else may move the fire - that rule is what makes
-     * a seed reproduce. This is the one exception and it is not really one: it runs before the
-     * first action, with nobody in the cabin and the clock still reading full, so it is not
-     * moving time forward. It is deciding how long the thing has been alight by the time the
-     * game opens on it.
-     *
-     * The passengers are not advanced with it, and that is a claim rather than a shortcut: a
-     * cell in a closed case in a closed bin smoulders for a long time and then breaks out all at
-     * once, so the cabin has had ninety seconds of this, not five minutes. What the cabin has
-     * had is in `open()` on the scenario, and it is a detector, some awareness and no dose.
-     */
-    function preburn(S, seconds) {
-        const f = S.fire;
-        if (!f || !(seconds > 0)) return;
-        const STEP = 6;
-        const saved = S.clock.elapsed;
-        for (let t = 0; t < seconds; t += STEP) {
-            const dt = Math.min(STEP, seconds - t);
-            // The fire asks the clock what time it is, for the second stage and for the log.
-            // While it is burning on its own, the time it is told is the time it has burned.
-            S.clock.elapsed = t;
-            advance(f, dt, S);
-        }
-        S.clock.elapsed = saved;
-        f.preburned = seconds;
-    }
-
     function advance(f, dt, S) {
         if (dt <= 0) return { vented: false, spread: 0 };
 
@@ -340,7 +310,7 @@
         // anybody has done to it. Nothing on the aeroplane stops this and nothing delays it: it
         // is not a consequence of how the fire is going, it is how long a pack takes.
         // When the pack goes over, on this flight. A scenario may move it, or say null and
-        // mean never - which is what the four-minute cut says, because the second stage is the
+        // mean never - which is what the five-minute cut says, because the second stage is the
         // best rule in the game and the worst one to meet first.
         const blueAt = (S.scenario && S.scenario.blueAt !== undefined) ? S.scenario.blueAt
                                                                       : BLUE_AT;
@@ -680,7 +650,7 @@
         return (100 - f.core.heat) / rate;
     }
 
-    PRS.fire = { preburn,
+    PRS.fire = {
         AGENTS, create, at, smokeAt, heatAt, worst, burningTiles, totalSmoke, smokeLayer,
         tapUsable, tapLav, basinGone,
         apply, coolCore, starve, advance, describe, describeSmoke, fireSprite, smokeSprite, ventEta,

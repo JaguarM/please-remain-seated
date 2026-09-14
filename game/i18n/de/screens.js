@@ -29,6 +29,12 @@
          "Zeig auf irgendjemanden."],
         ["{souls} souls · {mins}", "{souls} Seelen · {mins}"],
         ["Or fly the full fifteen minutes", "Oder die vollen fünfzehn Minuten fliegen"],
+        // The same sentence twice: once as the line under the boarding pass that declines the
+        // tutorial, and once as the button at the end of it. The "Oder" belongs only to the
+        // first, where it is answering an offer that has just been made.
+        ["Fly the full fifteen minutes", "Die vollen fünfzehn Minuten fliegen"],
+        // The other side of the same offer, under the pass when the pass says TN 447.
+        ["Or fly the last five minutes", "Oder die letzten fünf Minuten fliegen"],
         ["Flying beside you: {who}, who got {n} of {of} off this aeroplane.",
          "Neben dir fliegt {who}, mit {n} von {of} aus dieser Maschine heraus."],
         ["they finished with {n} of {of}", "sie sind bei {n} von {of} gelandet"],

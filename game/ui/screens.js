@@ -37,6 +37,13 @@
                      // when it is set, because a scenario names its own aircraft.
                      aircraft: null, scenario: null };
     let choiceLoaded = false;
+    // Whether the boarding pass has been filled in once. The tutorial is what the pass says the
+    // first time anybody sees it, and it is a default rather than a rule - so it is applied once
+    // and then the pass says whatever the player has since said. Without this, `title()` wrote
+    // the tutorial back onto the pass every time it drew, which meant the line underneath
+    // offering the full fifteen minutes set `scenario` to null, called `title()`, and watched
+    // `title()` put it straight back: a button that did nothing, twice a second.
+    let passMadeOut = false;
 
     /**
      * The choice, made sane: a saved character or outfit can be locked in this browser, a bag
@@ -89,7 +96,7 @@
                               // the date in the box that hashes what is in it would hand the
                               // next session a different aeroplane under the same name.
                               seedText: choice.daily ? "" : choice.seedText,
-                              // The aeroplane, but never the scenario: the four-minute cut is
+                              // The aeroplane, but never the scenario: the five-minute cut is
                               // something you choose each time and never something you find
                               // yourself in because you flew it last week.
                               aircraft: choice.aircraft });
@@ -168,22 +175,32 @@
             root.className = "screen title";
             const book = PRS.logbook.load();
             const ch = PRS.data.characters.byId(choice.characterId);
-            // The aeroplane goes in first, because it goes behind. It is a real flight on a
-            // random seed with a bot at the controls, and `show()` puts it out on the way to any
-            // other screen. If it fails to start there is no cabin and the title screen is what
-            // it was before, which is the only thing that matters here.
-            // The aeroplane behind the pass is the aeroplane on the pass.
-            PRS.backdrop.start(root, currentFlight().ac.id);
-            // The first time anybody opens this, the pass is made out for the four-minute cut
-            // rather than the full fifteen. Not a lesser version of the game: the last four
+            // The first time anybody opens this, the pass is made out for the five-minute cut
+            // rather than the full fifteen. Not a lesser version of the game: the last five
             // minutes of a real one, on an aeroplane you can see all of at once, with the part
-            // that is actually the game in it and nothing in front of that part. It reverts to
-            // TN 447 the moment there is a log book, and the line under the pass is the way
-            // past it for somebody who does not want to be taught anything.
-            if (!book.flights && choice.scenario === null && !choice.daily) {
-                choice.scenario = PRS.data.scenarios.LASTFOUR.id;
+            // that is actually the game in it and nothing in front of that part.
+            //
+            // Once. It is the first flight and not a menu item: there is no way back to it from
+            // here, the line under the pass is the way past it for somebody who does not want to
+            // be taught anything, and after it has been flown the pass is made out for TN 447
+            // like anybody else's.
+            //
+            // Before the backdrop and not after it. The aeroplane behind the pass is meant to be
+            // the aeroplane on the pass, and while this ran second the very first screen anybody
+            // ever saw had a narrowbody flying behind a boarding pass for a nineteen-seat
+            // turboprop - on the one draw where getting it right matters most.
+            if (!passMadeOut) {
+                passMadeOut = true;
+                if (!book.flights && choice.scenario === null && !choice.daily) {
+                    choice.scenario = PRS.data.scenarios.LASTFIVE.id;
+                }
             }
             const F = currentFlight();
+            // The aeroplane goes in behind. It is a real flight on a random seed with a bot at
+            // the controls, and `show()` puts it out on the way to any other screen. If it fails
+            // to start there is no cabin and the title screen is what it was before, which is the
+            // only thing that matters here.
+            PRS.backdrop.start(root, F.ac.id);
             root.appendChild(el("div", { class: "title-inner" }, [
                 el("div", { class: "kicker", text: T("{flight} · {type} · DESCENT",
                     { flight: F.ac.flightNo, type: T(F.ac.type).toUpperCase() }) }),
@@ -204,11 +221,25 @@
                     fact("0", T("ways to put it out"), "fire"),
                 ]),
                 pass(),
-                F.scen ? el("p", { class: "footnote title-skip" }, [
+                // The line under the pass, which is the only way to the five-minute cut and the
+                // only way past it. It is one offer with two sides rather than two controls: the
+                // pass says which flight you are about to take and this says the other one. That
+                // keeps the tutorial reachable for ever without putting it in the row of buttons
+                // underneath, where it would sit being pressed once and then read as clutter on
+                // every title screen after that.
+                el("p", { class: "footnote title-skip" }, F.scen ? [
                     el("span", { text: T(F.scen.blurb) + " " }),
                     el("button", { class: "linky", text: T("Or fly the full fifteen minutes"),
                                    onclick: () => { choice.scenario = null; title(); } }),
-                ]) : null,
+                ] : [
+                    el("button", { class: "linky", text: T("Or fly the last five minutes"),
+                                   onclick: () => {
+                                       choice.scenario = PRS.data.scenarios.LASTFIVE.id;
+                                       // A daily is one aeroplane for everybody who boards it,
+                                       // and it is never this one.
+                                       choice.daily = null;
+                                       title(); } }),
+                ]),
                 // From the second flight, with the roster and the previous flights. A first
                 // flight is one click, and "the same aeroplane as everybody else today" is not
                 // an offer that means anything to somebody who has not been on this one yet.
@@ -217,14 +248,10 @@
                 // there is a log book to put them in.
                 el("div", { class: "title-buttons" }, [
                     book.flights ? el("button", { text: T("Change who you are"), onclick: setup }) : null,
-                    // Always available, and never the default after the first time. Four minutes
-                    // is the right length for showing somebody the game, which is a thing a
-                    // player does for another player more often than for themselves.
-                    book.flights && !F.scen
-                        ? el("button", { text: T("The last four minutes"),
-                                         onclick: () => { choice.scenario = "lastfour";
-                                                          choice.daily = null; title(); } })
-                        : null,
+                    // The five-minute cut is not a button here. It is the flight a first-time
+                    // player is given and the one they can decline, and that is all it is: a way
+                    // in rather than a thing on the menu. "How to play" is what somebody who
+                    // wants to be taught something presses on their ninth flight.
                     el("button", { text: T("How to play"), onclick: () => help(root, ch) }),
                     book.flights ? el("button", { text: T("Previous flights ({n})",
                                                           { n: book.flights }),
@@ -812,9 +839,9 @@
      * how many people are on board, how far a carry is, whether there is anybody whose job any
      * of this is, and how long the flight is.
      *
-     * The four-minute cut is not in here. It is a flight rather than an aircraft, it is on the
-     * title screen where somebody looking for it will be, and putting it in a row of aeroplanes
-     * would make it look like a third one.
+     * The five-minute cut is not in here. It is a flight rather than an aircraft, it is what the
+     * pass says the first time anybody opens the title screen and nowhere else, and putting it in
+     * a row of aeroplanes would make it look like a third one.
      */
     function fleet(repaint) {
         const F = PRS.data.aircraft;
@@ -897,7 +924,7 @@
             aircraft: choice.aircraft,
             scenario: choice.scenario,
         });
-        // The four-minute cut is flown once per press. Leaving it set would mean the button on
+        // The five-minute cut is flown once per press. Leaving it set would mean the button on
         // the report that says "again" quietly meant "the tutorial again", forever.
         choice.scenario = null;
         // Somebody else's fifteen minutes, if one was pasted, and only on the aeroplane it was
@@ -1092,6 +1119,14 @@
             inner.appendChild(el("div", { class: "rep-ending" },
                 R.ending.text.split("\n\n").map((p) => el("p", { text: p }))));
 
+            // A first flight ends here, so the one number it was flown for is on it: the same
+            // aeroplane with you asleep in 9C, against the one you were awake on. On every other
+            // flight this is the top of the screen after the report, under a soul bar and a
+            // wardrobe and a card you nearly turned over - none of which a first flight should
+            // be handed, and all of which would bury this.
+            const taught = !!(S.scenario && S.scenario.tutorial);
+            if (taught) for (const node of versus(R)) inner.appendChild(node);
+
             // The numbers, in the order the report puts them.
             inner.appendChild(el("h3", { text: T("Souls on board") }));
             inner.appendChild(el("div", { class: "tally" }, [
@@ -1135,7 +1170,7 @@
             inner.appendChild(groupPhoto(S, R, cv));
 
             // "the fifteen minutes" was true while every flight was fifteen minutes long. It
-            // is four on the short cut and ten on the turboprop, so the heading says how long
+            // is five on the short cut and ten on the turboprop, so the heading says how long
             // the flight it is about actually was.
             inner.appendChild(el("h3", { text: T("Where the {mins} went",
                 { mins: T("{n} minutes", { n: Math.round(S.clock.total / 60) }) }) }));
@@ -1176,8 +1211,16 @@
                         el("span", { class: "tl-c", text: costLabel(a.cost) }),
                     ])))));
 
-            // One way on. What the flight was worth is the next screen and nothing else is.
-            inner.appendChild(el("div", { class: "title-buttons" }, [
+            // One way on. What the flight was worth is the next screen and nothing else is -
+            // except after the tutorial, which has already said what it was worth at the top of
+            // this page and whose one way on is the game it was a way into.
+            inner.appendChild(el("div", { class: "title-buttons" }, taught ? [
+                el("button", { class: "big", text: T("Fly the full fifteen minutes"),
+                               onclick: () => { choice.scenario = null; choice.aircraft = null;
+                                                choice.daily = null; begin(); } }),
+                el("button", { text: T("Change who you are"), onclick: setup }),
+                el("button", { text: T("Title"), onclick: title }),
+            ] : [
                 el("button", { class: "big", text: T("What you changed"),
                                onclick: () => unlocks(S, R) }),
             ]));
@@ -1327,6 +1370,36 @@
         ]);
     }
 
+    /**
+     * The two aeroplanes side by side: the one you flew, and the same one with you asleep in 9C.
+     *
+     * It lives here rather than inside the screen that used to hold it because it is the only
+     * part of that screen that is a score rather than a ladder, and the tutorial wants the score
+     * without the ladder. Returns nodes, and no nodes at all when the flight did not work the
+     * counterfactual out - the bots do not, and neither does a flight flown to fill a share code.
+     */
+    function versus(R) {
+        if (R.without === null) return [];
+        const diff = R.survivors - R.without;
+        return [
+            el("div", { class: "versus" }, [
+                el("span", {}, [T("Without you:"), el("b", { text: String(R.without) })]),
+                // Green only when it is green. A bigger number in the good colour, under a
+                // line saying the cabin would have done better without you, is a lie told
+                // by a stylesheet.
+                el("span", { class: "you" + (diff > 0 ? "" : diff < 0 ? " worse" : " same") },
+                   [T("With you:"), el("b", { text: String(R.survivors) })]),
+            ]),
+            el("p", { class: "delta", text: diff > 0
+                ? T("{n} alive who would not have been.",
+                    { n: PRS.util.plural(diff, K("person"), K("people")) })
+                : diff < 0
+                    ? T("The cabin would have done {n} better with you in your seat.",
+                        { n: PRS.util.plural(-diff, K("life"), K("lives")) })
+                    : T("Exactly what the cabin would have managed with you in your seat.") }),
+        ];
+    }
+
     // ------------------------------------------------------------------------------- unlocks ---
 
     /**
@@ -1351,24 +1424,7 @@
             inner.appendChild(el("div", { class: "rep-kicker", text: T("WHAT YOU CHANGED") }));
 
             // The two aeroplanes, side by side. Everything else on this screen comes off them.
-            if (R.without !== null) {
-                const diff = R.survivors - R.without;
-                inner.appendChild(el("div", { class: "versus" }, [
-                    el("span", {}, [T("Without you:"), el("b", { text: String(R.without) })]),
-                    // Green only when it is green. A bigger number in the good colour, under a
-                    // line saying the cabin would have done better without you, is a lie told
-                    // by a stylesheet.
-                    el("span", { class: "you" + (diff > 0 ? "" : diff < 0 ? " worse" : " same") },
-                       [T("With you:"), el("b", { text: String(R.survivors) })]),
-                ]));
-                inner.appendChild(el("p", { class: "delta", text: diff > 0
-                    ? T("{n} alive who would not have been.",
-                        { n: PRS.util.plural(diff, K("person"), K("people")) })
-                    : diff < 0
-                        ? T("The cabin would have done {n} better with you in your seat.",
-                            { n: PRS.util.plural(-diff, K("life"), K("lives")) })
-                        : T("Exactly what the cabin would have managed with you in your seat.") }));
-            }
+            for (const node of versus(R)) inner.appendChild(node);
 
             // The book: what it counted, and how far that got you.
             if (L) {

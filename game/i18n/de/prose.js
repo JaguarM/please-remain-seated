@@ -38,22 +38,23 @@
          "keine Flugbegleiter. Im Gepäckfach über {seat} brennt etwas. Das Cockpit ist eine " +
          "verschlossene Tür, und alle anderen an Bord sind älter als du oder schlafen."],
 
-        // ------------------------------------------------------------ the last four minutes ---
+        // ------------------------------------------------------------- the last five minutes ---
         //
-        // "Schlussvier" was tried and dropped: it is a coinage, and the whole point of the
-        // scenario's name is that it says plainly what you are getting.
-        ["The last four minutes", "Die letzten vier Minuten"],
-        ["Four minutes, nineteen seats, and a cabin that cannot walk itself out. Start here.",
-         "Vier Minuten, neunzehn Sitze und eine Kabine, die nicht allein hinauskommt. Fang " +
+        // "Schlussfünf" was tried and dropped, as "Schlussvier" was before it: it is a coinage,
+        // and the whole point of the scenario's name is that it says plainly what you are
+        // getting.
+        ["The last five minutes", "Die letzten fünf Minuten"],
+        ["Five minutes, nineteen seats, and a cabin that cannot walk itself out. Start here.",
+         "Fünf Minuten, neunzehn Sitze und eine Kabine, die nicht allein hinauskommt. Fang " +
          "hier an."],
-        ["Coastal Link 2231, four minutes out, nineteen souls and no cabin crew. The locker " +
-         "above {seat} has been alight for three minutes and you have spent one of those " +
-         "deciding it was really happening. Almost nobody on this aeroplane can get themselves " +
-         "off it.",
-         "Coastal Link 2231, vier Minuten vor der Landung, neunzehn Seelen und keine " +
-         "Flugbegleiter. Das Gepäckfach über {seat} brennt seit drei Minuten, und eine davon " +
-         "hast du damit verbracht, dir einzugestehen, dass es wirklich passiert. Fast niemand " +
-         "in diesem Flugzeug kommt allein heraus."],
+        // "der einzige Mensch, der hinsieht" would decide the player's gender, which the seed
+        // screen has not. Turned round into a nobody, which decides nothing.
+        ["Coastal Link 2231, five minutes out, nineteen souls and no cabin crew. Something has " +
+         "started in the locker above {seat}, and you are the only person on this aeroplane " +
+         "who is looking at it. Almost nobody on here can get themselves off it.",
+         "Coastal Link 2231, fünf Minuten vor der Landung, neunzehn Seelen und keine " +
+         "Flugbegleiter. Im Gepäckfach über {seat} hat etwas angefangen, und niemand sonst in " +
+         "diesem Flugzeug sieht hin. Fast niemand hier kommt allein heraus."],
 
         // The tutorial's own lines. They arrive in the log in the middle of a flight, so they
         // are the same voice as every other rule the game states: flat, present tense, second

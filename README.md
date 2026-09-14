@@ -65,16 +65,33 @@ The rules
 Two aeroplanes, and where to start
 ----------------------------------
 
-**The last four minutes** is the first thing on the title screen and the flight to fly first. It
-is not a cut-down version of the game: it is the last four minutes of a real one, on an aeroplane
-you can see all of at once, and it exists because the full fifteen spends its first third telling
-you there is a fire and its second third telling you that you cannot put it out. The part that is
-actually the game is the last third, and this is that, on its own.
+**The last five minutes** is the flight the boarding pass is made out for the first time anybody
+opens the game, and the flight to fly first. It is not a cut-down version of the game: it is the
+last five minutes of a real one, on an aeroplane you can see all of at once, and it exists because
+the full fifteen spends its first third telling you there is a fire and its second third telling
+you that you cannot put it out. The part that is actually the game is the last third, and this is
+that, on its own.
 
-Three things are true of it and all three are decisions:
+It is not on the menu, and that is the point of it. The one line under the boarding pass is the
+whole of how you get to it and past it, and it goes both ways: *Or fly the full fifteen minutes*
+while the pass says CL 2231, *Or fly the last five minutes* once it says TN 447. One offer with
+two sides rather than two controls, because a button for it would be pressed once and then sit
+on every title screen afterwards being clutter.
 
-- **Four minutes.** Long enough to carry three people. Short enough that a first flight ends
+It ends on its own report rather than on the screen that keeps the soul bar and the wardrobe and
+the card you nearly turned over. A first flight is owed the one number it was flown for - the same
+aeroplane with you asleep in 9C, against the one you were awake on - and none of the rest of it.
+
+Four things are true of it and all four are decisions:
+
+- **Five minutes.** Long enough to carry four people. Short enough that a first flight ends
   while you still want another one.
+- **The fire starts when you do.** One tile, one locker, at zero seconds, on every seed. This
+  used to be three minutes of fire handed over before the flight began, on the theory that a
+  short flight has to start in the middle, and the theory was wrong: a cabin that opens on a
+  fire is a cabin you cannot change. Playing well was worth four people and the seed was worth
+  three and a half. Give the same three minutes to the clock instead and playing well is worth
+  seven and the seed is worth one. `game/data/scenarios.js` has the measurement.
 - **The fire never goes blue.** The second stage is the best rule in the game and the worst one
   to meet first, because it is a rule that says everything you learnt in the last six minutes
   has stopped applying. What is burning here is an ordinary fire that an ordinary person could
@@ -83,7 +100,10 @@ Three things are true of it and all three are decisions:
   can walk out. This one cannot walk: it is the island hospital run, and on it are seven people
   over seventy-four, a woman whose chair is in the hold, a nine-month-old and a child. Nothing
   about the fire is turned up. The people are simply people the fire is enough for, which is the
-  truest thing this game has to say and the hardest thing to put in a tooltip.
+  truest thing this game has to say and the hardest thing to put in a tooltip. What the manifest
+  cannot do is carry the danger on its own: frailty multiplies harm the fire has already done,
+  so a seat the fire never reaches is a safe seat whoever is sitting in it, and adding a trait
+  to any one passenger moves the flight by less than a person.
 
 **Coastal Link 2231** is the aeroplane that flight is on, and it is a whole aircraft rather than
 a tutorial set: a Beechcraft 1900D, nineteen seats one either side of the aisle, ten minutes from
@@ -418,19 +438,26 @@ Testing it
     node tools/replay.js flights.json         # play recorded flights back against the bots
     node tools/coverage.js                    # every action performed at least once, and which
                                               # of them each aeroplane can and cannot reach
-    node tools/test_fire_strats.js            # every known way to play the fire, flown: nobody
-                                              # saves sixty, and fighting it is neither the whole
-                                              # game nor a waste of the seconds
+    node tools/test_fire_strats.js            # every known way to play the fire, flown on all
+                                              # three flights: nobody saves everybody as a matter
+                                              # of course, fighting it is neither the whole game
+                                              # nor a waste of the seconds, and the tutorial
+                                              # rewards playing it
+    node tools/ceiling.js --scenario=lastfive # not how the bots do: how well the flight can be
+                                              # flown at all, searched. The bots say what one way
+                                              # of playing is worth; this says what the aeroplane
+                                              # has in it, which is the other half of a balance
+                                              # number
     node tools/test_undo.js                   # undo is exact; neither it nor a detour buys a roll,
                                               # and a second played slowly is the same second
     node tools/test_share.js                  # every bot flight written out as a code and flown
                                               # again from it alone, spread over both aeroplanes
-                                              # and the four-minute cut: the same people in the
+                                              # and the five-minute cut: the same people in the
                                               # same condition, and a code from another build
                                               # refused rather than quietly flown
     node tools/i18n_scan.js                   # what each language has, and what it is missing
     node tools/dump_frame.js --at=540 --seed=606 && python tools/render_frame.py --out=docs/cabin.png
-    node tools/dump_frame.js --scenario=lastfour --at=150    # the same, on the small aeroplane
+    node tools/dump_frame.js --scenario=lastfive --at=150    # the same, on the small aeroplane
     node tools/simulate.js 60 --aircraft=be1900d             # the bot table for the turboprop
     node tools/dump_flight.js --seed=606 && python tools/render_gif.py   # the whole flight, moving
     python tools/trim_actions.py --list       # every action id; pass ids to remove them cleanly
@@ -459,26 +486,45 @@ again; if the best of them falls to the idle line, it has stopped being worth do
 a thing to remember: `node tools/test_fire_strats.js` asserts it, and fails with a sentence saying
 which of the two happened.
 
-**The other two flights**, sixty flights each, as Priya. The full sector on CL 2231, and then
-the four-minute cut on the same aircraft:
+**The other two flights**, forty flights each, as Priya, of the eighteen passengers on board.
+The full sector on CL 2231, and then the five-minute cut on the same aircraft. `node
+tools/test_fire_strats.js` prints all three tables and asserts about each of them.
 
-| bot | CL 2231, of 19 | the last four minutes, of 19 |
+| bot | CL 2231, of 18 | the last five minutes, of 18 |
 |---|---|---|
-| idle | 3.7 | 8.0 |
-| fire | 6.5 | 7.2 |
-| carry | 9.1 | 11.4 |
-| good | - | 12.9 |
-| blend | 13.9 | 11.1 |
-| sink | 10.9 | - |
-| sinkthen | 17.3 | 7.8 |
+| idle | 2.7 | 10.1 |
+| forward | 1.4 | 5.4 |
+| mover | 1.6 | 9.3 |
+| hold | 2.4 | 14.9 |
+| douse | 3.9 | 13.9 |
+| fire | 6.0 | 12.4 |
+| carry | 7.3 | 14.8 |
+| sink | 9.3 | 12.8 |
+| aftline | 9.7 | 13.6 |
+| blend | 12.1 | 16.4 |
+| good | 12.2 | 17.3 |
+| sinkthen | 16.4 | 16.7 |
 
 Two things in that table are the design and not an accident. On the full sector the bots land in
-the same order they do on the narrowbody, which is what says the small aeroplane is the same game:
-the basin is the strongest thing you can do to the fire, and doing that and then turning round to
-move people beats it. In the four-minute cut the order inverts - `sinkthen` drops *below* doing
-nothing and `good` wins - because in four minutes there is no time to solve the fire, and the
-tutorial's whole lesson is that people are what you spend the clock on. A first flight that
-rewarded the fire deck would teach the wrong game.
+much the same order they do on the narrowbody, which is what says the small aeroplane is the same
+game: the basin is the strongest thing you can do to the fire, and doing that and then turning
+round to move people beats everything.
+
+In the five-minute cut the table compresses rather than inverting. Everything beats doing nothing
+except the two ideas the game names as bad ones - `forward` and `mover` - which is the property a
+first flight has to have: a new player who does a sensible thing and lands *under* the "without
+you" line has been taught that they are what went wrong. The people lines still lead, but the
+fire lines are only three or four behind them instead of ten, because in five minutes there is no
+time to solve the fire and no second stage to punish not having solved it. `hold` - closing the
+bin and never opening it - is the best thing you can do to this fire in five minutes and the
+worst thing you can do to it in fifteen, and that is the same fact about starving a fire of air
+read at two different lengths.
+
+What that table does not show, and `tools/ceiling.js` does, is that all eighteen is reachable on
+the turboprop: `good` lands every passenger on the tutorial in seven flights in ten and `sinkthen`
+does it on the full sector in six. "You cannot save everybody" is a claim this README makes and
+the Beechcraft does not keep. One basin four tiles from the locker is most of the reason, and it
+is the next thing to fix on that aeroplane.
 
 The bottom six rows of the first table are lines real playtesters found, and they are in the file
 because two of them returned sixty of sixty before they were bots. What the table says now is the shape the game is

@@ -493,7 +493,7 @@
 
     function minutes(S) {
         // The strip is as long as the flight was scheduled to be, which is fifteen blocks on a
-        // narrowbody and four on the four-minute cut. The clock's `total` is the scheduled
+        // narrowbody and five on the five-minute cut. The clock's `total` is the scheduled
         // length less whatever an emergency descent took off it, so the length of the strip
         // comes off the aircraft and the scenario rather than off a constant.
         const scheduled = (S.scenario && S.scenario.seconds)

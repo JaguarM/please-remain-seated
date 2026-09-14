@@ -67,7 +67,7 @@
         // aircraft from here on.
         const scenario = PRS.data.scenarios ? PRS.data.scenarios.byId(opts.scenario) : null;
         // A scenario names its own aeroplane and that beats anything the caller asked for: the
-        // four-minute cut is a flight on CL 2231 and there is no version of it that is not.
+        // five-minute cut is a flight on CL 2231 and there is no version of it that is not.
         const ac = cabin.use((scenario && scenario.aircraft) || opts.aircraft
                              || PRS.data.aircraft.DEFAULT);
         const seconds = (scenario && scenario.seconds) || ac.seconds;
@@ -175,13 +175,10 @@
         // Two of the crew are in the aisle with the trolley, which is a wall you cannot pass.
         if (S.cabinFlags.cartX !== null) S.cabinFlags.aisleBlocked[S.cabinFlags.cartX] = 9999;
 
-        // A flight that starts in the middle. The fire burns on its own first, then the scenario
-        // says what else is already true - in that order, because `open` is written against a
-        // cabin the fire has already been in.
-        if (scenario) {
-            if (scenario.preburn) PRS.fire.preburn(S, scenario.preburn);
-            if (scenario.open) scenario.open(S);
-        }
+        // Whatever the scenario says is already true when you look up. Never the fire: the
+        // rule in actions.js that nothing but `spend` may move it has no exceptions any more,
+        // and scenarios.js is where the measurement that closed the last one is written down.
+        if (scenario && scenario.open) scenario.open(S);
 
         return S;
     }
