@@ -343,8 +343,12 @@ button.big:hover { background: #4b6191; }
 
 .rep-map { background: #12151a; border: 1px solid var(--line); border-radius: 4px; padding: 10px; overflow-x: auto; }
 /* `margin-inline: auto` for the short aeroplanes: screens.js caps the canvas so a tile is the
-   same size on both, and this puts what that leaves over on both sides. `min-width` still wins
-   over the cap on a narrow page, which is what keeps the photograph readable on a telephone. */
+   same size on both, and this puts what that leaves over on both sides.
+
+   `min-width` beats that cap on a narrow page, and is supposed to: a tile the same size on both
+   aeroplanes matters less than sixty faces being big enough to point at. So the cap screens.js
+   sets is advisory, the two rules disagree by design, and the disagreement is not a thing to fix
+   by making either follow the other. */
 .rep-canvas { display: block; width: 100%; max-width: 100%; min-width: 480px;
               margin-inline: auto; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 8px; }

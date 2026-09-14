@@ -1117,6 +1117,12 @@
             // Capped so a tile is about the same size on both aeroplanes: a fifteen-column
             // cabin stretched across the width a thirty-column one wants is a photograph at
             // twice the scale, which reads as a different picture rather than a smaller one.
+            //
+            // The cap is advisory and is meant to be. `.rep-canvas` carries a `min-width`, and
+            // a min-width beats a max-width, so on a narrow page the photograph comes out wider
+            // than this asks for - which is the right answer there, because the alternative is
+            // sixty faces too small to point at. The two disagreeing is the design and not a
+            // bug to be reconciled: leave both, and do not make one of them follow the other.
             cv.style.maxWidth = (PRS.cabin.W * 28) + "px";
             inner.appendChild(el("h3", { text: T("The cabin at touchdown") }));
             inner.appendChild(el("div", { class: "rep-map" }, [cv, el("div", { class: "legend" }, [
