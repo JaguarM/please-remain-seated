@@ -1152,7 +1152,7 @@
                 inner.appendChild(el("div", { class: "medals" },
                     R.medals.map((m) => el("div", { class: "medal" }, [
                         el("b", { text: PRS.medals.nameOf(m, S) }),
-                        el("i", { text: T(m.text) })]))));
+                        el("i", { text: PRS.medals.textOf(m, S) })]))));
             }
 
             // Two drawers. Both are about the flight you have just read about, both are long,

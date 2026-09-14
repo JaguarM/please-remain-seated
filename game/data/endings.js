@@ -66,7 +66,9 @@
         {
             id: "delegated",
             title: K("THE ONES WHO WALKED OFF"),
-            when: (S, R) => R.byHelpers >= 10 && R.survivors >= 44,
+            // Forty-four of sixty, as a share, because there is more than one aeroplane and
+            // forty-four of them is not a thing a Beechcraft has.
+            when: (S, R) => R.byHelpers >= 10 && R.survivors >= Math.round(44 / 60 * (R.souls - 1)),
             text(S, R) {
                 return T("You recruited {n} people.", { n: S.stats.helpersRecruited }) +
                     "\n\n" +

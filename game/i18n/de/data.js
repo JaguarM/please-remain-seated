@@ -229,14 +229,17 @@
          "Eine Verbrennung abbekommen. Sie hat die Leute dazu gebracht, dir zu glauben, und das " +
          "ist der schlimmste Teil daran."],
 
-        ["Forty", "Vierzig"],
-        ["Forty people got off this aeroplane alive.",
-         "Vierzig Menschen sind lebend aus diesem Flugzeug gekommen."],
-        ["Forty-eight", "Achtundvierzig"],
-        ["Forty-eight. This is a very good flight and you should know that.",
-         "Achtundvierzig. Das ist ein sehr guter Flug, und das sollst du wissen."],
-        ["Fifty-two", "Zweiundfünfzig"],
-        ["Fifty-two. Almost nobody gets here.", "Zweiundfünfzig. Hierher kommt fast niemand."],
+        // The four about the score used to be named after their numbers - "Vierzig",
+        // "Achtundvierzig" - which only worked while there was one aeroplane to count. The name
+        // is the share now and the sentence carries the flight's own numbers.
+        ["Two thirds", "Zwei Drittel"],
+        ["{n} of {of} people got off this aeroplane alive.",
+         "{n} von {of} Menschen sind lebend aus diesem Flugzeug gekommen."],
+        ["Four fifths", "Vier Fünftel"],
+        ["{n} of {of}. This is a very good flight and you should know that.",
+         "{n} von {of}. Das ist ein sehr guter Flug, und das sollst du wissen."],
+        ["Almost all of them", "Fast alle"],
+        ["{n} of {of}. Almost nobody gets here.", "{n} von {of}. Hierher kommt fast niemand."],
         ["Half", "Die Hälfte"],
         ["Half the cabin, or fewer. It was always going to be like this for somebody.",
          "Die halbe Kabine oder weniger. Für irgendjemanden wäre es immer so ausgegangen."],

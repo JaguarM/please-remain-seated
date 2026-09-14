@@ -21,6 +21,17 @@
 
     /** The manifest, once there is one. Medals about how it ended wait for it. */
     const landed = (S) => S.result || null;
+
+    /**
+     * That fraction of the passengers on this aeroplane, as a whole number of people.
+     *
+     * Not of the souls: `survivors` counts the cabin and not you, because you are the last name
+     * on the manifest and not one of the people you are trying to save.
+     */
+    const share = (S, f) => Math.round(f * Math.max(1, S.pax.length));
+
+    /** The numbers a score medal's sentence needs: how many got off, out of how many there were. */
+    const scoreParams = (S) => ({ n: S.result ? S.result.survivors : 0, of: S.pax.length });
     const outOfTheRows = (S, trait) => S.pax.filter((p) => p.traits.indexOf(trait) >= 0);
 
     const MEDALS = [
@@ -129,20 +140,30 @@
           when: (S) => S.player.burns > 20 },
 
         // ------------------------------------------------------------------------ the score ---
-        { id: "ten_souls", name: K("Forty"),
-          text: K("Forty people got off this aeroplane alive."),
-          when: (S) => landed(S) && S.result.survivors >= 40 },
-        { id: "eighteen_souls", name: K("Forty-eight"),
-          text: K("Forty-eight. This is a very good flight and you should know that."),
-          when: (S) => landed(S) && S.result.survivors >= 48 },
-        { id: "twentytwo_souls", name: K("Fifty-two"),
-          text: K("Fifty-two. Almost nobody gets here."),
-          when: (S) => landed(S) && S.result.survivors >= 52,
-          near: (S) => ({ have: landed(S) ? S.result.survivors : 0, need: 52,
+        //
+        // A share of the cabin, not a count of it. These were 40, 48, 52 and 30, which are the
+        // right numbers on sixty passengers and are all wrong on eighteen: on the turboprop the
+        // three good ones could not be won at all and "Half" was awarded to every flight ever
+        // flown there, including the ones where nobody was lost. A player who got all eighteen
+        // off the tutorial was handed a medal saying half the cabin or fewer.
+        //
+        // So the thresholds are the fractions those numbers were, written as the division so
+        // that the narrowbody's medals are visibly the same medals, and the sentences say the
+        // number instead of being named after it.
+        { id: "ten_souls", name: K("Two thirds"),
+          text: K("{n} of {of} people got off this aeroplane alive."),
+          when: (S) => landed(S) && S.result.survivors >= share(S, 40 / 60) },
+        { id: "eighteen_souls", name: K("Four fifths"),
+          text: K("{n} of {of}. This is a very good flight and you should know that."),
+          when: (S) => landed(S) && S.result.survivors >= share(S, 48 / 60) },
+        { id: "twentytwo_souls", name: K("Almost all of them"),
+          text: K("{n} of {of}. Almost nobody gets here."),
+          when: (S) => landed(S) && S.result.survivors >= share(S, 52 / 60),
+          near: (S) => ({ have: landed(S) ? S.result.survivors : 0, need: share(S, 52 / 60),
                           note: K("off alive") }) },
         { id: "three_souls", name: K("Half"),
           text: K("Half the cabin, or fewer. It was always going to be like this for somebody."),
-          when: (S) => landed(S) && S.result.survivors <= 30 },
+          when: (S) => landed(S) && S.result.survivors <= share(S, 30 / 60) },
     ];
 
     const BY_ID = {};
@@ -156,6 +177,15 @@
      */
     function nameOf(m, S) {
         return T(typeof m.name === "function" ? m.name(S) : m.name);
+    }
+
+    /**
+     * What a medal's sentence says on this flight. Most of them are a fixed sentence; the four
+     * about the score put the flight's own numbers in, because "forty-eight" is a sentence about
+     * one aeroplane and there is more than one aeroplane.
+     */
+    function textOf(m, S) {
+        return T(m.text, scoreParams(S));
     }
 
     function check(S) {
@@ -175,7 +205,7 @@
             if (!ok) continue;
             S.medals[m.id] = S.clock.elapsed;
             PRS.state.log(S, T("◆ {name} — {text}",
-                               { name: nameOf(m, S), text: T(m.text) }) + opens(m.id), "medal");
+                               { name: nameOf(m, S), text: textOf(m, S) }) + opens(m.id), "medal");
         }
     }
 
@@ -195,5 +225,5 @@
         return MEDALS.filter((m) => S.medals[m.id]);
     }
 
-    PRS.medals = { MEDALS, BY_ID, check, earned, nameOf };
+    PRS.medals = { MEDALS, BY_ID, check, earned, nameOf, textOf };
 })(window);

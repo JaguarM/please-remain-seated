@@ -175,29 +175,46 @@
         return result;
     }
 
-    // Out of sixty. Nobody is meant to see an A often, and all sixty is not a thing this
-    // aeroplane has in it.
+    // A fraction of the cabin, not a count of it.
+    //
+    // These were 54, 49, 43, 36 and 28, which are the right numbers for the aeroplane they were
+    // written for and are nonsense on the other one: a Beechcraft carries eighteen passengers,
+    // so every flight ever flown on the turboprop - including one where every single person on
+    // board walked off it - came back graded F, "Almost none", under a line saying it was not
+    // enough. The tutorial is on that aeroplane. It was telling a perfect flight it had achieved
+    // almost nothing.
+    //
+    // So the bands are the fractions those numbers were, written as the division so that the
+    // narrowbody's grades are visibly the same grades: 54/60 is 54 on sixty passengers and
+    // sixteen on eighteen. Nobody is meant to see an A often, and every passenger is not a thing
+    // any of these aeroplanes has in it.
     const GRADES = [
-        { key: "A", min: 54, name: K("Exceptional"),
+        { key: "A", of: 54 / 60, name: K("Exceptional"),
           text: K("Almost everybody. There is no version of this afternoon that goes better, " +
                   "and you found the one that nearly does.") },
-        { key: "B", min: 49, name: K("Remarkable"),
+        { key: "B", of: 49 / 60, name: K("Remarkable"),
           text: K("Most of a burning aeroplane got off it alive, and a good part of that was " +
                   "what you did in the first five minutes.") },
-        { key: "C", min: 43, name: K("Considerable"),
+        { key: "C", of: 43 / 60, name: K("Considerable"),
           text: K("More people lived than would have. That is the job, and it is the whole job.") },
-        { key: "D", min: 36, name: K("Some"),
+        { key: "D", of: 36 / 60, name: K("Some"),
           text: K("Some. Which is a strange word to have to use.") },
-        { key: "E", min: 28, name: K("A few"),
+        { key: "E", of: 28 / 60, name: K("A few"),
           text: K("The fire decided most of this. You decided some of it.") },
-        { key: "F", min: 0, name: K("Almost none"),
+        { key: "F", of: 0, name: K("Almost none"),
           text: K("You were the only person on this aeroplane who understood, and it was not " +
                   "enough.") },
     ];
 
-    /** The grade is nothing hidden: how many of the sixty got off alive. */
+    /**
+     * The grade is nothing hidden: how many of the cabin got off alive.
+     *
+     * `survivors` counts the passengers and not you - you are the last soul on the manifest and
+     * not one of the people you are trying to save - so the grade is a fraction of `souls - 1`.
+     */
     function gradeOf(result) {
-        for (const g of GRADES) if (result.survivors >= g.min) return g;
+        const pax = Math.max(1, result.souls - 1);
+        for (const g of GRADES) if (result.survivors >= Math.round(g.of * pax)) return g;
         return GRADES[GRADES.length - 1];
     }
 
