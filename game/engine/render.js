@@ -144,13 +144,21 @@
         return lower ? (cabin.AISLE_Y + 1 + cabin.H - 2) / 2 : (1 + cabin.AISLE_Y - 1) / 2;
     }
 
-    /** The readout on a canvas of its own, which is what a turned cabin needs. */
-    // How wide the readout draws when it is on a canvas of its own, in tiles. It used to be
-    // the cabin's depth, because a turned cabin is that many tiles across and the readout sits
-    // over it - which is nine on a narrowbody and five on a turboprop, and five tiles is not
-    // enough room for "OUT OF SEATS" beside "HELPING". Both are stretched to the width of the
-    // page by the CSS anyway, so the readout asks for the room the words need and lets the
-    // cabin below it be whatever width it is.
+    /**
+     * The readout on a canvas of its own, which is what a turned cabin needs.
+     *
+     * `STATUS_TILES` is the room four numbers need, in tiles. A turned cabin is its own depth
+     * across - nine on a narrowbody, five on a turboprop - and five tiles is not enough for
+     * "OUT OF SEATS" beside "HELPING".
+     *
+     * So on a short aeroplane the strip is wider than the cabin under it, and that is the right
+     * way round rather than an oversight. `fit` caps the cabin at its own pixel width so a
+     * fifteen-tile aeroplane is not blown up to twice the scale of every sprite in it; the strip
+     * has no sprites in it and wants the page. Capping it to match was tried and is worse: four
+     * labelled numbers two-across in two hundred and forty pixels is either a collision or a
+     * nine-pixel font. The two are stacked and joined by the CSS, and a strip that overhangs a
+     * short cabin reads as a bar above a picture, which is what it is.
+     */
     const STATUS_TILES = 9;
 
     function statusWidth() { return Math.max(STATUS_TILES, cabin.H); }

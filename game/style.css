@@ -212,7 +212,11 @@ button.big:hover { background: #4b6191; }
    to say it themselves or an aeroplane that is the right way round grows a readout it has
    already drawn on itself. */
 .readout[hidden], .toward[hidden] { display: none; }
-.turned .readout + .canvas-wrap { border-radius: 0 0 4px 4px; }
+/* The strip and the cabin are one panel with a line across it, not two panels. The window the
+   cabin scrolls in is wrapped in `.viewport` - that is where the arrow pointing at the fire
+   hangs - so the cabin is the readout's nephew rather than its sibling, and the selector has to
+   say so or the join comes apart. */
+.turned .readout + .viewport .canvas-wrap { border-radius: 0 0 4px 4px; border-top: 0; }
 
 /* Nine tiles across a tablet held upright is a seat the size of a coaster and an aeroplane
    two and a half thousand pixels long, so the picture stops growing at a tile you can hit
