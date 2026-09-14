@@ -393,7 +393,7 @@
         const inten = S.fire.intensity[i];
         const d = S.derived;
 
-        let intake = smoke * dt * 0.0034 * d.smokeMul;
+        let intake = smoke * dt * 0.0034 * d.smokeMul * cabin.smokeMul;
         if (st.wearing(S, "hood")) intake *= 0.05;
         else if (st.wearing(S, "wet_towel") || st.wearing(S, "blanket")) intake *= 0.45;
         if (p.crouching) intake *= 0.6;

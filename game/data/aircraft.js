@@ -21,7 +21,9 @@
 //   LAV_LEFT_Y        the second lavatory, or null on an aeroplane that has one.
 //   ORIGIN            the seat whose locker is on fire.
 //   ceiling           metres, cabin floor to cabin ceiling. Smoke fills from the top down, so
-//                     this is how long you have before the layer is at head height.
+//                     this is how long you have before the layer is at head height, and how
+//                     thick it is once it is there: `cabin.smokeMul` is this against a
+//                     narrowbody's, and it multiplies everything anybody breathes.
 //   crewModel         "cabin" for an aeroplane with cabin crew, "flightdeck" for one without.
 //   rosterKey         which roster in `passengers.js` is on board. Read late, because that file
 //                     loads after this one.

@@ -40,7 +40,8 @@
             burns: p.burns * 1.5,
             // The air they are in when the gear comes down, and the minute and a half after it
             // before the slide is at the door, on top of everything they have already breathed.
-            air: f.smoke[i] * 0.7,
+            // Thicker at head height in a cabin with less ceiling: see cabin.smokeMul.
+            air: f.smoke[i] * 0.7 * cabin.smokeMul,
             heat: f.intensity[i] * 0.42,
             unmasked: p.masked ? 0 : 5,
             upright: (p.braced ? 0 : 3) +

@@ -22,6 +22,10 @@
     const PRS = global.PRS = global.PRS || {};
     const T = PRS.t, X = PRS.tx, K = PRS.k;
 
+    // The cabin the smoke numbers were tuned in: a narrowbody, seven feet and a bit floor to
+    // ceiling. Every other aeroplane's air is measured against this one. See `smokeMul` in use().
+    const REF_CEILING = 2.2;
+
     // Tile kinds. `walk` is the base cost in seconds for an average person to cross the tile.
     const KIND = {
         wall:    { walk: Infinity, fuel: 0.05, solid: true,  label: K("hull") },
@@ -70,6 +74,17 @@
         C.LAV_RIGHT_Y = ac.LAV_RIGHT_Y;
         C.ORIGIN = ac.ORIGIN;
         C.ceiling = ac.ceiling;
+        // How much ceiling there is to fill, as a multiplier on everything anybody breathes.
+        //
+        // `ceiling` is metres floor to cabin roof, and until now nothing in the simulation read
+        // it - which made the sentence in aircraft.js about the Beechcraft's missing foot, and
+        // the one in the README about smoke filling from the ceiling down, claims the game did
+        // not actually make. Smoke fills from the top, so the same smoke in a cabin a foot
+        // shorter is at head height sooner and thicker once it is there.
+        //
+        // The coefficients this multiplies were tuned on the narrowbody, so the narrowbody is
+        // exactly one and nothing about TN 447 moves. The turboprop is 2.2 / 1.8.
+        C.smokeMul = REF_CEILING / ac.ceiling;
         // There are no safe zones. There are doors, and the floor in front of them: the service
         // end and the cross-aisle at each end, which is where anybody moving people puts them
         // down because the door is right there and the fire is not. Whether the air there is any

@@ -393,7 +393,9 @@
             // the face halves it.
             const maskFactor = p.masked ? 0.5 : 1;
             const lowFactor = (p.state === "down" || p.braced) ? 0.6 : 1;   // smoke is high up
-            p.smokeDose += smoke * dt * 0.0031 * maskFactor * lowFactor;
+            // ...and there is less height for it to be high up in on a small aeroplane, which is
+            // what cabin.smokeMul is.
+            p.smokeDose += smoke * dt * 0.0031 * maskFactor * lowFactor * cabin.smokeMul;
             if (inten > 18) p.burns += (inten - 18) * dt * 0.0012;
             if (heat > 40) p.burns += (heat - 40) * dt * 0.0009;
 
