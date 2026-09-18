@@ -189,17 +189,31 @@
             wrap = el("div", { class: "backdrop", "aria-hidden": "true" }, [canvas]);
             host.appendChild(wrap);
             PRS.render.turn(false);
-            scale = PRS.render.fit(canvas);
-            // fit() sizes the canvas to be read: 100% wide and as tall as it likes. Behind the
-            // title it is a background instead, and covers.
-            canvas.style.width = "";
-            canvas.style.height = "";
 
             // Somebody who has asked for less movement gets the aeroplane and not the flight.
             still = !!(global.matchMedia &&
                        global.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
+            // On board before the canvas is sized, because boarding is what loads the aeroplane:
+            // takeOff calls state.create, which calls cabin.use. Sized first, the canvas was the
+            // shape of whichever aeroplane was loaded before - the narrowbody, on the first screen
+            // anybody ever sees - with the turboprop drawn into its top left-hand corner.
             takeOff();
+            scale = PRS.render.fit(canvas);
+            // fit() sizes the canvas to be read: 100% wide, as tall as it likes, and never wider
+            // than it has pixels. Behind the title it is a background instead, and covers - and
+            // that last cap held it to the left of any window wide enough for 142% of it to be
+            // more than the canvas has.
+            canvas.style.width = "";
+            canvas.style.height = "";
+            canvas.style.maxWidth = "";
+            // The strip above the aeroplane is 1.5 tiles of however tall this one is: a seventh of
+            // the narrowbody's canvas and nearly a quarter of the turboprop's. The stylesheet clips
+            // it off and centres what is under it, and has to be told which.
+            const aeroplane = PRS.cabin.H * PRS.render.TILE * scale;
+            canvas.style.setProperty("--band",
+                                     (100 * (1 - aeroplane / canvas.height)).toFixed(2) + "%");
+
             loop();
             return wrap;
         } catch (err) {

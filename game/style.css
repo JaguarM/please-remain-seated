@@ -73,12 +73,14 @@ button:active { transform: translateY(1px); }
 .backdrop { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
 /* The renderer draws a strip above the aeroplane where the state of the cabin is written -
    HELPING, PANIC, the meters - which is for a player and not for a menu, so it is clipped off
-   the top. 1.5 tiles of a 10.5-tile canvas is 14.29% of it, and the 57.14% below is the
-   aeroplane: centring that rather than the whole canvas is what the second translate is for. */
+   the top. It is 1.5 tiles of the canvas: 14.29% of the narrowbody's 10.5 and 23.08% of the
+   turboprop's 6.5, so backdrop.js sets --band to whichever is flying. The translate centres the
+   aeroplane under the strip rather than the whole canvas: half of the canvas, and half the strip. */
 .backdrop-cabin {
+  --band: 14.29%;
   position: absolute; left: -21%; width: 142%; height: auto; top: 50%;
-  transform: translateY(-57.14%);
-  clip-path: inset(14.29% 0 0 0);
+  transform: translateY(calc(-50% - var(--band) / 2));
+  clip-path: inset(var(--band) 0 0 0);
   image-rendering: pixelated;
   opacity: .85;
   /* The aeroplane has to stop somewhere and a straight line across the screen is not it, so it
