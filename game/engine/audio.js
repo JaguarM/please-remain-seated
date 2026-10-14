@@ -1,8 +1,5 @@
-// Every sound in the game is synthesised here, because the game ships as a folder you can open
-// from disk and a folder you can open from disk should not need forty .ogg files to make a noise.
-//
-// The palette is the aeroplane's own: the two-tone cabin chime, the flat hiss of the air
-// conditioning, and one low roar under all of it that gets louder as the fire does.
+// Synthesised Web Audio engine for Please Remain Seated.
+// Zero external audio files required — works directly from file://.
 (function (global) {
     "use strict";
 
@@ -12,15 +9,10 @@
     let master = null;
     let roarGain = null, roarSource = null;
     let enabled = true;
-    // 0..1, and 0.5 is the loudest the master gain has ever been: the cabin roar sits under
-    // everything and a game that opens at full scale is a game somebody turns off.
     let volume = 1;
     let ready = false;
-    // How many cues have been asked for, ever. The play screen uses it to find out whether the
-    // action it just ran made its own noise, and only falls back to a generic one if it did not,
-    // which is how a hundred and eighty-nine actions get a sound without a hundred and
-    // eighty-nine edits.
     let plays = 0;
+    let hushed = 0;
 
     function ensure() {
         if (ctx) return ctx;
@@ -33,8 +25,6 @@
         return ctx;
     }
 
-    // Browsers will not make a sound until the player has clicked something. The menus call this
-    // on the first click and nothing before it needs to be audible anyway.
     function unlock() {
         const c = ensure();
         if (!c) return;
@@ -91,7 +81,6 @@
         src.stop(t0 + dur + 0.02);
     }
 
-    // The low roar of a cabin at cruise, which is also the bed the fire sits on.
     function startRoar() {
         if (!enabled || !ensure() || !ready || roarSource) return;
         const src = ctx.createBufferSource();
@@ -99,82 +88,126 @@
         src.loop = true;
         const lp = ctx.createBiquadFilter();
         lp.type = "lowpass";
-        lp.frequency.value = 260;
+        lp.frequency.value = 240;
         roarGain = ctx.createGain();
-        roarGain.gain.value = 0.05;
+        roarGain.gain.value = 0.04;
         src.connect(lp).connect(roarGain).connect(master);
         src.start();
         roarSource = src;
     }
 
-    function setRoar(level) {
+    function setRoar(lvl) {
         if (hushed || !roarGain || !ctx) return;
-        roarGain.gain.setTargetAtTime(0.035 + 0.10 * Math.min(1, Math.max(0, level)), now(), 0.6);
+        roarGain.gain.setTargetAtTime(0.03 + 0.09 * Math.min(1, Math.max(0, lvl)), now(), 0.4);
     }
 
     function stopRoar() {
-        if (roarSource) { try { roarSource.stop(); } catch (e) { /* already stopped */ } }
+        if (roarSource) { try { roarSource.stop(); } catch (e) {} }
         roarSource = null;
     }
 
-    // The library. Named for what happens, not for what it sounds like.
     const sfx = {
-        // Two-tone cabin chime, the "bing-bong" that in this game always means bad news.
-        chime() { tone(880, 0.5, { type: "sine", gain: 0.16 });
-                  tone(660, 0.7, { type: "sine", gain: 0.14, delay: 0.28 }); },
-        click() { tone(520, 0.045, { type: "square", gain: 0.05 }); },
-        select() { tone(660, 0.06, { type: "square", gain: 0.07 });
-                   tone(990, 0.08, { type: "square", gain: 0.05, delay: 0.05 }); },
+        chime() {
+            tone(880, 0.45, { type: "sine", gain: 0.16 });
+            tone(660, 0.65, { type: "sine", gain: 0.14, delay: 0.25 });
+        },
+        click() { tone(540, 0.04, { type: "square", gain: 0.05 }); },
+        select() {
+            tone(660, 0.06, { type: "triangle", gain: 0.09 });
+            tone(990, 0.08, { type: "triangle", gain: 0.08, delay: 0.05 });
+        },
         back() { tone(400, 0.08, { type: "square", gain: 0.06 }); },
-        step() { noise(0.06, { freq: 380, gain: 0.035, q: 0.7 }); },
-        // Water, foam and halon are three different hisses and the player learns them.
-        pour() { noise(0.55, { freq: 1600, freqTo: 500, gain: 0.13, q: 0.6 }); },
-        spray() { noise(0.8, { freq: 3800, freqTo: 1400, gain: 0.16, q: 0.4 }); },
-        halon() { noise(1.1, { freq: 5200, freqTo: 900, gain: 0.18, q: 0.3 }); },
-        smother() { noise(0.35, { freq: 300, gain: 0.14, filter: "lowpass" }); },
-        flare() { noise(0.5, { freq: 220, freqTo: 1500, gain: 0.22, filter: "lowpass" });
-                  tone(90, 0.5, { type: "sawtooth", gain: 0.1, slideTo: 200 }); },
-        grab() { noise(0.13, { freq: 500, gain: 0.09, filter: "lowpass" }); },
-        drop() { noise(0.16, { freq: 200, gain: 0.11, filter: "lowpass" }); },
-        secure() { tone(523, 0.1, { type: "triangle", gain: 0.1 });
-                   tone(784, 0.14, { type: "triangle", gain: 0.1, delay: 0.09 });
-                   tone(1046, 0.2, { type: "triangle", gain: 0.09, delay: 0.19 }); },
-        refuse() { tone(220, 0.16, { type: "square", gain: 0.07, slideTo: 160 }); },
-        alarm() { for (let i = 0; i < 3; i++) tone(2400, 0.12, { type: "square", gain: 0.09, delay: i * 0.18 }); },
-        masksDrop() { noise(0.4, { freq: 700, gain: 0.1 });
-                      tone(440, 0.6, { type: "sine", gain: 0.08, delay: 0.1 }); },
-        pa() { tone(1200, 0.06, { type: "square", gain: 0.05 });
-               noise(0.25, { freq: 1200, gain: 0.04, q: 0.4, delay: 0.06 }); },
-        bad() { tone(160, 0.4, { type: "sawtooth", gain: 0.12, slideTo: 90 }); },
-        good() { tone(660, 0.12, { type: "triangle", gain: 0.1 });
-                 tone(880, 0.22, { type: "triangle", gain: 0.1, delay: 0.1 }); },
-        tick() { tone(1500, 0.02, { type: "square", gain: 0.025 }); },
-        // Hovering something that would happen. Deliberately almost inaudible: it fires whenever
-        // the pointer crosses a row, and anything louder would be a woodpecker.
-        blip() { tone(1180, 0.018, { type: "sine", gain: 0.018 }); },
-
-        // The seven fallbacks. One per deck, plus one for talking and one for lifting, so that
-        // every action makes the right kind of noise even when nobody wrote it a specific one.
-        talk() { tone(240, 0.07, { type: "sawtooth", gain: 0.035 });
-                 tone(300, 0.06, { type: "sawtooth", gain: 0.03, delay: 0.08 });
-                 tone(210, 0.08, { type: "sawtooth", gain: 0.028, delay: 0.15 }); },
-        rummage() { noise(0.18, { freq: 2600, freqTo: 1100, gain: 0.07, q: 0.8 });
-                    noise(0.12, { freq: 1800, gain: 0.05, q: 1.2, delay: 0.14 }); },
-        latch() { tone(1400, 0.02, { type: "square", gain: 0.05 });
-                  tone(700, 0.05, { type: "square", gain: 0.045, delay: 0.045 }); },
-        effort() { noise(0.22, { freq: 420, freqTo: 180, gain: 0.075, filter: "lowpass" }); },
-        breath() { noise(0.34, { freq: 620, freqTo: 320, gain: 0.055, q: 0.5 }); },
-        landing() { tone(55, 2.2, { type: "sawtooth", gain: 0.16, slideTo: 120 });
-                    noise(2.4, { freq: 300, freqTo: 2000, gain: 0.14, filter: "lowpass" }); },
-        touchdown() { noise(0.9, { freq: 180, freqTo: 60, gain: 0.28, filter: "lowpass" }); },
+        step() { noise(0.045, { freq: 380, gain: 0.03, q: 0.8 }); },
+        jump() {
+            tone(240, 0.16, { type: "sine", gain: 0.11, slideTo: 580 });
+            noise(0.08, { freq: 600, gain: 0.05 });
+        },
+        pour() { noise(0.45, { freq: 1600, freqTo: 520, gain: 0.14, q: 0.6 }); },
+        splash() {
+            noise(0.55, { freq: 2200, freqTo: 420, gain: 0.20, q: 0.5 });
+            tone(320, 0.18, { type: "sine", gain: 0.1, slideTo: 140 });
+        },
+        spray() { noise(0.35, { freq: 3600, freqTo: 1500, gain: 0.14, q: 0.4 }); },
+        halon() { noise(0.5, { freq: 5000, freqTo: 950, gain: 0.17, q: 0.3 }); },
+        fan() { noise(0.4, { freq: 750, freqTo: 1200, gain: 0.12, q: 0.9 }); },
+        smother() { noise(0.3, { freq: 300, gain: 0.14, filter: "lowpass" }); },
+        flare() {
+            noise(0.45, { freq: 240, freqTo: 1600, gain: 0.22, filter: "lowpass" });
+            tone(95, 0.45, { type: "sawtooth", gain: 0.11, slideTo: 220 });
+        },
+        pop() {
+            tone(520, 0.08, { type: "sawtooth", gain: 0.16, slideTo: 110 });
+            noise(0.18, { freq: 1400, freqTo: 300, gain: 0.18 });
+        },
+        sizzle() {
+            noise(0.28, { freq: 4200, freqTo: 2600, gain: 0.12, q: 0.8 });
+            tone(190, 0.15, { type: "sawtooth", gain: 0.08, slideTo: 130 });
+        },
+        grab() {
+            tone(320, 0.09, { type: "triangle", gain: 0.1, slideTo: 480 });
+            noise(0.1, { freq: 500, gain: 0.08, filter: "lowpass" });
+        },
+        drop() {
+            tone(260, 0.11, { type: "triangle", gain: 0.1, slideTo: 130 });
+            noise(0.14, { freq: 220, gain: 0.1, filter: "lowpass" });
+        },
+        thud() {
+            tone(130, 0.22, { type: "sine", gain: 0.2, slideTo: 48 });
+            noise(0.18, { freq: 240, gain: 0.16, filter: "lowpass" });
+        },
+        secure() {
+            tone(523, 0.1, { type: "triangle", gain: 0.12 });
+            tone(659, 0.12, { type: "triangle", gain: 0.12, delay: 0.08 });
+            tone(784, 0.14, { type: "triangle", gain: 0.12, delay: 0.16 });
+            tone(1046, 0.24, { type: "triangle", gain: 0.12, delay: 0.24 });
+        },
+        refuse() {
+            tone(240, 0.14, { type: "square", gain: 0.08, slideTo: 170 });
+            tone(190, 0.18, { type: "square", gain: 0.08, slideTo: 130, delay: 0.12 });
+        },
+        whistle() {
+            tone(2600, 0.12, { type: "sine", gain: 0.14, slideTo: 2950 });
+            tone(2850, 0.22, { type: "sine", gain: 0.15, slideTo: 2500, delay: 0.13 });
+        },
+        horn() {
+            tone(311, 0.42, { type: "sawtooth", gain: 0.16 });
+            tone(392, 0.42, { type: "sawtooth", gain: 0.14 });
+            noise(0.35, { freq: 900, gain: 0.08 });
+        },
+        camera() {
+            tone(1800, 0.03, { type: "square", gain: 0.09 });
+            noise(0.08, { freq: 3200, gain: 0.12, delay: 0.02 });
+        },
+        alarm() {
+            for (let i = 0; i < 3; i++) {
+                tone(2400, 0.11, { type: "square", gain: 0.1, delay: i * 0.16 });
+            }
+        },
+        masksDrop() {
+            noise(0.35, { freq: 700, gain: 0.12 });
+            tone(587, 0.2, { type: "sine", gain: 0.1 });
+            tone(880, 0.35, { type: "sine", gain: 0.1, delay: 0.15 });
+        },
+        pa() {
+            tone(987, 0.14, { type: "sine", gain: 0.12 });
+            tone(784, 0.22, { type: "sine", gain: 0.11, delay: 0.14 });
+        },
+        bad() { tone(165, 0.35, { type: "sawtooth", gain: 0.12, slideTo: 92 }); },
+        good() {
+            tone(660, 0.11, { type: "triangle", gain: 0.11 });
+            tone(880, 0.2, { type: "triangle", gain: 0.11, delay: 0.09 });
+        },
+        tick() { tone(1400, 0.02, { type: "square", gain: 0.025 }); },
+        blip() { tone(1180, 0.018, { type: "sine", gain: 0.02 }); },
+        talk() {
+            tone(260, 0.06, { type: "sawtooth", gain: 0.04 });
+            tone(330, 0.06, { type: "sawtooth", gain: 0.035, delay: 0.07 });
+        },
+        landing() {
+            tone(60, 1.8, { type: "sawtooth", gain: 0.16, slideTo: 120 });
+            noise(2.0, { freq: 320, freqTo: 1800, gain: 0.15, filter: "lowpass" });
+        },
     };
-
-    // A flight that is not the one being flown - the report's "without you", somebody else's
-    // cabin running beside yours - still calls everything a flight calls, including the noises.
-    // Switching the sound off would stop the engine roar of the flight that IS being flown and
-    // leave the player in silence, so there is a hand over the speaker instead: it counts, so
-    // that two quiet flights at once still lift it exactly once.
-    let hushed = 0;
 
     function hush(on) {
         hushed = Math.max(0, hushed + (on ? 1 : -1));
@@ -188,10 +221,7 @@
         fn();
     }
 
-    /** How many cues have been played. Only useful as a before-and-after pair. */
     function count() { return plays; }
-
-    /** What the master gain should be, given the switch and the slider. */
     function level() { return enabled ? 0.5 * volume : 0; }
 
     function apply() {
@@ -206,10 +236,6 @@
 
     function isEnabled() { return enabled; }
 
-    /**
-     * How loud, 0..1. Sliding to zero is the same silence as the switch being off, and the two
-     * are kept apart because M is a thing you press for a moment and the slider is a setting.
-     */
     function setVolume(v) {
         volume = Math.max(0, Math.min(1, typeof v === "number" ? v : 1));
         apply();
@@ -217,6 +243,8 @@
 
     function getVolume() { return volume; }
 
-    PRS.audio = { unlock, play, count, sfx, setEnabled, isEnabled, setVolume, getVolume,
-                  startRoar, stopRoar, setRoar, hush };
+    PRS.audio = {
+        unlock, play, count, sfx, setEnabled, isEnabled, setVolume, getVolume,
+        startRoar, stopRoar, setRoar, hush
+    };
 })(window);
